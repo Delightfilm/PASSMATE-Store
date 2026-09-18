@@ -30,12 +30,16 @@ Last updated: 2026-09-18
 - [x] Supabase catalog adapter 구현 (env 미설정 시 local fallback)
 - [x] Home / 상품목록 / 상품상세를 catalog adapter에 연결
 - [x] Supabase Setup Runbook 작성
-- [ ] PASSMATE 전용 Supabase organization 생성
-- [ ] PASSMATE 전용 Supabase 프로젝트 생성
-- [ ] V1 migrations 실제 적용
-- [ ] RLS 정책 실제 검증
-- [ ] PM-C2 seed 실제 적용
-- [ ] 테스트 사용자 기준 조회 검증
+- [x] PASSMATE 전용 Supabase organization 생성
+- [x] PASSMATE 전용 Supabase 프로젝트 접근 확인 (`fmecqeadghrdisirucqm`)
+- [x] V1/V1.5 migrations 0001~0004 적용 상태 확인
+- [x] PM-C2 seed 실제 적용 확인
+- [x] V1 schema/RLS smoke test 통과
+- [x] Order + issuance runtime contract verification 통과
+- [x] Supabase security advisor 0 findings
+- [x] Worker RPC service-role only 권한 검증
+- [x] 고객 role self-escalation 차단 검증
+- [ ] 테스트 Auth 사용자 기준 own-row 조회 검증
 - [ ] Vercel 환경변수 연결
 - [ ] Storefront에서 Supabase 상품 데이터 조회
 
@@ -63,27 +67,27 @@ Last updated: 2026-09-18
 - [x] Dockerfile / docker-compose scaffold
 - [x] Python unit tests + Worker CI
 - [x] NAS deployment runbook
-- [ ] PASSMATE Supabase에서 migrations 0003~0004 실제 적용
-- [ ] DB illegal transition 차단 실제 검증
-- [ ] NAS Worker가 fulfillment transition 계약을 사용하도록 연결
+- [x] PASSMATE Supabase에서 migrations 0003~0004 실제 적용 확인
+- [x] DB illegal transition / retry / stale completion 실제 검증
+- [x] NAS Queue RPC 권한 및 runtime contract 검증
+- [ ] NAS Worker를 실제 Supabase service-role credential로 `--once` integration test
 
 ## Next Priorities
 
-1. PASSMATE 전용 Supabase organization 생성
-2. V1/V1.5 migrations(0001~0003) 실제 적용
-3. order state SQL smoke test 실행
-4. passmate-prod 프로젝트/Storefront 연동 검증
-5. NAS Worker 실제 Supabase integration test
-6. Production storage adapter 설계
-7. Payment Provider contract 설계
+1. Vercel에 Supabase public env 2개 연결
+2. Storefront → Supabase catalog 실제 조회 검증
+3. 테스트 Auth 사용자 own-row/RLS 검증
+4. NAS Worker 실제 Supabase `--once` integration test
+5. Production storage adapter 설계
+6. Payment Provider contract 설계
 
 
 ## Blocker
 
-PASSMATE는 DF-AUTOSYNC organization과 분리해서 운영하기로 확정.
-사용자 화면에서 **PASSMATE / Free Plan / 1 project** organization이 생성된 것을 시각적으로 확인함. 다만 현재 연결된 Supabase connector의 organization 목록에는 아직 **DF-AUTOSYNC**만 표시되어 connector 동기화/권한 갱신이 필요함.
+Supabase 프로젝트는 project ref로 직접 접근 가능해져 DB 작업 blocker는 해소됨.
 
-필요 조치:
-1. Supabase connector가 새 PASSMATE organization을 인식하는지 재확인
-2. 인식되는 즉시 해당 organization에 `passmate-prod` 생성
-3. migrations 0001~0004 + smoke tests 적용
+현재 남은 외부 연동 blocker:
+- Vercel connector에서는 아직 `passmate-store` 프로젝트가 404로 조회되어 환경변수 자동 입력 불가
+- NAS 실제 integration test는 service-role secret을 NAS Worker 환경에 주입해야 실행 가능
+
+참고: 현재 PASSMATE Supabase 프로젝트 region은 **ap-northeast-1 (Tokyo)** 이다. 기존 계획의 Seoul(ap-northeast-2)과 다르므로 region 변경이 필요하면 별도 프로젝트 migration으로 처리해야 한다.
