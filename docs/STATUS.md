@@ -40,8 +40,8 @@ Last updated: 2026-09-18
 - [x] Worker RPC service-role only 권한 검증
 - [x] 고객 role self-escalation 차단 검증
 - [ ] 테스트 Auth 사용자 기준 own-row 조회 검증
-- [ ] Vercel 환경변수 연결
-- [ ] Storefront에서 Supabase 상품 데이터 조회
+- [x] Storefront Supabase public config 연결 (publishable key only)
+- [ ] Production deployment에서 Supabase catalog source 확인
 
 ## V1.5 Order State Machine Progress
 
@@ -74,8 +74,8 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. Vercel에 Supabase public env 2개 연결
-2. Storefront → Supabase catalog 실제 조회 검증
+1. Vercel Hobby build-rate-limit 해제 후 최신 배포 확인
+2. Production deployment 로그에서 Supabase catalog source 확인
 3. 테스트 Auth 사용자 own-row/RLS 검증
 4. NAS Worker 실제 Supabase `--once` integration test
 5. Production storage adapter 설계
@@ -88,6 +88,7 @@ Supabase 프로젝트는 project ref로 직접 접근 가능해져 DB 작업 blo
 
 현재 남은 외부 연동 blocker:
 - Vercel connector에서는 아직 `passmate-store` 프로젝트가 404로 조회되어 환경변수 자동 입력 불가
+- browser-safe Supabase URL/publishable key fallback을 코드에 연결해 이 blocker는 우회했으나, 최신 Vercel 배포는 Hobby build-rate-limit으로 지연/실패 상태
 - NAS 실제 integration test는 service-role secret을 NAS Worker 환경에 주입해야 실행 가능
 
 참고: 현재 PASSMATE Supabase 프로젝트 region은 **ap-northeast-1 (Tokyo)** 이다. 기존 계획의 Seoul(ap-northeast-2)과 다르므로 region 변경이 필요하면 별도 프로젝트 migration으로 처리해야 한다.
