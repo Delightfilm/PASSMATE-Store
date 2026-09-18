@@ -1,7 +1,8 @@
 import { ProductCard } from "@/components/product-card";
-import { products } from "@/lib/products";
+import { getProducts } from "@/lib/products";
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const products = await getProducts();
   return (
     <section className="section page-section">
       <div className="container">
