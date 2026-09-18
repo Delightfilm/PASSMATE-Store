@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "master_manifest": {
+    "file_name": "manifest.json",
+    "required": [
+      "schema_version",
+      "product_code",
+      "product_version",
+      "edition_year",
+      "master_file",
+      "master_sha256"
+    ],
+    "sha256_format": "lowercase_hex_64"
+  },
+  "output": {
+    "artifact_code": "bundle",
+    "extension": ".pdf",
+    "require_output_differs_from_master": true,
+    "required_result": [
+      "storage_key",
+      "sha256",
+      "size_bytes"
+    ]
+  },
+  "storage": {
+    "issued_prefix": "issued",
+    "forbid_absolute_key": true,
+    "forbid_parent_segments": true
+  },
+  "privacy": {
+    "forbidden_output_path_fields": [
+      "email",
+      "name",
+      "phone",
+      "address",
+      "birth_date"
+    ],
+    "allowed_identifiers": [
+      "job_id",
+      "order_id",
+      "order_item_id",
+      "product_code",
+      "product_version",
+      "generation"
+    ]
+  }
+}
