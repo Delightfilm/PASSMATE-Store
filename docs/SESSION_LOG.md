@@ -165,3 +165,28 @@
 **다음 할 일**
 - PASSMATE 프로젝트 ref 확인 또는 Supabase connector 재연결 후 프로젝트 접근 확인.
 - 접근 확인 즉시 migrations 0001~0004, seed, RLS/state-machine/NAS queue smoke tests 적용.
+
+## 2026-09-18 — Supabase Live Integration & Hardening
+
+**한 일**
+- 사용자 제공 project ref `fmecqeadghrdisirucqm`로 PASSMATE Supabase 프로젝트 직접 접근 성공.
+- 프로젝트 상태 `ACTIVE_HEALTHY`, region `ap-northeast-1` 확인.
+- migrations 0001~0004 및 PM-C2 seed가 실제 DB에 적용된 상태 확인.
+- V1 read-only smoke test 통과.
+- Connector가 일반 SQL write를 read-only transaction으로 실행하는 제약 때문에 runtime 검증을 별도 verification migration으로 수행.
+- 주문 상태머신 + issuance queue runtime verification 통과: unpaid enqueue 차단, paid transition, idempotent enqueue, lease/heartbeat, retry, stale completion 차단, refund invariant 검증.
+- Supabase Security Advisor 실행 후 발견된 SECURITY DEFINER RPC 노출, mutable search_path, RLS policy 중복/성능 문제를 `0005_security_hardening.sql`로 수정.
+- `private.is_admin()` helper로 admin check를 API 노출 schema에서 분리하고 Worker RPC는 service_role only로 제한.
+- client roles의 issuance queue 접근을 explicit deny policy로 고정.
+- FK covering indexes 추가 및 RLS auth.uid initplan 개선.
+- Security Advisor 재검사 결과 **0 findings** 확인.
+- 권한 검증: anon/authenticated는 Worker claim RPC 실행 불가, service_role만 실행 가능, authenticated 사용자는 profiles.role UPDATE 불가.
+
+**막힌 것**
+- Vercel connector에서 `passmate-store` 프로젝트가 여전히 404로 조회되어 Supabase public env를 자동 입력할 수 없음.
+- 실제 Auth 사용자 기반 own-row RLS와 NAS Worker `--once`는 다음 integration 단계에서 진행.
+
+**다음 할 일**
+- Vercel Supabase env 연결 후 Storefront DB catalog 조회 검증.
+- 테스트 Auth 사용자 RLS 검증.
+- NAS Worker service-role integration test.
