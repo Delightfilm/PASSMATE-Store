@@ -10,6 +10,7 @@
 |---|---|---|---|
 | V0 ✅ | 브랜드·자사몰 기반 | PASSMATE 브랜드, Concept B 로고 방향, GitHub, Vercel, 반응형 Storefront | Production 배포 성공 |
 | V1 🚧 | 회원·상품·주문 DB 기반 | Supabase, Auth 연동 기반, profiles/products/product_versions/orders/order_items/entitlements, RLS | 스키마 적용 + 테스트 데이터 CRUD 검증 |
+| V1.5 🚧 | 주문 상태 머신 | 결제 상태와 발행 상태 분리, 전이 규칙, state_version, audit trail, 실패/재시도 규칙 | 계약/DB/CI 검증 + 실제 migration 테스트 |
 | V2 | 고객 계정 | 회원가입/로그인/로그아웃, 비밀번호 재설정, 내 자료 UI | 로그인 사용자별 화면 정상 |
 | V3 | 결제 | 국내 PG 선정, 주문/결제 성공·취소·실패 처리, 중복 처리 방지 | 테스트 결제 → paid 주문 기록 |
 | V4 | NAS 발행 엔진 | NAS Docker Worker, MASTER 관리, 발행 Queue, PDF 생성 | 테스트 주문 → NAS 발행 성공 |
