@@ -71,3 +71,22 @@
 
 **다음 할 일**
 - 새 Supabase project 생성 직후 환경변수만 넣으면 DB catalog source로 전환되는지 검증.
+
+## 2026-09-18 — V1.5 Order State Machine
+
+**한 일**
+- 주문/결제 상태와 자료 발행 상태를 분리한 2축 상태 머신으로 확정.
+- Order: `pending → payment_pending → paid/refunded`, 실패 시 `failed → payment_pending` 재시도 규칙 추가.
+- Fulfillment: `not_started → queued → issuing → ready`, 실패 시 `failed → queued` 재시도 규칙 추가.
+- 결제 전 발행 금지, 환불 시 `refunded + revoked` 강제 규칙 추가.
+- `state_version`을 통한 optimistic concurrency 기반 추가.
+- `order_state_events` 자동 audit trail과 DB transition trigger migration 작성.
+- JSON contract / TypeScript helper / CI validator / SQL smoke test / 상세 문서 추가.
+- Production build에서 catalog + order-state contract 검증이 항상 실행되도록 quality gate 변경.
+
+**막힌 것**
+- DB trigger와 SQL smoke test는 PASSMATE 전용 Supabase 프로젝트가 생기기 전까지 실제 실행 불가.
+
+**다음 할 일**
+- PASSMATE Supabase 생성 후 migrations 0001~0003 적용 및 illegal transition 차단 검증.
+- 이후 NAS Worker의 Queue/Issuing/Ready/Failed 전이를 이 계약에 맞춰 설계.
