@@ -81,9 +81,9 @@ Last updated: 2026-09-18
 ## Blocker
 
 PASSMATE는 DF-AUTOSYNC organization과 분리해서 운영하기로 확정.
-현재 연결된 Supabase 계정에서 확인되는 organization은 **DF-AUTOSYNC** 하나뿐이며, 현재 도구에서는 새 organization 생성 기능을 제공하지 않음.
+사용자가 PASSMATE 전용 Supabase organization 생성을 완료했다고 보고했으나, 현재 연결된 Supabase connector의 organization 목록에는 아직 **DF-AUTOSYNC**만 표시됨.
 
 필요 조치:
-1. Supabase Dashboard에서 PASSMATE 전용 organization 생성
-2. 생성 후 organization이 커넥터에 보이는지 확인
-3. 해당 organization 안에 PASSMATE 프로젝트 생성
+1. Supabase connector가 새 PASSMATE organization을 인식하는지 재확인
+2. 인식되는 즉시 해당 organization에 `passmate-prod` 생성
+3. migrations 0001~0004 + smoke tests 적용
