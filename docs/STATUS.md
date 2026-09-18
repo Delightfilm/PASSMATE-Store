@@ -74,7 +74,7 @@ Last updated: 2026-09-18
 3. order state SQL smoke test 실행
 4. passmate-prod 프로젝트/Storefront 연동 검증
 5. NAS Worker 실제 Supabase integration test
-6. Final PDF processor contract 설계
+6. Production storage adapter 설계
 7. Payment Provider contract 설계
 
 
