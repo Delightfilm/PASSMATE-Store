@@ -123,7 +123,7 @@ if (
 }
 
 if (
-  !paymentSync.includes(".eq("merchant_order_id", paymentId)") ||
+  !paymentSync.includes('.eq("merchant_order_id", paymentId)') ||
   !paymentSync.includes("order.user_id !== userData.user.id")
 ) {
   throw new Error("payment-sync must bind the payment to the authenticated purchaser.");
