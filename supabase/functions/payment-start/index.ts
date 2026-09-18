@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,31 +19,18 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const storeId = Deno.env.get("PORTONE_STORE_ID");
   const channelKey = Deno.env.get("PORTONE_KCP_CHANNEL_KEY");
-
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    return json(503, { error: "supabase_runtime_not_configured" });
-  }
 
   if (!storeId || !channelKey) {
     return json(503, { error: "payment_provider_not_configured" });
   }
 
-  const authorization = req.headers.get("Authorization");
-  if (!authorization) return json(401, { error: "missing_authorization" });
+  const { data: ctx, error: contextError } =
+    await createSupabaseContext(req, { auth: "user" });
 
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) {
-    return json(401, { error: "invalid_session" });
+  if (contextError || !ctx?.userClaims?.id) {
+    return json(contextError?.status ?? 401, { error: "invalid_session" });
   }
 
   let body: Record<string, unknown>;
@@ -74,16 +61,11 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "invalid_idempotency_key" });
   }
 
-  // This value is only a proposal for a new logical checkout. On replay,
-  // create_direct_checkout returns the original attempt and we read its
-  // persisted merchant_order_id below.
   const proposedPaymentId = `pm-${crypto.randomUUID()}`;
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = ctx.supabaseAdmin;
 
   const { data, error } = await admin.rpc("create_direct_checkout", {
-    p_user_id: userData.user.id,
+    p_user_id: ctx.userClaims.id,
     p_product_slug: body.productSlug,
     p_provider: "portone_kcp",
     p_merchant_order_id: proposedPaymentId,

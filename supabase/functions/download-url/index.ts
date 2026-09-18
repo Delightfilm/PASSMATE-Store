@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
 
 const BUCKET = "passmate-artifacts";
 const EXPIRES_IN_SECONDS = 60;
@@ -26,25 +26,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const { data: ctx, error: contextError } =
+    await createSupabaseContext(req, { auth: "user" });
 
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    return json(503, { error: "runtime_not_configured" });
-  }
-
-  const authorization = req.headers.get("Authorization");
-  if (!authorization) return json(401, { error: "missing_authorization" });
-
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) {
-    return json(401, { error: "invalid_session" });
+  if (contextError || !ctx?.userClaims?.id) {
+    return json(contextError?.status ?? 401, { error: "invalid_session" });
   }
 
   let body: { entitlementId?: string };
@@ -61,14 +47,12 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "invalid_entitlement_id" });
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = ctx.supabaseAdmin;
 
   const { data, error: resolveError } = await admin.rpc(
     "resolve_download_artifact",
     {
-      p_user_id: userData.user.id,
+      p_user_id: ctx.userClaims.id,
       p_entitlement_id: body.entitlementId,
     }
   );
@@ -108,7 +92,7 @@ Deno.serve(async (req: Request) => {
   const { error: logError } = await admin
     .from("download_events")
     .insert({
-      user_id: userData.user.id,
+      user_id: ctx.userClaims.id,
       entitlement_id: body.entitlementId,
       issuance_job_id: artifact.issuance_job_id,
       event_type: "signed_url_created",

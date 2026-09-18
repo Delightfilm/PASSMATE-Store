@@ -22,7 +22,7 @@ class ProductionWiringTests(unittest.TestCase):
 
             settings = Settings(
                 supabase_url="https://example.supabase.co",
-                service_role_key="test-secret",
+                server_key="sb_secret_test-secret",
                 worker_id="nas-prod-01",
                 master_root=master,
                 work_root=work,

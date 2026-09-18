@@ -108,7 +108,7 @@ class LocalArtifactStore(ArtifactStore):
 
 
 class SupabaseArtifactStore(ArtifactStore):
-    """Private Supabase Storage adapter using the service-role credential.
+    """Private Supabase Storage adapter using a backend server credential.
 
     Standard upload is used with immutable object keys. If a retry finds an
     existing object, its bytes are fetched and verified before treating the
@@ -118,22 +118,23 @@ class SupabaseArtifactStore(ArtifactStore):
     def __init__(
         self,
         base_url: str,
-        service_role_key: str,
+        server_key: str,
         *,
         bucket: str = "passmate-artifacts",
         timeout_seconds: int = 60,
     ) -> None:
         self.base_url = base_url.rstrip("/")
-        self.service_role_key = service_role_key
+        self.server_key = server_key
         self.bucket = bucket
         self.timeout_seconds = timeout_seconds
 
     def _headers(self, **extra: str) -> dict[str, str]:
         headers = {
-            "apikey": self.service_role_key,
-            "Authorization": f"Bearer {self.service_role_key}",
-            "User-Agent": "passmate-nas-worker/0.2",
+            "apikey": self.server_key,
+            "User-Agent": "passmate-nas-worker/0.4",
         }
+        if not self.server_key.startswith("sb_secret_"):
+            headers["Authorization"] = f"Bearer {self.server_key}"
         headers.update(extra)
         return headers
 

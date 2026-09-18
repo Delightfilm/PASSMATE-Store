@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,34 +24,20 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const { data: ctx, error: contextError } =
+    await createSupabaseContext(req, { auth: "user" });
 
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    return json(503, { error: "runtime_not_configured" });
+  if (contextError || !ctx?.userClaims?.id) {
+    return json(contextError?.status ?? 401, { error: "invalid_session" });
   }
 
-  const authorization = req.headers.get("Authorization");
-  if (!authorization) return json(401, { error: "missing_authorization" });
-
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) {
-    return json(401, { error: "invalid_session" });
-  }
-
-  const { data: profile } = await userClient
+  const { data: profile, error: profileError } = await ctx.supabase
     .from("profiles")
     .select("role")
-    .eq("id", userData.user.id)
+    .eq("id", ctx.userClaims.id)
     .maybeSingle();
 
-  if (profile?.role !== "admin") {
+  if (profileError || profile?.role !== "admin") {
     return json(403, { error: "admin_required" });
   }
 
@@ -67,9 +53,7 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "invalid_json" });
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = ctx.supabaseAdmin;
 
   if (body.action === "retry_issuance") {
     if (!body.jobId || !/^[0-9a-fA-F-]{36}$/.test(body.jobId)) {
@@ -77,7 +61,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const { data, error } = await admin.rpc("admin_retry_issuance_job", {
-      p_admin_user_id: userData.user.id,
+      p_admin_user_id: ctx.userClaims.id,
       p_job_id: body.jobId,
     });
 
@@ -97,7 +81,7 @@ Deno.serve(async (req: Request) => {
     const { data: rows, error: artifactError } = await admin.rpc(
       "admin_get_issuance_artifact",
       {
-        p_admin_user_id: userData.user.id,
+        p_admin_user_id: ctx.userClaims.id,
         p_artifact_id: body.artifactId,
       }
     );
@@ -118,7 +102,7 @@ Deno.serve(async (req: Request) => {
       const { error: recordError } = await admin.rpc(
         "admin_record_artifact_integrity",
         {
-          p_admin_user_id: userData.user.id,
+          p_admin_user_id: ctx.userClaims.id,
           p_artifact_id: body.artifactId,
           p_integrity_status: "unavailable",
           p_observed_sha256: null,
@@ -145,7 +129,7 @@ Deno.serve(async (req: Request) => {
     const { error: recordError } = await admin.rpc(
       "admin_record_artifact_integrity",
       {
-        p_admin_user_id: userData.user.id,
+        p_admin_user_id: ctx.userClaims.id,
         p_artifact_id: body.artifactId,
         p_integrity_status: integrityStatus,
         p_observed_sha256: observedSha256,

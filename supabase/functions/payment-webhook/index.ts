@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
 import * as PortOne from "jsr:@portone/server-sdk@0.19.0";
 
 function json(status: number, body: unknown) {
@@ -38,19 +38,11 @@ type PortOnePayment = {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const portoneApiSecret = Deno.env.get("PORTONE_API_SECRET");
   const webhookSecret = Deno.env.get("PORTONE_WEBHOOK_SECRET");
   const expectedStoreId = Deno.env.get("PORTONE_STORE_ID");
 
-  if (
-    !supabaseUrl ||
-    !serviceRoleKey ||
-    !portoneApiSecret ||
-    !webhookSecret ||
-    !expectedStoreId
-  ) {
+  if (!portoneApiSecret || !webhookSecret || !expectedStoreId) {
     return json(503, { error: "webhook_runtime_not_configured" });
   }
 
@@ -65,6 +57,14 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.warn("PortOne webhook signature verification failed", error);
     return json(400, { error: "invalid_webhook_signature" });
+  }
+
+  const { data: ctx, error: contextError } =
+    await createSupabaseContext(req, { auth: "none" });
+
+  if (contextError || !ctx) {
+    console.error("Supabase webhook context failed", contextError?.code);
+    return json(503, { error: "supabase_runtime_not_configured" });
   }
 
   let webhook: {
@@ -125,10 +125,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const payment = (await response.json()) as PortOnePayment;
-
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = ctx.supabaseAdmin;
 
   const { data: attempt, error: attemptError } = await admin
     .from("payment_attempts")

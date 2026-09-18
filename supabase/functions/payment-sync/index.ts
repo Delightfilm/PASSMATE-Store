@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,32 +44,18 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const portoneApiSecret = Deno.env.get("PORTONE_API_SECRET");
   const expectedStoreId = Deno.env.get("PORTONE_STORE_ID");
 
-  if (
-    !supabaseUrl ||
-    !anonKey ||
-    !serviceRoleKey ||
-    !portoneApiSecret ||
-    !expectedStoreId
-  ) {
+  if (!portoneApiSecret || !expectedStoreId) {
     return json(503, { error: "payment_sync_runtime_not_configured" });
   }
 
-  const authorization = req.headers.get("Authorization");
-  if (!authorization) return json(401, { error: "missing_authorization" });
+  const { data: ctx, error: contextError } =
+    await createSupabaseContext(req, { auth: "user" });
 
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) {
-    return json(401, { error: "invalid_session" });
+  if (contextError || !ctx?.userClaims?.id) {
+    return json(contextError?.status ?? 401, { error: "invalid_session" });
   }
 
   let body: Record<string, unknown>;
@@ -93,9 +79,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const paymentId = body.paymentId;
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const admin = ctx.supabaseAdmin;
 
   const { data: attempt, error: attemptError } = await admin
     .from("payment_attempts")
@@ -120,7 +104,7 @@ Deno.serve(async (req: Request) => {
     console.error("payment-sync order lookup failed");
     return json(500, { error: "order_lookup_failed" });
   }
-  if (!order || order.user_id !== userData.user.id) {
+  if (!order || order.user_id !== ctx.userClaims.id) {
     return json(404, { error: "payment_not_found" });
   }
 

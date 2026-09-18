@@ -17,7 +17,7 @@ from .worker import PassmateWorker
 def build_worker(settings: Settings) -> PassmateWorker:
     client = SupabaseRpcClient(
         settings.supabase_url,
-        settings.service_role_key,
+        settings.server_key,
         timeout_seconds=settings.request_timeout_seconds,
     )
 
@@ -31,7 +31,7 @@ def build_worker(settings: Settings) -> PassmateWorker:
     elif settings.processor_mode == "production":
         store = SupabaseArtifactStore(
             settings.supabase_url,
-            settings.service_role_key,
+            settings.server_key,
             bucket=settings.storage_bucket,
             timeout_seconds=max(settings.request_timeout_seconds, 60),
         )
@@ -90,10 +90,11 @@ def main() -> int:
 
     if args.check_config:
         logging.info(
-            "configuration OK worker_id=%s mode=%s bucket=%s version=%s",
+            "configuration OK worker_id=%s mode=%s bucket=%s key_type=%s version=%s",
             settings.worker_id,
             settings.processor_mode,
             settings.storage_bucket,
+            "legacy" if settings.legacy_server_key else "secret",
             WORKER_VERSION,
         )
         return 0

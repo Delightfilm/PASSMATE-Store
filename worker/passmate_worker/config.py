@@ -23,6 +23,25 @@ def _required(name: str) -> str:
     return value
 
 
+def _server_key() -> tuple[str, bool]:
+    secret_key = os.getenv("SUPABASE_SECRET_KEY", "").strip()
+    if secret_key:
+        if not secret_key.startswith("sb_secret_"):
+            raise ConfigError(
+                "SUPABASE_SECRET_KEY must use the sb_secret_ key format"
+            )
+        return secret_key, False
+
+    legacy_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    if legacy_key:
+        return legacy_key, True
+
+    raise ConfigError(
+        "SUPABASE_SECRET_KEY is required "
+        "(legacy SUPABASE_SERVICE_ROLE_KEY is accepted only for migration/preflight)"
+    )
+
+
 def _positive_int(name: str, default: int, minimum: int = 1) -> int:
     raw = os.getenv(name, str(default)).strip()
     try:
@@ -45,7 +64,7 @@ def _bool(name: str, default: bool = False) -> bool:
 @dataclass(frozen=True)
 class Settings:
     supabase_url: str
-    service_role_key: str
+    server_key: str
     worker_id: str
     master_root: Path
     work_root: Path
@@ -57,6 +76,7 @@ class Settings:
     heartbeat_seconds: int = 60
     request_timeout_seconds: int = 30
     allow_reference_copy: bool = False
+    legacy_server_key: bool = False
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -82,6 +102,14 @@ class Settings:
             raise ConfigError(
                 "PASSMATE_PROCESSOR_MODE must be one of "
                 "disabled, reference, production"
+            )
+
+        server_key, legacy_server_key = _server_key()
+
+        if processor_mode == "production" and legacy_server_key:
+            raise ConfigError(
+                "production mode requires SUPABASE_SECRET_KEY; "
+                "legacy SUPABASE_SERVICE_ROLE_KEY is not allowed"
             )
 
         storage_bucket = os.getenv(
@@ -124,7 +152,7 @@ class Settings:
 
         return cls(
             supabase_url=supabase_url,
-            service_role_key=_required("SUPABASE_SERVICE_ROLE_KEY"),
+            server_key=server_key,
             worker_id=worker_id,
             master_root=Path(
                 os.getenv("PASSMATE_MASTER_ROOT", "/data/master")
@@ -150,6 +178,7 @@ class Settings:
                 minimum=5,
             ),
             allow_reference_copy=allow_reference_copy,
+            legacy_server_key=legacy_server_key,
         )
 
     def validate_filesystem(self) -> None:
@@ -171,4 +200,9 @@ class Settings:
             raise ConfigError(
                 "PASSMATE_PROCESSOR_MODE=disabled; "
                 "set production only after NAS preflight succeeds"
+            )
+
+        if self.processor_mode == "production" and self.legacy_server_key:
+            raise ConfigError(
+                "production mode requires SUPABASE_SECRET_KEY"
             )

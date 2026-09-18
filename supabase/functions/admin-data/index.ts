@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,31 +17,17 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const { data: ctx, error: contextError } =
+    await createSupabaseContext(req, { auth: "user" });
 
-  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-    return json(503, { error: "runtime_not_configured" });
+  if (contextError || !ctx?.userClaims?.id) {
+    return json(contextError?.status ?? 401, { error: "invalid_session" });
   }
 
-  const authorization = req.headers.get("Authorization");
-  if (!authorization) return json(401, { error: "missing_authorization" });
-
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData.user) {
-    return json(401, { error: "invalid_session" });
-  }
-
-  const { data: profile, error: profileError } = await userClient
+  const { data: profile, error: profileError } = await ctx.supabase
     .from("profiles")
     .select("role")
-    .eq("id", userData.user.id)
+    .eq("id", ctx.userClaims.id)
     .maybeSingle();
 
   if (profileError || profile?.role !== "admin") {
@@ -55,11 +41,8 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "invalid_json" });
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const userId = userData.user.id;
+  const admin = ctx.supabaseAdmin;
+  const userId = ctx.userClaims.id;
   let result;
 
   if (body.view === "summary") {

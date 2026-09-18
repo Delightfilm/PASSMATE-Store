@@ -11,7 +11,7 @@ from passmate_worker.config import ConfigError, Settings
 
 BASE_ENV = {
     "SUPABASE_URL": "https://example.supabase.co",
-    "SUPABASE_SERVICE_ROLE_KEY": "test-secret",
+    "SUPABASE_SECRET_KEY": "sb_secret_test-secret",
     "PASSMATE_WORKER_ID": "nas-test-01",
     "PASSMATE_LEASE_SECONDS": "300",
     "PASSMATE_HEARTBEAT_SECONDS": "60",
@@ -38,6 +38,7 @@ class ConfigTests(unittest.TestCase):
 
             self.assertTrue(settings.work_root.is_dir())
             self.assertTrue(settings.output_root.is_dir())
+            self.assertFalse(settings.legacy_server_key)
 
     def test_http_supabase_url_rejected(self) -> None:
         env = {
@@ -87,6 +88,39 @@ class ConfigTests(unittest.TestCase):
 
         self.assertEqual(settings.processor_mode, "production")
         self.assertFalse(settings.allow_reference_copy)
+        self.assertFalse(settings.legacy_server_key)
+
+    def test_legacy_key_is_allowed_only_for_preflight(self) -> None:
+        env = {
+            "SUPABASE_URL": "https://example.supabase.co",
+            "SUPABASE_SERVICE_ROLE_KEY": "legacy-jwt-key",
+            "PASSMATE_WORKER_ID": "nas-test-01",
+            "PASSMATE_LEASE_SECONDS": "300",
+            "PASSMATE_HEARTBEAT_SECONDS": "60",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            settings = Settings.from_env()
+
+        self.assertTrue(settings.legacy_server_key)
+        self.assertEqual(settings.processor_mode, "disabled")
+
+    def test_production_rejects_legacy_service_role_key(self) -> None:
+        env = {
+            "SUPABASE_URL": "https://example.supabase.co",
+            "SUPABASE_SERVICE_ROLE_KEY": "legacy-jwt-key",
+            "PASSMATE_WORKER_ID": "nas-test-01",
+            "PASSMATE_LEASE_SECONDS": "300",
+            "PASSMATE_HEARTBEAT_SECONDS": "60",
+            "PASSMATE_PROCESSOR_MODE": "production",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            with self.assertRaisesRegex(
+                ConfigError,
+                "production mode requires SUPABASE_SECRET_KEY",
+            ):
+                Settings.from_env()
 
 
 if __name__ == "__main__":

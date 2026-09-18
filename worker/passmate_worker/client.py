@@ -11,15 +11,31 @@ class RpcError(RuntimeError):
     pass
 
 
+def _server_headers(server_key: str) -> dict[str, str]:
+    headers = {
+        "apikey": server_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "passmate-nas-worker/0.4",
+    }
+
+    # Modern sb_secret_ keys are opaque API keys, not JWTs. Sending one as a
+    # Bearer token makes the Supabase gateway try to parse it as a JWT.
+    if not server_key.startswith("sb_secret_"):
+        headers["Authorization"] = f"Bearer {server_key}"
+
+    return headers
+
+
 class SupabaseRpcClient:
     def __init__(
         self,
         base_url: str,
-        service_role_key: str,
+        server_key: str,
         timeout_seconds: int = 30,
     ) -> None:
         self.base_url = base_url.rstrip("/")
-        self.service_role_key = service_role_key
+        self.server_key = server_key
         self.timeout_seconds = timeout_seconds
 
     def _rpc(self, function_name: str, payload: dict[str, Any]) -> Any:
@@ -29,13 +45,7 @@ class SupabaseRpcClient:
             url,
             data=body,
             method="POST",
-            headers={
-                "apikey": self.service_role_key,
-                "Authorization": f"Bearer {self.service_role_key}",
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "User-Agent": "passmate-nas-worker/0.4",
-            },
+            headers=_server_headers(self.server_key),
         )
 
         try:

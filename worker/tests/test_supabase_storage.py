@@ -23,13 +23,13 @@ class FakeResponse:
 
 
 class SupabaseArtifactStoreTests(unittest.TestCase):
-    def test_upload_uses_private_bucket_and_no_upsert(self) -> None:
+    def test_upload_uses_modern_secret_as_apikey_only(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp) / "issued.pdf"
             source.write_bytes(b"%PDF-1.4\nPASSMATE\n%%EOF\n")
             store = SupabaseArtifactStore(
                 "https://example.supabase.co",
-                "service-secret",
+                "sb_secret_storage-test",
             )
 
             captured = []
@@ -54,15 +54,29 @@ class SupabaseArtifactStoreTests(unittest.TestCase):
                 "/storage/v1/object/passmate-artifacts/issued/PM-C2/",
                 captured[0].full_url,
             )
+            self.assertEqual(captured[0].headers.get("X-upsert"), "false")
             self.assertEqual(
-                captured[0].headers.get("X-upsert"),
-                "false",
+                captured[0].headers.get("Apikey"),
+                "sb_secret_storage-test",
             )
+            self.assertIsNone(captured[0].headers.get("Authorization"))
+
+    def test_legacy_key_keeps_bearer_only_for_migration_compatibility(self) -> None:
+        store = SupabaseArtifactStore(
+            "https://example.supabase.co",
+            "legacy-service-role-jwt",
+        )
+        headers = store._headers()
+        self.assertEqual(headers["apikey"], "legacy-service-role-jwt")
+        self.assertEqual(
+            headers["Authorization"],
+            "Bearer legacy-service-role-jwt",
+        )
 
     def test_delete_uses_storage_api(self) -> None:
         store = SupabaseArtifactStore(
             "https://example.supabase.co",
-            "service-secret",
+            "sb_secret_storage-test",
         )
         captured = []
 
