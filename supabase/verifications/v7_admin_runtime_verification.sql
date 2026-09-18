@@ -70,7 +70,7 @@ begin
   )
   values (
     'paid',
-    'not_started',
+    'queued',
     'test',
     100,
     'KRW'
