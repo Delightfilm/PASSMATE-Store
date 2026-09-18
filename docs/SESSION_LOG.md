@@ -499,3 +499,26 @@
 - migration 0013 live 적용 및 lifecycle runtime verification.
 - admin-data/admin-action Edge Function V6 버전 배포.
 - Security Advisor / RPC 권한 재검증.
+
+## 2026-09-18 — V6 Internal Issuance Registry Live Verification
+
+**한 일**
+- `0013_v6_issuance_registry.sql`을 PASSMATE Supabase에 실제 적용.
+- `admin-data`, `admin-action` Edge Function을 V6 기능 포함 v2로 갱신 배포, 둘 다 ACTIVE/JWT required 확인.
+- 첫 runtime verification에서 test fixture가 order fulfillment를 `queued`로 직접 시작해 기존 state machine의 `queued → ready` 금지 규칙과 충돌하는 테스트 설계 오류를 발견.
+- fixture를 실제 Worker 처리 중 상태인 `issuing`으로 맞춰 재실행 후 검증 통과.
+- 실제 DB에서 generation 1 성공 → active, generation 2 성공 → G1 superseded/G2 active, order refund → 모든 artifact revoked 동작 확인.
+- non-admin actor의 Registry Admin RPC 거절 확인.
+- Admin Registry/Integrity RPC 권한: anon/authenticated 실행 불가, service_role only 확인.
+- `issuance_artifacts`, `issuance_artifact_events` 고객 직접 조회 차단 확인.
+- Performance Advisor가 지적한 order_item/product_version FK covering index를 `0014_v6_registry_indexes.sql`로 보완.
+- 적용 후 Supabase Security Advisor **0 findings**.
+- runtime test 종료 후 artifact/event/product fixture가 모두 0개로 cleanup된 것 확인.
+
+**막힌 것**
+- 실제 private Storage artifact가 아직 없어서 Admin의 실제 object SHA-256/size 비교 E2E는 NAS 발행 후 진행.
+- 실제 Admin Auth user가 아직 없어 브라우저 `/admin/` 무결성 확인 버튼 E2E는 이후 진행.
+
+**다음 할 일**
+- NAS 접근 가능 시 V4 실제 `--once` 발행으로 V6 Registry 실데이터 생성.
+- 같은 artifact를 Admin 무결성 확인 → V5 고객 다운로드까지 한 번에 E2E.

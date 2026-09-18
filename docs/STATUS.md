@@ -199,9 +199,15 @@ Last updated: 2026-09-18
 - [x] verified/mismatch/unavailable 결과 audit
 - [x] customer UI Registry 비노출 CI guard
 - [x] V6 contract validator
-- [ ] migration 0013 live 적용
-- [ ] V6 runtime registry verification
-- [ ] updated Admin Edge Functions deploy
+- [x] migration 0013 live 적용
+- [x] V6 runtime registry verification 통과
+- [x] succeeded → active / new generation → superseded / refund → revoked 검증
+- [x] admin-data / admin-action Edge Functions v2 ACTIVE
+- [x] V6 Admin RPC anon/authenticated 차단 + service_role only 검증
+- [x] Registry/Event table client read 차단 검증
+- [x] Performance Advisor FK covering indexes 보완 (0014)
+- [x] V6 적용 후 Security Advisor 0 findings
+- [x] runtime fixture cleanup 확인
 - [ ] 실제 Storage artifact 무결성 verify E2E
 
 ## V7 Admin Console Progress
@@ -236,12 +242,12 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. V6 migration 0013 live 적용 + runtime registry verification
-2. Admin Edge Functions V6 갱신 배포 + Security Advisor 검증
-3. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
-4. 실제 Worker --once → artifact registry → V5 signed download E2E
-5. 실제 admin 계정 지정 후 private artifact 무결성 확인 E2E
-6. PortOne credential 입력 + sandbox payment E2E
+1. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
+2. 실제 Worker --once → V6 artifact registry → V5 signed download E2E
+3. 실제 admin 계정 지정 후 private artifact 무결성 확인 E2E
+4. real NAS lease-loss/reclaim + continuous soak test
+5. PortOne credential 입력 + sandbox payment E2E
+6. Vercel 제한 해제 후 V2/V3/V6/V7 Production UI 검증
 
 
 ## Blocker
