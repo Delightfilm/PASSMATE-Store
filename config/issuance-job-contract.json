@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "poll_interval_seconds": 10,
+  "lease": {
+    "default_seconds": 300,
+    "heartbeat_seconds": 60,
+    "min_seconds": 60,
+    "max_seconds": 1800
+  },
+  "retry": {
+    "max_attempts": 5,
+    "backoff_seconds": [60, 300, 900, 3600]
+  },
+  "job": {
+    "statuses": [
+      "queued",
+      "leased",
+      "retry_wait",
+      "succeeded",
+      "dead_letter",
+      "cancelled"
+    ],
+    "terminal": ["succeeded", "dead_letter", "cancelled"]
+  },
+  "claim_payload": {
+    "required": [
+      "schema_version",
+      "job_id",
+      "lease_token",
+      "attempt",
+      "generation",
+      "order_id",
+      "order_item_id",
+      "product_code",
+      "product_version",
+      "edition_year",
+      "artifact_code"
+    ],
+    "forbidden_personal_fields": [
+      "email",
+      "name",
+      "full_name",
+      "phone",
+      "address",
+      "birth_date"
+    ]
+  },
+  "completion_result": {
+    "required": [
+      "job_id",
+      "lease_token",
+      "storage_key",
+      "sha256",
+      "size_bytes"
+    ],
+    "sha256_format": "lowercase_hex_64"
+  },
+  "failure_result": {
+    "required": [
+      "job_id",
+      "lease_token",
+      "error_code",
+      "retryable"
+    ]
+  },
+  "error_codes": {
+    "NETWORK_ERROR": { "retryable_default": true },
+    "STORAGE_UPLOAD_FAILED": { "retryable_default": true },
+    "PDF_PROCESS_FAILED": { "retryable_default": true },
+    "HASH_FAILED": { "retryable_default": true },
+    "MASTER_NOT_FOUND": { "retryable_default": false },
+    "MASTER_VERSION_MISMATCH": { "retryable_default": false },
+    "INVALID_JOB": { "retryable_default": false },
+    "LEASE_LOST": { "retryable_default": false },
+    "ORDER_NOT_PAID": { "retryable_default": false }
+  }
+}
