@@ -3,8 +3,8 @@ import Link from "next/link";
 import { ProductCover } from "@/components/product-cover";
 import { getProduct, getStaticProductSlugs } from "@/lib/products";
 
-export function generateStaticParams() {
-  return getStaticProductSlugs();
+export async function generateStaticParams() {
+  return await getStaticProductSlugs();
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -26,6 +26,22 @@ type ProductRow = {
 };
 
 const localProducts = catalog as Product[];
+const allowLocalCatalogFallback =
+  process.env.PASSMATE_ALLOW_LOCAL_CATALOG_FALLBACK === "true";
+
+function catalogFailure(reason: string): Product[] {
+  if (allowLocalCatalogFallback) {
+    console.warn(
+      `[PASSMATE] ${reason}; explicit local catalog fallback enabled`
+    );
+    return localProducts;
+  }
+
+  console.error(
+    `[PASSMATE] ${reason}; production catalog fails closed`
+  );
+  return [];
+}
 
 function mapRow(row: ProductRow): Product {
   return {
@@ -43,10 +59,6 @@ function mapRow(row: ProductRow): Product {
   };
 }
 
-export function getStaticProductSlugs() {
-  return localProducts.map(({ slug }) => ({ slug }));
-}
-
 export async function getProducts(): Promise<Product[]> {
   const { url, key } = getPublicSupabaseConfig();
 
@@ -58,28 +70,58 @@ export async function getProducts(): Promise<Product[]> {
   endpoint.searchParams.set("is_active", "eq.true");
   endpoint.searchParams.set("order", "created_at.asc");
 
-  const response = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
-  });
-
-  if (!response.ok) {
-    console.warn(
-      `[PASSMATE] Supabase catalog request failed (${response.status}); using local fallback`
-    );
-    return localProducts;
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+    });
+  } catch (error) {
+    console.error("[PASSMATE] Supabase catalog network error", error);
+    return catalogFailure("Supabase catalog network request failed");
   }
 
-  const rows = (await response.json()) as ProductRow[];
+  if (!response.ok) {
+    return catalogFailure(
+      `Supabase catalog request failed (${response.status})`
+    );
+  }
+
+  let rows: ProductRow[];
+  try {
+    const payload: unknown = await response.json();
+    if (!Array.isArray(payload)) {
+      return catalogFailure("Supabase catalog returned an invalid payload");
+    }
+    rows = payload as ProductRow[];
+  } catch (error) {
+    console.error("[PASSMATE] Supabase catalog JSON parse failed", error);
+    return catalogFailure("Supabase catalog returned invalid JSON");
+  }
+
   if (rows.length === 0) {
-    console.warn("[PASSMATE] Supabase catalog returned no active products; using local fallback");
-    return localProducts;
+    // Zero active DB products is an intentional kill switch, not an error.
+    // Never resurrect local products unless the explicit fallback flag is on.
+    if (allowLocalCatalogFallback) {
+      console.warn(
+        "[PASSMATE] Supabase catalog has zero active products; explicit local fallback enabled"
+      );
+      return localProducts;
+    }
+
+    console.info("[PASSMATE] catalog source=supabase products=0 fail-closed");
+    return [];
   }
 
   console.info(`[PASSMATE] catalog source=supabase products=${rows.length}`);
   return rows.map(mapRow);
+}
+
+export async function getStaticProductSlugs() {
+  const products = await getProducts();
+  return products.map(({ slug }) => ({ slug }));
 }
 
 export async function getProduct(slug: string) {

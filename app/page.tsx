@@ -5,6 +5,8 @@ import { getProducts } from "@/lib/products";
 
 export default async function Home() {
   const products = await getProducts();
+  const firstProduct = products[0];
+
   return (
     <>
       <section className="hero section">
@@ -15,7 +17,12 @@ export default async function Home() {
             <h1>시험에 필요한 것만.<br/><span>합격까지 함께.</span></h1>
             <p className="hero-lead">긴 교재를 다시 읽는 대신, 마지막 회독에 필요한 핵심만 정리합니다. PASSMATE는 자격증별 핵심요약·벼락치기·치트시트를 한 번에 제공합니다.</p>
             <div className="hero-actions">
-              <Link className="button button-primary" href="/products/computer-literacy-2">컴활 2급 미리보기</Link>
+              <Link
+                className="button button-primary"
+                href={firstProduct ? "/products/" + firstProduct.slug : "/products"}
+              >
+                {firstProduct ? firstProduct.title + " 미리보기" : "요약노트 준비 현황 보기"}
+              </Link>
               <Link className="button button-ghost" href="/products">요약노트 둘러보기</Link>
             </div>
             <div className="trust-row">
@@ -51,7 +58,11 @@ export default async function Home() {
             <div><span className="eyebrow">FIRST RELEASE</span><h2>첫 번째 PASSMATE</h2></div>
             <Link href="/products" className="text-link">전체 요약노트 →</Link>
           </div>
-          <div className="product-list">{products.map((p) => <ProductCard key={p.slug} product={p} />)}</div>
+          {products.length > 0 ? (
+            <div className="product-list">{products.map((p) => <ProductCard key={p.slug} product={p} />)}</div>
+          ) : (
+            <p className="page-lead">현재 판매 중인 요약노트가 없습니다.</p>
+          )}
         </div>
       </section>
 

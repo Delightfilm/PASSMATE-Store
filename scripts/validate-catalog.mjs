@@ -36,4 +36,29 @@ for (const product of catalog) {
   slugs.add(product.slug);
 }
 
+const productsSource = fs.readFileSync(
+  new URL("../lib/products.ts", import.meta.url),
+  "utf8"
+);
+
+for (const required of [
+  "PASSMATE_ALLOW_LOCAL_CATALOG_FALLBACK",
+  "production catalog fails closed",
+  "catalog source=supabase products=0 fail-closed",
+  "catch (error)",
+]) {
+  if (!productsSource.includes(required)) {
+    throw new Error("Catalog fail-closed guard missing: " + required);
+  }
+}
+
+if (
+  !productsSource.includes("export async function getStaticProductSlugs()") ||
+  !productsSource.includes("const products = await getProducts()")
+) {
+  throw new Error(
+    "Static product routes must come from the authoritative catalog source."
+  );
+}
+
 console.log(`PASSMATE catalog OK: ${catalog.length} product(s)`);

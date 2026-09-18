@@ -3,6 +3,7 @@ import { getProducts } from "@/lib/products";
 
 export default async function ProductsPage() {
   const products = await getProducts();
+
   return (
     <section className="section page-section">
       <div className="container">
@@ -11,7 +12,11 @@ export default async function ProductsPage() {
           <h1 className="page-title">요약노트</h1>
           <p className="page-lead">자격증별 CORE · CRAM · SHEET 패키지를 순차 발행합니다.</p>
         </div>
-        <div className="product-list">{products.map((p) => <ProductCard key={p.slug} product={p} />)}</div>
+        {products.length > 0 ? (
+          <div className="product-list">{products.map((p) => <ProductCard key={p.slug} product={p} />)}</div>
+        ) : (
+          <p className="page-lead">현재 판매 중인 요약노트가 없습니다.</p>
+        )}
       </div>
     </section>
   );

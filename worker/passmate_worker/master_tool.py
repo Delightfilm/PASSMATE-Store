@@ -60,6 +60,19 @@ def init_master(args: argparse.Namespace) -> int:
     if root not in directory.parents:
         raise SystemExit("MASTER destination escaped root")
 
+    # product/version is an immutable release identity. Once either the
+    # registered PDF or its manifest exists, init must never mutate that
+    # directory in place. Changed bytes require a new product_version.
+    registered_paths = [
+        directory / "master.pdf",
+        directory / "manifest.json",
+    ]
+    if any(path.exists() for path in registered_paths):
+        raise SystemExit(
+            "MASTER version already registered; "
+            "create a new product version instead of overwriting it"
+        )
+
     directory.mkdir(parents=True, exist_ok=True)
     destination = directory / "master.pdf"
 
@@ -113,7 +126,7 @@ def main() -> int:
 
     init = sub.add_parser(
         "init",
-        help="copy a final PDF into a version directory and write manifest.json",
+        help="register a final PDF in a new immutable product/version directory",
     )
     init.add_argument("--master-root", required=True)
     init.add_argument("--source", required=True)
