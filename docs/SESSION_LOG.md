@@ -228,3 +228,19 @@
 - migration 0006 실제 적용 + Supabase Advisor 재검사.
 - GitHub Actions build 확인.
 - 실사용 테스트 회원으로 signup/login/RLS 검증 후 V2 종료 Gate 판단.
+
+## 2026-09-18 — V2 RLS Applied & Auth Guard Fix
+
+**한 일**
+- `0006_v2_customer_account_rls.sql`을 PASSMATE Supabase에 실제 적용.
+- 적용 후 Supabase Security Advisor 재검사 결과 **0 findings** 확인.
+- V2 첫 배포 시 Auth CI guard가 공개 설정 파일의 설명 주석 `service-role` 문자열까지 secret으로 오탐하는 문제 발견.
+- 실제 secret pattern만 검사하도록 guard를 수정해 설명 주석은 허용하고 `SUPABASE_SERVICE_ROLE_KEY`/service-role JWT 흔적만 차단하도록 보정.
+
+**막힌 것**
+- Vercel의 최신 build 결과는 Hobby 제한/배포 상태를 계속 확인해야 함.
+- Production Auth redirect와 실제 회원 signup/login 검증은 배포 접근 가능 시 수행.
+
+**다음 할 일**
+- 수정 commit의 build 상태 확인.
+- Production에서 signup/login/password reset/RLS 실사용 검증.

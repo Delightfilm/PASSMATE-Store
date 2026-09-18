@@ -84,6 +84,8 @@ Last updated: 2026-09-18
 - [x] 내 자료 entitlement 조회 UI
 - [x] 구매 후 비활성 상품도 본인이 metadata를 볼 수 있는 RLS migration
 - [x] Auth public-config CI guard
+- [x] Supabase migration 0006 실제 적용
+- [x] migration 0006 적용 후 Security Advisor 0 findings
 - [ ] Supabase Auth Redirect URL production 설정 확인
 - [ ] 실제 테스트 회원 가입/로그인
 - [ ] 실제 사용자 own-row RLS 검증
@@ -91,9 +93,9 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. V2 Auth UI/코드 CI build 검증
-2. Supabase migration 0006 적용 및 advisor 재검사
-3. Vercel Hobby build-rate-limit 해제 후 최신 배포 확인
+1. V2 Auth UI/코드 build 검증
+2. Vercel Hobby build-rate-limit 해제 후 최신 배포 확인
+3. Supabase Auth Redirect URL production 설정 확인
 4. 실제 회원가입/로그인 + own-row RLS 검증
 5. NAS Worker 실제 Supabase `--once` integration test
 6. Payment Provider contract 설계
