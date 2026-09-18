@@ -2,26 +2,18 @@
 
 ## Status
 
-This Worker is currently a **reference integration implementation**.
+V4 production wiring is implemented.
 
-It proves:
+The Worker supports explicit modes:
 
-- Supabase outbound polling
-- atomic job claim
-- lease ownership
-- heartbeat renewal
-- typed failure reporting
-- SHA-256 generation
-- completion/retry flow
-- Docker execution on the NAS
+- `production`: validated MASTER → pypdf rewrite → private Supabase Storage
+- `reference`: controlled queue/lease integration test only
 
-It does **not** yet implement the final customer PDF transformation or cloud download upload.
+The default is `disabled`, so a new NAS environment cannot claim jobs until the operator explicitly enables a processor mode.
 
-The reference processor is intentionally disabled by default.
+No public Docker port is exposed.
 
----
-
-## 1. Expected NAS layout
+## 1. NAS layout
 
 ```text
 /PASSMATE
@@ -30,11 +22,12 @@ The reference processor is intentionally disabled by default.
 ├── 01_MASTER
 │   └── PM-C2
 │       └── 2027-v1.0
-│           └── master.pdf
+│           ├── master.pdf
+│           └── manifest.json
 └── 02_ISSUED
 ```
 
-The Docker container mounts:
+Container mounts:
 
 ```text
 /PASSMATE/01_MASTER       -> /data/master  (read-only)
@@ -42,109 +35,68 @@ The Docker container mounts:
 /PASSMATE/02_ISSUED       -> /data/output
 ```
 
-MASTER is never mounted writable.
+Production artifacts upload to private Supabase Storage. `/data/output` remains for reference integration mode.
 
----
+## 2. MASTER registration
 
-## 2. Required environment
-
-Copy:
-
-```text
-worker/.env.example
+```bash
+python -m passmate_worker.master_tool init \
+  --master-root /data/master \
+  --source /incoming/final.pdf \
+  --product-code PM-C2 \
+  --product-version 2027-v1.0 \
+  --edition-year 2027
 ```
 
-to:
+Verify:
 
-```text
-worker/.env
+```bash
+python -m passmate_worker.master_tool verify \
+  --directory /data/master/PM-C2/2027-v1.0
 ```
 
-Required secret values:
+The long-running Worker mounts MASTER read-only.
+
+## 3. Environment
+
+Required server-only values:
 
 ```env
 SUPABASE_URL=https://PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-The service-role key must never be committed to GitHub or exposed to the browser.
-
----
-
-## 3. Worker identity
-
-Example:
+Initial safe state:
 
 ```env
-PASSMATE_WORKER_ID=nas-passmate-01
-```
-
-Worker IDs are operational identifiers only.
-
-If a second Worker is added later:
-
-```text
-nas-passmate-01
-nas-passmate-02
-```
-
-Each Worker uses the same queue, while atomic claim prevents both from owning the same job.
-
----
-
-## 4. Default timing
-
-```env
-PASSMATE_POLL_SECONDS=10
-PASSMATE_LEASE_SECONDS=300
-PASSMATE_HEARTBEAT_SECONDS=60
-PASSMATE_REQUEST_TIMEOUT_SECONDS=30
-```
-
-Meaning:
-
-- poll every 10 seconds
-- job ownership lasts 300 seconds
-- renew ownership every 60 seconds
-- HTTP RPC timeout is 30 seconds
-
-Heartbeat must always be shorter than the lease.
-
----
-
-## 5. Reference-copy safety gate
-
-Default:
-
-```env
+PASSMATE_PROCESSOR_MODE=disabled
 PASSMATE_ALLOW_REFERENCE_COPY=false
 ```
 
-When false, the Worker refuses to turn a MASTER PDF into an issued artifact.
-
-For controlled integration testing only:
+Production after preflight:
 
 ```env
-PASSMATE_ALLOW_REFERENCE_COPY=true
+PASSMATE_PROCESSOR_MODE=production
+PASSMATE_STORAGE_BUCKET=passmate-artifacts
+PASSMATE_ALLOW_REFERENCE_COPY=false
 ```
 
-This simply copies:
+## 4. Production PDF transform
 
-```text
-/data/master/{product_code}/{product_version}/master.pdf
-```
+V4 uses pypdf to clone/rewrite the validated MASTER into a fresh PDF.
 
-to the issued output tree, then computes SHA-256.
+- manifest SHA-256 must match
+- encrypted MASTER rejected
+- zero-page MASTER rejected
+- output must parse
+- page count must match
+- output cannot be byte-identical to MASTER
+- no buyer-specific identifiers are added in V4
+- private Storage upload only
 
-**Do not use reference-copy mode for public sales.**
+V6 can layer internal issuance controls later without changing the V4 queue/storage interface.
 
-The final processor will replace this with customer-output generation and temporary download storage.
-
----
-
-## 6. Preflight
-
-Before starting the long-running Worker:
+## 5. Preflight
 
 ```bash
 docker compose -f worker/docker-compose.yml build
@@ -154,19 +106,15 @@ docker compose -f worker/docker-compose.yml run --rm \
   python -m passmate_worker.main --check-config
 ```
 
-Expected outcome:
+`--check-config` never claims a queue job.
 
-```text
-configuration OK
+## 6. One-job production test
+
+After MASTER verify and a paid test order:
+
+```env
+PASSMATE_PROCESSOR_MODE=production
 ```
-
-No queue job is claimed in `--check-config` mode.
-
----
-
-## 7. One-job integration test
-
-After Supabase migrations 0001 through 0004 are applied and a test job exists:
 
 ```bash
 docker compose -f worker/docker-compose.yml run --rm \
@@ -174,88 +122,55 @@ docker compose -f worker/docker-compose.yml run --rm \
   python -m passmate_worker.main --once
 ```
 
-This processes at most one job and exits.
+Expected:
 
-Use this before enabling continuous mode.
+```text
+queued → leased → private Storage upload → succeeded → ready
+```
 
----
+Then verify V5 signed download.
 
-## 8. Continuous mode
+## 7. Continuous mode
 
 ```bash
 docker compose -f worker/docker-compose.yml up -d --build
-```
-
-Logs:
-
-```bash
 docker compose -f worker/docker-compose.yml logs -f passmate-worker
 ```
 
-Stop:
+## 8. Runtime hardening
 
-```bash
-docker compose -f worker/docker-compose.yml down
+- non-root UID 10001
+- read-only container root filesystem
+- MASTER read-only
+- writable work/output mounts only
+- tmpfs /tmp
+- all Linux capabilities dropped
+- no-new-privileges
+- no inbound ports
+- outbound HTTPS to Supabase only
+
+## 9. Worker heartbeat
+
+Each Worker reports worker ID, random process instance ID, mode, version, last-seen time, and current leased job.
+
+`report_worker_node()` is service-role only. Operational heartbeat failure does not invalidate a healthy issuance lease.
+
+## 10. Reference mode
+
+```env
+PASSMATE_PROCESSOR_MODE=reference
+PASSMATE_ALLOW_REFERENCE_COPY=true
 ```
 
-No public Docker port is exposed.
+Never use reference mode for public sales.
 
----
+## 11. Remaining V4 exit gate
 
-## 9. File permissions
-
-The image runs as non-root user:
-
-```text
-UID 10001
-```
-
-The NAS host directories for work/output must be writable by the container user or mapped with equivalent Docker permissions.
-
-MASTER needs read permission only.
-
----
-
-## 10. Failure behavior
-
-### Missing MASTER
-
-```text
-MASTER_NOT_FOUND
-retryable=false
-```
-
-Job goes to dead-letter according to the server contract.
-
-### Network/RPC failure while polling
-
-Worker logs the failure and does not fabricate a job result.
-
-### Heartbeat failure
-
-The Worker treats ownership as lost.
-
-It must not complete the old job and discards any reference output produced after losing the lease.
-
-### Completion rejected
-
-Output is treated as orphaned/stale and removed by the reference processor.
-
----
-
-## 11. Promotion gate before real sales
-
-Reference Worker is not production-ready until all are complete:
-
-1. PASSMATE Supabase project created
-2. migrations 0001~0004 applied
-3. SQL smoke tests passed
-4. NAS `--check-config` passed
-5. one-job integration test passed
-6. lease-loss/reclaim test passed
-7. final PDF processor implemented
-8. temporary customer download storage implemented
-9. real MASTER version manifest validation implemented
-10. end-to-end paid order test passed
-
-Until then, `PASSMATE_ALLOW_REFERENCE_COPY=false` remains the safe default.
+1. real NAS `--check-config`
+2. real PM-C2 MASTER manifest verify
+3. one paid test order
+4. Worker `--once`
+5. private Storage artifact hash/size confirmation
+6. V5 signed download confirmation
+7. lease-loss/reclaim test
+8. continuous-mode soak test

@@ -58,10 +58,34 @@ class ConfigTests(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 Settings.from_env()
 
-    def test_reference_copy_disabled_by_default(self) -> None:
+    def test_processor_is_disabled_by_default(self) -> None:
         with patch.dict(os.environ, BASE_ENV, clear=True):
             settings = Settings.from_env()
 
+        self.assertEqual(settings.processor_mode, "disabled")
+        with self.assertRaises(ConfigError):
+            settings.validate_runtime_enabled()
+
+    def test_production_rejects_reference_copy_gate(self) -> None:
+        env = {
+            **BASE_ENV,
+            "PASSMATE_PROCESSOR_MODE": "production",
+            "PASSMATE_ALLOW_REFERENCE_COPY": "true",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            with self.assertRaises(ConfigError):
+                Settings.from_env()
+
+    def test_production_mode_is_explicit(self) -> None:
+        env = {
+            **BASE_ENV,
+            "PASSMATE_PROCESSOR_MODE": "production",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            settings = Settings.from_env()
+            settings.validate_runtime_enabled()
+
+        self.assertEqual(settings.processor_mode, "production")
         self.assertFalse(settings.allow_reference_copy)
 
 

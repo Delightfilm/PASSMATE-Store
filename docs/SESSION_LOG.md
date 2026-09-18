@@ -433,3 +433,27 @@
 **다음 할 일**
 - PC/계정 접근 가능 시 사용자 Admin 계정 생성/role 지정 후 \`/admin/\` 실제 접근 검증.
 - NAS 접근 가능 시 실제 실패 job을 대상으로 Admin 재시도 → Worker 처리까지 E2E.
+
+## 2026-09-18 — V4 Production Worker Wiring
+
+**한 일**
+- 기존 reference Worker에서 실제 production path를 분리하고 `PASSMATE_PROCESSOR_MODE=disabled|reference|production` 명시형 모드 도입.
+- 기본값을 `disabled`로 두어 새 NAS 환경이 preflight 전에 Queue를 claim하지 못하도록 fail-closed.
+- production mode에서 `ProductionPdfProcessor → PypdfRewriteTransformer → SupabaseArtifactStore`를 실제 Worker main에 연결.
+- pypdf 6.19.0을 고정하고 MASTER PDF를 clone/rewrite한 뒤 출력 parse/page-count를 재검증하도록 구현.
+- V4 transformer에는 고객별 식별정보를 넣지 않고 generic Producer metadata만 사용. 내부 발행 식별은 V6 책임으로 분리.
+- MASTER PDF를 version directory에 복사하고 SHA-256 manifest를 원자적으로 생성/검증하는 `master_tool init/verify` 추가.
+- Worker node heartbeat schema/RPC 작성: worker/instance/mode/version/last_seen/current_job.
+- Docker를 non-root + read-only rootfs + cap_drop ALL + no-new-privileges + tmpfs로 하드닝.
+- Worker CI가 pypdf dependency를 설치한 뒤 compile/unit test를 실행하도록 갱신.
+- production transformer/config/wiring/MASTER tool 테스트 추가.
+- pypdf는 2026-09-16 공개된 6.19.0으로 pin.
+
+**막힌 것**
+- 실제 NAS가 현재 접근 불가하여 Docker preflight, PM-C2 real MASTER verify, service-role `--once`는 아직 실행 불가.
+- 실제 발행 artifact가 없으므로 V5 signed download와 연결한 물리 E2E는 이후 진행.
+
+**다음 할 일**
+- migration 0012 실제 Supabase 적용 + runtime/권한/Security Advisor 검증.
+- GitHub Actions Worker CI 확인.
+- NAS 접근 가능 시 real MASTER → --once → private Storage → ready → signed download E2E.

@@ -5,6 +5,7 @@ services:
       dockerfile: worker/Dockerfile
     container_name: passmate-worker
     restart: unless-stopped
+    init: true
     env_file:
       - .env
     environment:
@@ -15,4 +16,11 @@ services:
       - ${PASSMATE_NAS_MASTER_PATH:?set PASSMATE_NAS_MASTER_PATH}:/data/master:ro
       - ${PASSMATE_NAS_WORK_PATH:?set PASSMATE_NAS_WORK_PATH}:/data/work
       - ${PASSMATE_NAS_OUTPUT_PATH:?set PASSMATE_NAS_OUTPUT_PATH}:/data/output
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     stop_grace_period: 30s

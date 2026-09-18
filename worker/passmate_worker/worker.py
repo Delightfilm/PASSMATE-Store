@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 
 from .errors import WorkerError
 from .heartbeat import LeaseHeartbeat
@@ -21,6 +22,9 @@ class PassmateWorker:
         poll_seconds: int,
         lease_seconds: int,
         heartbeat_seconds: int,
+        mode: str = "reference",
+        version: str = "unknown",
+        instance_id: str | None = None,
         sleep_fn=time.sleep,
     ) -> None:
         self.client = client
@@ -29,7 +33,30 @@ class PassmateWorker:
         self.poll_seconds = poll_seconds
         self.lease_seconds = lease_seconds
         self.heartbeat_seconds = heartbeat_seconds
+        self.mode = mode
+        self.version = version
+        self.instance_id = instance_id or str(uuid.uuid4())
         self.sleep_fn = sleep_fn
+
+    def _report_worker(self, current_job_id: str | None = None) -> None:
+        report = getattr(self.client, "report_worker_node", None)
+        if report is None:
+            return
+
+        try:
+            report(
+                worker_id=self.worker_id,
+                instance_id=self.instance_id,
+                mode=self.mode,
+                version=self.version,
+                current_job_id=current_job_id,
+            )
+        except Exception:
+            logger.warning(
+                "worker heartbeat report failed id=%s",
+                self.worker_id,
+                exc_info=True,
+            )
 
     def _claim(self) -> IssuanceJob | None:
         return self.client.claim(
@@ -38,6 +65,8 @@ class PassmateWorker:
         )
 
     def run_once(self) -> bool:
+        self._report_worker()
+
         try:
             self.client.reap_expired()
             job = self._claim()
@@ -48,12 +77,15 @@ class PassmateWorker:
         if job is None:
             return False
 
+        self._report_worker(job.job_id)
+
         logger.info(
-            "claimed job=%s product=%s version=%s attempt=%s",
+            "claimed job=%s product=%s version=%s attempt=%s generation=%s",
             job.job_id,
             job.product_code,
             job.product_version,
             job.attempt,
+            job.generation,
         )
 
         heartbeat = LeaseHeartbeat(
@@ -62,6 +94,7 @@ class PassmateWorker:
             self.worker_id,
             self.lease_seconds,
             self.heartbeat_seconds,
+            on_renew=lambda: self._report_worker(job.job_id),
         )
         heartbeat.start()
         result = None
@@ -151,11 +184,14 @@ class PassmateWorker:
 
         finally:
             heartbeat.stop()
+            self._report_worker()
 
     def run_forever(self) -> None:
         logger.info(
-            "worker started id=%s poll=%ss lease=%ss heartbeat=%ss",
+            "worker started id=%s mode=%s version=%s poll=%ss lease=%ss heartbeat=%ss",
             self.worker_id,
+            self.mode,
+            self.version,
             self.poll_seconds,
             self.lease_seconds,
             self.heartbeat_seconds,

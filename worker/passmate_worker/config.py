@@ -12,6 +12,8 @@ class ConfigError(ValueError):
 
 
 _WORKER_ID_RE = re.compile(r"^[A-Za-z0-9._:-]{3,128}$")
+_BUCKET_RE = re.compile(r"^[A-Za-z0-9._-]{3,63}$")
+_PROCESSOR_MODES = {"disabled", "reference", "production"}
 
 
 def _required(name: str) -> str:
@@ -48,6 +50,8 @@ class Settings:
     master_root: Path
     work_root: Path
     output_root: Path
+    processor_mode: str = "disabled"
+    storage_bucket: str = "passmate-artifacts"
     poll_seconds: int = 10
     lease_seconds: int = 300
     heartbeat_seconds: int = 60
@@ -70,6 +74,25 @@ class Settings:
         if not supabase_url.startswith("https://"):
             raise ConfigError("SUPABASE_URL must use https")
 
+        processor_mode = os.getenv(
+            "PASSMATE_PROCESSOR_MODE",
+            "disabled",
+        ).strip().lower()
+        if processor_mode not in _PROCESSOR_MODES:
+            raise ConfigError(
+                "PASSMATE_PROCESSOR_MODE must be one of "
+                "disabled, reference, production"
+            )
+
+        storage_bucket = os.getenv(
+            "PASSMATE_STORAGE_BUCKET",
+            "passmate-artifacts",
+        ).strip()
+        if not _BUCKET_RE.fullmatch(storage_bucket):
+            raise ConfigError(
+                "PASSMATE_STORAGE_BUCKET contains unsupported characters"
+            )
+
         lease_seconds = _positive_int(
             "PASSMATE_LEASE_SECONDS",
             300,
@@ -89,6 +112,16 @@ class Settings:
         if lease_seconds > 1800:
             raise ConfigError("PASSMATE_LEASE_SECONDS must be <= 1800")
 
+        allow_reference_copy = _bool(
+            "PASSMATE_ALLOW_REFERENCE_COPY",
+            False,
+        )
+
+        if processor_mode == "production" and allow_reference_copy:
+            raise ConfigError(
+                "PASSMATE_ALLOW_REFERENCE_COPY must be false in production mode"
+            )
+
         return cls(
             supabase_url=supabase_url,
             service_role_key=_required("SUPABASE_SERVICE_ROLE_KEY"),
@@ -102,6 +135,8 @@ class Settings:
             output_root=Path(
                 os.getenv("PASSMATE_OUTPUT_ROOT", "/data/output")
             ),
+            processor_mode=processor_mode,
+            storage_bucket=storage_bucket,
             poll_seconds=_positive_int(
                 "PASSMATE_POLL_SECONDS",
                 10,
@@ -114,10 +149,7 @@ class Settings:
                 30,
                 minimum=5,
             ),
-            allow_reference_copy=_bool(
-                "PASSMATE_ALLOW_REFERENCE_COPY",
-                False,
-            ),
+            allow_reference_copy=allow_reference_copy,
         )
 
     def validate_filesystem(self) -> None:
@@ -133,3 +165,10 @@ class Settings:
 
         self.work_root.mkdir(parents=True, exist_ok=True)
         self.output_root.mkdir(parents=True, exist_ok=True)
+
+    def validate_runtime_enabled(self) -> None:
+        if self.processor_mode == "disabled":
+            raise ConfigError(
+                "PASSMATE_PROCESSOR_MODE=disabled; "
+                "set production only after NAS preflight succeeds"
+            )

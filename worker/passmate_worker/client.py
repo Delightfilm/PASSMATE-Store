@@ -34,7 +34,7 @@ class SupabaseRpcClient:
                 "Authorization": f"Bearer {self.service_role_key}",
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "User-Agent": "passmate-nas-worker/0.1",
+                "User-Agent": "passmate-nas-worker/0.4",
             },
         )
 
@@ -63,6 +63,28 @@ class SupabaseRpcClient:
             raise RpcError(
                 f"RPC {function_name} returned invalid JSON"
             ) from exc
+
+    def report_worker_node(
+        self,
+        *,
+        worker_id: str,
+        instance_id: str,
+        mode: str,
+        version: str,
+        current_job_id: str | None,
+    ) -> bool:
+        return bool(
+            self._rpc(
+                "report_worker_node",
+                {
+                    "p_worker_id": worker_id,
+                    "p_instance_id": instance_id,
+                    "p_mode": mode,
+                    "p_version": version,
+                    "p_current_job_id": current_job_id,
+                },
+            )
+        )
 
     def reap_expired(self) -> int:
         result = self._rpc("reap_expired_issuance_jobs", {})

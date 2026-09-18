@@ -4,7 +4,7 @@ Last updated: 2026-09-18
 
 ## Current Version
 
-**V7 — 관리자 콘솔 선행 구현 중 (V1~V5 실환경 종료 Gate 병행 보류)**
+**V4 — NAS Production Worker wiring 진행 중 (실NAS Exit Gate 보류)**
 
 ## Completed
 
@@ -136,6 +136,30 @@ Last updated: 2026-09-18
 - [x] Checkout CI guard
 - [ ] sandbox 결제 E2E
 
+## V4 NAS Production Worker Progress
+
+- [x] ProductionPdfProcessor 실제 Worker wiring
+- [x] SupabaseArtifactStore production wiring
+- [x] pypdf 기반 production PDF rewrite transformer
+- [x] MASTER manifest SHA-256 / product / version / year 검증
+- [x] output PDF parse + page-count 검증
+- [x] encrypted/invalid MASTER fail-closed
+- [x] buyer-specific identifier 없는 V4 baseline transform
+- [x] processor mode disabled/reference/production 분리
+- [x] production에서 reference-copy 동시활성 차단
+- [x] MASTER init/verify CLI
+- [x] Worker runtime heartbeat schema/RPC
+- [x] Docker non-root/read-only/cap-drop/no-new-privileges hardening
+- [x] pypdf pinned dependency + Worker CI install
+- [x] production wiring/unit tests 작성
+- [ ] migration 0012 live 적용
+- [ ] Worker runtime DB verification
+- [ ] 실제 NAS --check-config
+- [ ] 실제 PM-C2 MASTER manifest verify
+- [ ] 실제 Supabase service-role로 --once
+- [ ] 실제 artifact upload → job succeeded → ready E2E
+- [ ] real NAS lease-loss/reclaim + soak test
+
 ## V5 Private Storage & Download Progress
 
 - [x] private artifact bucket contract
@@ -190,12 +214,12 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. 외부 작업 종료 후 실제 admin 계정 지정 + /admin E2E
-2. 실제 dead-letter/retry-wait Admin action E2E
-3. V5 실제 NAS PDF upload → signed download E2E
-4. PortOne credential 입력 + sandbox payment E2E
-5. Vercel 제한 해제 후 V2/V3/V7 Production UI 검증
-6. V7 PG 환불/Admin 상품 mutation은 실제 PG 및 Release Gate 이후 진행
+1. V4 migration 0012 live 적용 + Worker heartbeat runtime 검증
+2. Worker GitHub Actions production wiring tests 확인
+3. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
+4. 실제 service-role Worker --once → Storage → ready → V5 download E2E
+5. PortOne credential 입력 + sandbox payment E2E
+6. 실제 admin 계정 지정 + /admin E2E
 
 
 ## Blocker
