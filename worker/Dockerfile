@@ -11,7 +11,7 @@ WORKDIR /app
 COPY worker/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-COPY worker /app/worker
+COPY --chown=passmate:passmate worker /app/worker
 
 RUN mkdir -p /data/work /data/output /data/master \
     && chown -R passmate:passmate /data/work /data/output
