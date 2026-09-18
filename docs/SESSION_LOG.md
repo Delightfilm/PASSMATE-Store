@@ -565,3 +565,27 @@ Live verification:
 Local verification passed: `npm run build`, all 28 Worker tests, and Deno type checking for `payment-start`.
 
 The remaining launch gate is real NAS + authenticated account + PortOne sandbox E2E. Do not place server keys in Git or chat.
+
+## 2026-09-18 — Payment P1 hardening
+
+**한 일**
+- P1-1 end-to-end checkout idempotency 구현. 같은 provider + idempotency key 재시도는 새 주문을 만들지 않고 기존 order/payment_attempt/merchant paymentId를 반환하며, transaction advisory lock으로 동시 재시도 race를 직렬화.
+- Checkout 페이지가 한 logical checkout 동안 동일 idempotency key를 재사용하도록 변경하고 replay/cross-user regression SQL을 추가.
+- PASSMATE live Supabase에 `payment_p1_idempotent_checkout` migration 적용 및 verification migration 통과. `payment-start` v3 ACTIVE/JWT required.
+- P1-2 authenticated `payment-sync` Edge Function 추가. 결제 완료 페이지가 browser 결과를 신뢰하지 않고 구매자 JWT로 서버 reconciliation을 호출한 뒤 PortOne 결제 정보를 재조회.
+- sync와 webhook이 같은 결제 상태를 서로 다른 event id로 보고해도 `apply_payment_event()`가 `already_applied`로 수렴하도록 보강하고 paid/refund convergence verification 통과.
+- P1-3 `payment-webhook`에 PortOne Standard Webhooks HMAC 검증, expected Store ID, KRW, authoritative amount 검증, partial cancellation/manual-review 경로 추가.
+- 공식 PortOne JS SDK 동작을 재확인해 `Webhook.verify()`가 payload를 반환하지 않는 점과 Deno `Headers`를 plain record로 변환해야 하는 점을 수정. `payment-webhook` v3 ACTIVE.
+- `payment-sync` v1 ACTIVE/JWT required, `payment-webhook` v3 ACTIVE/custom signature auth.
+- Payment P1 live DB verification 후 Supabase Security Advisor 0 findings.
+- Next.js 타입체크가 Deno Edge Function을 Node module로 해석하던 CI 경계를 분리해 `supabase/functions/**`를 Next tsconfig에서 제외.
+
+**막힌 것**
+- PortOne 실제 Store ID / KCP Channel Key / API Secret / Webhook Secret 설정 상태를 도구로 읽을 수 없어 실제 signed webhook 및 sandbox 결제 E2E는 아직 미실행.
+- 공개 판매 전에는 PortOne에 webhook URL을 등록하고 결제 성공/실패/취소/환불을 실제 sandbox에서 확인해야 함.
+- NAS는 MASTER PDF가 없고, 다음 실행 전 PASSMATE Supabase project ref(`fmecqeadghrdisirucqm`)와 일치하는 URL/key로 환경을 다시 맞춰야 함.
+
+**다음 할 일**
+- GitHub Build CI 최종 green 확인.
+- PortOne credential + webhook secret 설정 및 sandbox E2E.
+- 이어서 Admin direct DML/hard-delete P1 제거.

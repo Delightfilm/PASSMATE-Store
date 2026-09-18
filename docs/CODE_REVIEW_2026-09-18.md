@@ -331,3 +331,20 @@ All three release blockers are resolved:
 Local verification passed (`npm run build`, 28 Worker tests, Deno type check). Live Supabase verification passed after applying the three P0 migrations; fixtures were cleaned up, the payment-start v2 function is active with JWT verification, and Security Advisor reports zero findings.
 
 The P0 findings above remain in the historical sections for traceability. The remaining release gate is authenticated NAS/PortOne/Auth E2E plus the listed P1 payment and admin hardening items.
+
+## Payment P1 Resolution — 2026-09-18
+
+Payment P1 code and live database/function hardening are implemented. Real PortOne sandbox traffic remains the external verification gate.
+
+1. **End-to-end idempotency:** `create_direct_checkout()` serializes the logical provider/idempotency key with a transaction advisory lock. Replays return the original order, payment attempt, and persisted merchant payment ID instead of creating another pending order. Cross-user/product key reuse is rejected. Live regression migration passed.
+2. **Authenticated browser reconciliation:** new JWT-protected `payment-sync` binds the merchant payment ID to the authenticated purchaser, re-fetches PortOne, validates payment/store/currency/amount, then applies the same DB payment event path used by webhooks.
+3. **Webhook hardening:** `payment-webhook` v3 verifies PortOne Standard Webhooks signatures against the raw body, validates expected Store ID, re-fetches the authoritative payment, requires KRW and exact amount, and sends partial/unexpected cancellation states to manual review instead of guessing.
+4. **Race convergence:** separate verified sync/webhook deliveries for the same paid/refunded state return `already_applied`; entitlement and issuance side effects do not run twice. Live convergence verification passed.
+5. **Security:** post-migration Supabase Security Advisor reports 0 findings.
+
+Remaining operational gate:
+- configure/confirm `PORTONE_STORE_ID`, `PORTONE_KCP_CHANNEL_KEY`, `PORTONE_API_SECRET`, and `PORTONE_WEBHOOK_SECRET`;
+- register the webhook URL in PortOne;
+- run authenticated sandbox success/failure/cancel/refund E2E, including browser redirect and signed webhook delivery.
+
+The historical P1 findings above remain for traceability.

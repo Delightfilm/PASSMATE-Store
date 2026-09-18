@@ -109,10 +109,11 @@ Last updated: 2026-09-18
 - [x] V3 provider-neutral runtime verification 통과
 - [x] Payment RPC anon/authenticated 차단 + service_role only 검증
 - [x] migration 0007 적용 후 Security Advisor 0 findings
-- [ ] 실제 PG 선정
-- [ ] 실제 PG adapter 구현
+- [x] 실제 PG 선정: PortOne V2 + NHN KCP
+- [x] PortOne payment-start / payment-sync / signed webhook adapter 구현
 - [ ] PG sandbox 결제 승인/실패/취소/환불 E2E
-- [ ] 실제 webhook signature 검증
+- [x] PortOne Standard Webhooks signature 검증 코드 + Edge Function v3 배포
+- [ ] 실제 webhook secret 설정 후 signed sandbox webhook E2E
 
 ## V3.1 PortOne + KCP Progress
 
@@ -134,6 +135,15 @@ Last updated: 2026-09-18
 - [x] 모바일 redirect/PC Promise 공통 완료 화면 shell
 - [x] 완료 화면은 server-verified own-order 상태만 신뢰
 - [x] Checkout CI guard
+- [x] P1-1: provider+idempotency key replay가 기존 order/attempt/paymentId를 반환하도록 DB/Edge/browser hardening
+- [x] P1-1 live migration + replay/cross-user regression verification 통과
+- [x] P1-2: authenticated `payment-sync` Edge Function 추가, browser completion에서 PortOne authoritative re-fetch
+- [x] P1-2 sync/webhook race가 `already_applied`로 수렴하는 DB verification 통과
+- [x] P1-3: Standard Webhooks HMAC signature + Store ID + KRW + authoritative amount 검증
+- [x] `payment-start` v3 / `payment-sync` v1 / `payment-webhook` v3 ACTIVE
+- [x] Payment P1 적용 후 Supabase Security Advisor 0 findings
+- [ ] `PORTONE_STORE_ID` / KCP Channel Key / API Secret / Webhook Secret 실제 값 최종 확인
+- [ ] PortOne webhook URL 등록 + signed sandbox webhook 수신 확인
 - [ ] sandbox 결제 E2E
 
 ## V4 NAS Production Worker Progress
@@ -259,9 +269,9 @@ Live Supabase 확인:
 - [x] 적용 후 Supabase Security Advisor 0 findings
 
 우선(P1):
-- [ ] end-to-end payment idempotency
-- [ ] browser completion → server payment reconciliation
-- [ ] PortOne webhook signature + currency/store 검증
+- [x] end-to-end payment idempotency — replay는 기존 order/attempt/paymentId 반환, concurrent create advisory lock 적용
+- [x] browser completion → server payment reconciliation — authenticated `payment-sync`가 PortOne 재조회 후 DB event 적용
+- [x] PortOne webhook signature + currency/store 검증 — Standard Webhooks 검증 + authoritative re-fetch + Store/KRW/amount gate
 - [ ] authenticated admin direct DML 제거 및 hard-delete 차단
 - [ ] Supabase legacy service_role/anon → secret/publishable key migration
 - [ ] production catalog fallback fail-closed
@@ -271,11 +281,11 @@ Live Supabase 확인:
 
 ## Next Priorities
 
-1. NAS disabled preflight → MASTER verify → production `--once` 발행
-2. Supabase job/order/artifact + private Storage + 고객 다운로드 + Admin 무결성 확인 E2E
-3. PortOne sandbox 결제/환불 및 실제 Auth 계정 E2E
-4. Payment P1: idempotency + completion reconciliation + webhook hardening
-5. Admin/Supabase P1: direct DML/hard-delete 제한 + modern secret key migration
+1. PortOne 실제 환경변수/웹훅 시크릿 확인 → webhook URL 등록 → sandbox 결제/취소/환불 + 실제 Auth 계정 E2E
+2. Admin P1: authenticated direct DML 제거 + 금융/발행 기록 hard-delete 차단
+3. Supabase P1: legacy service_role/anon 의존을 modern secret/publishable key로 단계적 전환
+4. Storefront production catalog fail-closed + MASTER version immutable registration
+5. MASTER PDF 준비 후 NAS를 올바른 PASSMATE project ref로 재검증 → production `--once` → download/integrity E2E
 
 
 ## Blocker
@@ -285,6 +295,7 @@ Supabase 프로젝트는 project ref로 직접 접근 가능해져 DB 작업 blo
 현재 남은 외부 연동 blocker:
 - Vercel connector에서는 아직 `passmate-store` 프로젝트가 404로 조회되어 환경변수 자동 입력 불가
 - browser-safe Supabase URL/publishable key fallback을 코드에 연결해 이 blocker는 우회했으나, 최신 Vercel 배포는 Hobby build-rate-limit으로 지연/실패 상태
-- NAS 실제 integration test는 service-role secret을 NAS Worker 환경에 주입해야 실행 가능
+- PortOne sandbox E2E는 Store ID / KCP Channel Key / API Secret / Webhook Secret 실제 설정과 PortOne webhook URL 등록이 필요
+- NAS 실제 integration test는 MASTER PDF가 필요하며, 다음 실행 전 `worker/.env`의 Supabase URL을 PASSMATE project ref `fmecqeadghrdisirucqm`로 맞추고 같은 프로젝트의 server key를 사용해야 함
 
 참고: 현재 PASSMATE Supabase 프로젝트 region은 **ap-northeast-1 (Tokyo)** 이다. 기존 계획의 Seoul(ap-northeast-2)과 다르므로 region 변경이 필요하면 별도 프로젝트 migration으로 처리해야 한다.
