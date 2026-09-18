@@ -123,7 +123,7 @@ begin
     fulfillment_transition_allowed := case old.fulfillment_status
       when 'not_started' then new.fulfillment_status in ('queued', 'revoked')
       when 'queued' then new.fulfillment_status in ('issuing', 'failed', 'revoked')
-      when 'issuing' then new.fulfillment_status in ('ready', 'failed', 'revoked')
+      when 'issuing' then new.fulfillment_status in ('queued', 'ready', 'failed', 'revoked')
       when 'ready' then new.fulfillment_status = 'revoked'
       when 'failed' then new.fulfillment_status in ('queued', 'revoked')
       when 'revoked' then false
