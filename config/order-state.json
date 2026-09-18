@@ -1,0 +1,42 @@
+{
+  "order": {
+    "initial": "pending",
+    "terminal": ["cancelled", "refunded"],
+    "states": [
+      "pending",
+      "payment_pending",
+      "paid",
+      "failed",
+      "cancelled",
+      "refunded"
+    ],
+    "transitions": {
+      "pending": ["payment_pending", "cancelled"],
+      "payment_pending": ["paid", "failed", "cancelled"],
+      "paid": ["refunded"],
+      "failed": ["payment_pending", "cancelled"],
+      "cancelled": [],
+      "refunded": []
+    }
+  },
+  "fulfillment": {
+    "initial": "not_started",
+    "terminal": ["revoked"],
+    "states": [
+      "not_started",
+      "queued",
+      "issuing",
+      "ready",
+      "failed",
+      "revoked"
+    ],
+    "transitions": {
+      "not_started": ["queued", "revoked"],
+      "queued": ["issuing", "failed", "revoked"],
+      "issuing": ["ready", "failed", "revoked"],
+      "ready": ["revoked"],
+      "failed": ["queued", "revoked"],
+      "revoked": []
+    }
+  }
+}
