@@ -148,15 +148,20 @@ Last updated: 2026-09-18
 - [x] NAS SupabaseArtifactStore adapter
 - [x] immutable key + retry hash verification
 - [x] V5 CI contract validator
-- [ ] migration 0009 live 적용
-- [ ] download-url Edge Function live deploy
+- [x] migration 0009 live 적용
+- [x] private bucket 생성/검증 (public=false, PDF only, 50 MiB)
+- [x] download-url Edge Function ACTIVE (JWT required)
+- [x] resolve_download_artifact RPC service_role only 검증
+- [x] download_events client read 차단 검증
+- [x] Storage objects client policy 없음 확인
+- [x] V5 적용 후 Security Advisor 0 findings
 - [ ] 실제 NAS PDF upload → signed download E2E
 - [ ] 환불 후 download 재발급 차단 E2E
 
 ## Next Priorities
 
-1. V5 migration 0009 실제 적용 + download-url Edge Function deploy
-2. Storage bucket privacy / RPC permission / Security Advisor 검증
+1. V5 실제 NAS PDF upload → signed download E2E
+2. 환불 후 새 다운로드 링크 발급 차단 E2E
 3. Checkout shell build/Production 검증은 Vercel 제한 해제 후 수행
 3. 외부 작업 종료 후 PortOne Store ID / Channel Key / API Secret 입력
 4. Checkout browser SDK 실연동

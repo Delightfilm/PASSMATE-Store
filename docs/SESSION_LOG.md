@@ -367,3 +367,23 @@
 - migration 0009 실제 적용.
 - download-url Edge Function deploy.
 - bucket privacy / RPC privilege / Security Advisor 검증.
+
+## 2026-09-18 — V5 Private Storage Live Foundation
+
+**한 일**
+- \`0009_v5_private_download.sql\` 실제 PASSMATE Supabase 적용 완료.
+- private bucket \`passmate-artifacts\` 생성 확인: \`public=false\`, PDF only, 50 MiB.
+- \`download-url\` Edge Function v1 배포 및 ACTIVE 확인. JWT required.
+- \`resolve_download_artifact()\` 권한 검증: anon/authenticated 실행 불가, service_role만 실행 가능.
+- \`download_events\`는 anon/authenticated SELECT 불가.
+- \`storage.objects\`에 고객 직접 접근을 허용하는 policy가 없음을 확인.
+- 적용 후 Supabase Security Advisor **0 findings** 확인.
+- 현재 Supabase Edge Functions: payment-start / payment-webhook / download-url 모두 ACTIVE.
+
+**막힌 것**
+- 실제 발행 PDF object가 아직 없으므로 signed URL 실다운로드 E2E는 NAS Worker 실연동 이후 진행.
+- 환불 후 재발급 차단 E2E도 실제 고객 fixture와 artifact가 준비된 뒤 진행.
+
+**다음 할 일**
+- NAS 접근 전에는 V7 Admin 선행 또는 V4 production Worker wiring을 계속 진행 가능.
+- NAS 접근 가능 시 SupabaseArtifactStore upload → complete job → ready → download-url 전체 E2E.
