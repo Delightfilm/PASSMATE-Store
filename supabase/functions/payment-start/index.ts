@@ -29,7 +29,6 @@ Deno.serve(async (req: Request) => {
     return json(503, { error: "supabase_runtime_not_configured" });
   }
 
-  // Do not create an order if client-side PortOne identifiers are not ready.
   if (!storeId || !channelKey) {
     return json(503, { error: "payment_provider_not_configured" });
   }
@@ -75,7 +74,10 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "invalid_idempotency_key" });
   }
 
-  const paymentId = `pm-${crypto.randomUUID()}`;
+  // This value is only a proposal for a new logical checkout. On replay,
+  // create_direct_checkout returns the original attempt and we read its
+  // persisted merchant_order_id below.
+  const proposedPaymentId = `pm-${crypto.randomUUID()}`;
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -84,7 +86,7 @@ Deno.serve(async (req: Request) => {
     p_user_id: userData.user.id,
     p_product_slug: body.productSlug,
     p_provider: "portone_kcp",
-    p_merchant_order_id: paymentId,
+    p_merchant_order_id: proposedPaymentId,
     p_idempotency_key: idempotencyKey,
   });
 
@@ -112,10 +114,27 @@ Deno.serve(async (req: Request) => {
     return json(500, { error: "checkout_result_invalid" });
   }
 
+  const { data: attempt, error: attemptError } = await admin
+    .from("payment_attempts")
+    .select("id,merchant_order_id")
+    .eq("id", row.payment_attempt_id)
+    .maybeSingle();
+
+  if (
+    attemptError ||
+    !attempt ||
+    attempt.id !== row.payment_attempt_id ||
+    typeof attempt.merchant_order_id !== "string" ||
+    attempt.merchant_order_id.length === 0
+  ) {
+    console.error("payment attempt identity lookup failed");
+    return json(500, { error: "checkout_payment_identity_missing" });
+  }
+
   return json(200, {
     orderId: row.order_id,
     paymentAttemptId: row.payment_attempt_id,
-    paymentId,
+    paymentId: attempt.merchant_order_id,
     idempotencyKey,
     storeId,
     channelKey,

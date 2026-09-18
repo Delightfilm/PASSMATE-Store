@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -81,6 +81,7 @@ function formatKrw(amountKrw: number) {
 
 export function CheckoutClient() {
   const router = useRouter();
+  const checkoutIdempotencyKey = useRef<string | null>(null);
   const [productSlug, setProductSlug] = useState(DEFAULT_PRODUCT);
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -139,6 +140,11 @@ export function CheckoutClient() {
         return;
       }
 
+      // Keep one logical checkout key for retries while this checkout page is
+      // mounted. Network retry/re-click therefore resolves to the same order,
+      // attempt and PortOne paymentId instead of creating a second pending order.
+      checkoutIdempotencyKey.current ??= crypto.randomUUID();
+
       const { url, key } = getPublicSupabaseConfig();
       const response = await fetch(url + "/functions/v1/payment-start", {
         method: "POST",
@@ -149,7 +155,7 @@ export function CheckoutClient() {
         },
         body: JSON.stringify({
           productSlug,
-          idempotencyKey: crypto.randomUUID(),
+          idempotencyKey: checkoutIdempotencyKey.current,
         }),
       });
 
@@ -176,6 +182,10 @@ export function CheckoutClient() {
       const preparedPayment: unknown = await response.json();
       if (!isPaymentStart(preparedPayment)) {
         throw new Error("invalid-payment-start-response");
+      }
+
+      if (preparedPayment.idempotencyKey !== checkoutIdempotencyKey.current) {
+        throw new Error("checkout-idempotency-mismatch");
       }
 
       setPayment(preparedPayment);
@@ -230,7 +240,7 @@ export function CheckoutClient() {
       }
 
       // Browser response is not authoritative. The completion page only
-      // observes the own-order state changed by the verified webhook.
+      // observes the own-order state changed by server verification.
       goToResult(result.paymentId || payment.paymentId);
     } catch (error) {
       console.error("[PASSMATE] payment start failed", error);

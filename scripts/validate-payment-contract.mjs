@@ -45,4 +45,45 @@ for (const required of [
   }
 }
 
+const idempotencyMigration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20260918130000_payment_p1_idempotent_checkout.sql",
+    import.meta.url
+  ),
+  "utf8"
+);
+const paymentStart = fs.readFileSync(
+  new URL("../supabase/functions/payment-start/index.ts", import.meta.url),
+  "utf8"
+);
+const checkout = fs.readFileSync(
+  new URL("../components/checkout-client.tsx", import.meta.url),
+  "utf8"
+);
+
+for (const required of [
+  "pg_advisory_xact_lock",
+  "idempotency key reused by another user",
+  "idempotency key reused for different product",
+]) {
+  if (!idempotencyMigration.includes(required)) {
+    throw new Error(`payment idempotency hardening missing: ${required}`);
+  }
+}
+
+if (
+  !paymentStart.includes('select("id,merchant_order_id")') ||
+  !paymentStart.includes("paymentId: attempt.merchant_order_id")
+) {
+  throw new Error("payment-start must return the persisted merchant payment id on replay");
+}
+
+if (
+  !checkout.includes("useRef<string | null>(null)") ||
+  !checkout.includes("checkoutIdempotencyKey.current ??= crypto.randomUUID()") ||
+  !checkout.includes("idempotencyKey: checkoutIdempotencyKey.current")
+) {
+  throw new Error("checkout must reuse one logical idempotency key across preparation retries");
+}
+
 console.log("PASSMATE V3 payment contract OK");
