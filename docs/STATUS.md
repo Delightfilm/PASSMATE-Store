@@ -4,7 +4,7 @@ Last updated: 2026-09-18
 
 ## Current Version
 
-**V4 — NAS Production Worker wiring 진행 중 (실NAS Exit Gate 보류)**
+**V6 — 내부 발행 Registry/무결성 관리 구현 중 (실Artifact Exit Gate 보류)**
 
 ## Completed
 
@@ -185,6 +185,25 @@ Last updated: 2026-09-18
 - [ ] 실제 NAS PDF upload → signed download E2E
 - [ ] 환불 후 download 재발급 차단 E2E
 
+## V6 Internal Issuance Management Progress
+
+- [x] issuance_artifacts internal registry schema
+- [x] 고객 PII 없는 internal_ref / job/order/product/version linkage
+- [x] succeeded job → artifact 자동 등록 trigger
+- [x] 새 generation 성공 → 이전 artifact superseded
+- [x] refund → order artifact revoked
+- [x] SHA-256 / size 무결성 기준 저장
+- [x] issuance_artifact_events audit
+- [x] Admin artifact list RPC
+- [x] Admin private object integrity verify action
+- [x] verified/mismatch/unavailable 결과 audit
+- [x] customer UI Registry 비노출 CI guard
+- [x] V6 contract validator
+- [ ] migration 0013 live 적용
+- [ ] V6 runtime registry verification
+- [ ] updated Admin Edge Functions deploy
+- [ ] 실제 Storage artifact 무결성 verify E2E
+
 ## V7 Admin Console Progress
 
 - [x] admin role 3중 검증: UI / Edge / DB actor
@@ -217,12 +236,12 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. Worker GitHub Actions production wiring tests 확인
-2. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
-3. 실제 service-role Worker --once → Storage → ready → V5 download E2E
-4. real NAS lease-loss/reclaim + continuous soak test
-5. PortOne credential 입력 + sandbox payment E2E
-6. 실제 admin 계정 지정 + /admin E2E
+1. V6 migration 0013 live 적용 + runtime registry verification
+2. Admin Edge Functions V6 갱신 배포 + Security Advisor 검증
+3. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
+4. 실제 Worker --once → artifact registry → V5 signed download E2E
+5. 실제 admin 계정 지정 후 private artifact 무결성 확인 E2E
+6. PortOne credential 입력 + sandbox payment E2E
 
 
 ## Blocker

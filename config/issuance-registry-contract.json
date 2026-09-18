@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "customer_ui_exposed": false,
+  "stores_customer_pii": false,
+  "source_of_truth": "issuance_jobs successful result",
+  "lifecycle_statuses": ["active", "superseded", "revoked"],
+  "integrity_statuses": ["unchecked", "verified", "mismatch", "unavailable"],
+  "integrity_fields": ["sha256", "size_bytes"],
+  "admin_only_actions": ["list", "verify_integrity"],
+  "storage_verification": {
+    "uses_private_service_role_download": true,
+    "creates_signed_url": false,
+    "records_observed_hash": true
+  },
+  "refund_behavior": "revoke_all_order_artifacts",
+  "reissue_behavior": "latest_successful_generation_active"
+}

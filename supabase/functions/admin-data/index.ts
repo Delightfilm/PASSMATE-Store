@@ -81,6 +81,11 @@ Deno.serve(async (req: Request) => {
     result = await admin.rpc("admin_list_catalog", {
       p_admin_user_id: userId,
     });
+  } else if (body.view === "artifacts") {
+    result = await admin.rpc("admin_list_issuance_artifacts", {
+      p_admin_user_id: userId,
+      p_limit: Math.min(Math.max(body.limit ?? 100, 1), 300),
+    });
   } else {
     return json(400, { error: "invalid_view" });
   }

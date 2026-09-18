@@ -476,3 +476,26 @@
 **다음 할 일**
 - NAS 접근 가능 시 `--check-config` → `master_tool verify` → `--once` 순서로 실환경 Gate 진행.
 - 성공 artifact를 V5 `download-url`까지 이어서 전체 자동 발행/다운로드 E2E 수행.
+
+## 2026-09-18 — V6 Internal Issuance Management
+
+**한 일**
+- 성공한 발행 Job의 결과를 별도 내부 Registry로 보존하는 `issuance_artifacts` 설계.
+- Registry에는 고객 PII 없이 internal_ref, job/order/item/product/version, generation, private storage key, SHA-256, size만 기록.
+- Job 성공 시 Registry 자동 등록, 새 generation 성공 시 이전 active artifact를 superseded로 전환하는 trigger 작성.
+- 주문 환불 시 해당 order의 발행 기록을 revoked로 전환하는 lifecycle 동기화 추가.
+- `issuance_artifact_events` audit 추가.
+- Admin에서 발행 기록 목록을 조회하는 RPC와 UI 추가.
+- Admin 무결성 확인 기능 작성: signed URL 없이 service-role로 private Storage object를 직접 읽고 SHA-256/size를 Registry와 비교.
+- 결과를 verified/mismatch/unavailable로 저장하고 artifact event + admin action audit에 기록.
+- customer 내 자료/다운로드 코드에 V6 Registry 내부 필드가 들어가면 실패하는 CI guard 추가.
+- 고객 다운로드 권한은 기존 entitlement/order/job gate를 그대로 유지하고 V6 Registry가 권한 source of truth가 되지 않도록 분리.
+
+**막힌 것**
+- 실제 Storage artifact가 아직 없어 private object 무결성 확인 E2E는 NAS 발행 이후 진행.
+- 실제 Admin Auth user가 없어 브라우저 Admin 버튼 E2E는 이후 진행.
+
+**다음 할 일**
+- migration 0013 live 적용 및 lifecycle runtime verification.
+- admin-data/admin-action Edge Function V6 버전 배포.
+- Security Advisor / RPC 권한 재검증.

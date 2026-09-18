@@ -92,3 +92,19 @@ JWT 재검증
 - dead_letter → new generation queued
 - action audit 기록
 - Security Advisor 0 findings
+
+
+## V6 Internal Issuance Registry
+
+관리자 콘솔에 `발행 기록` 조회가 추가된다.
+
+- 내부 참조
+- 상품/버전
+- generation
+- lifecycle
+- integrity
+- SHA-256 prefix
+- size
+- private Storage object 무결성 확인
+
+무결성 확인은 고객용 signed URL을 생성하지 않고 Admin Edge Function이 private object를 직접 읽어 SHA-256/size를 비교한다.

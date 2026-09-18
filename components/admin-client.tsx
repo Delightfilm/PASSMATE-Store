@@ -17,6 +17,8 @@ type Summary = {
   jobs_dead_letter: number;
   payment_failures: number;
   downloads_today: number;
+  artifacts_active: number;
+  artifacts_integrity_attention: number;
 };
 
 type OrderRow = {
@@ -46,6 +48,22 @@ type JobRow = {
   last_error_code: string | null;
   completed_at: string | null;
   created_at: string;
+};
+
+type ArtifactRow = {
+  artifact_id: string;
+  internal_ref: string;
+  order_id: string;
+  product_code: string;
+  product_version: string;
+  artifact_code: string;
+  generation: number;
+  lifecycle_status: string;
+  integrity_status: string;
+  sha256: string;
+  size_bytes: number;
+  registered_at: string;
+  last_verified_at: string | null;
 };
 
 type CatalogRow = {
@@ -86,6 +104,10 @@ function shortId(value: string): string {
   return value.slice(0, 8);
 }
 
+function shortInternalRef(value: string): string {
+  return value.replace("IA-", "").slice(0, 10).toUpperCase();
+}
+
 function statusLabel(value: string | null): string {
   const labels: Record<string, string> = {
     pending: "주문 대기",
@@ -103,6 +125,12 @@ function statusLabel(value: string | null): string {
     retry_wait: "재시도 대기",
     succeeded: "발행 완료",
     dead_letter: "수동 확인",
+    active: "현재본",
+    superseded: "이전본",
+    unchecked: "미확인",
+    verified: "정상",
+    mismatch: "불일치",
+    unavailable: "확인 불가",
   };
   return value ? labels[value] ?? value : "-";
 }
@@ -113,9 +141,11 @@ export function AdminClient() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [jobs, setJobs] = useState<JobRow[]>([]);
+  const [artifacts, setArtifacts] = useState<ArtifactRow[]>([]);
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [error, setError] = useState("");
   const [busyJob, setBusyJob] = useState<string | null>(null);
+  const [busyArtifact, setBusyArtifact] = useState<string | null>(null);
 
   async function token(): Promise<string | null> {
     const supabase = getSupabaseBrowserClient();
@@ -124,27 +154,37 @@ export function AdminClient() {
   }
 
   async function loadAll(accessToken: string) {
-    const [summaryResult, orderResult, jobResult, catalogResult] =
-      await Promise.all([
-        callAdmin<{ data: Summary }>("admin-data", accessToken, {
-          view: "summary",
-        }),
-        callAdmin<{ data: OrderRow[] }>("admin-data", accessToken, {
-          view: "orders",
-          limit: 50,
-        }),
-        callAdmin<{ data: JobRow[] }>("admin-data", accessToken, {
-          view: "jobs",
-          limit: 100,
-        }),
-        callAdmin<{ data: CatalogRow[] }>("admin-data", accessToken, {
-          view: "catalog",
-        }),
-      ]);
+    const [
+      summaryResult,
+      orderResult,
+      jobResult,
+      artifactResult,
+      catalogResult,
+    ] = await Promise.all([
+      callAdmin<{ data: Summary }>("admin-data", accessToken, {
+        view: "summary",
+      }),
+      callAdmin<{ data: OrderRow[] }>("admin-data", accessToken, {
+        view: "orders",
+        limit: 50,
+      }),
+      callAdmin<{ data: JobRow[] }>("admin-data", accessToken, {
+        view: "jobs",
+        limit: 100,
+      }),
+      callAdmin<{ data: ArtifactRow[] }>("admin-data", accessToken, {
+        view: "artifacts",
+        limit: 100,
+      }),
+      callAdmin<{ data: CatalogRow[] }>("admin-data", accessToken, {
+        view: "catalog",
+      }),
+    ]);
 
     setSummary(summaryResult.data);
     setOrders(orderResult.data ?? []);
     setJobs(jobResult.data ?? []);
+    setArtifacts(artifactResult.data ?? []);
     setCatalog(catalogResult.data ?? []);
   }
 
@@ -225,6 +265,27 @@ export function AdminClient() {
     }
   }
 
+  async function verifyArtifact(artifactId: string) {
+    const accessToken = await token();
+    if (!accessToken || busyArtifact) return;
+
+    setBusyArtifact(artifactId);
+    setError("");
+
+    try {
+      await callAdmin<{ result: string }>("admin-action", accessToken, {
+        action: "verify_artifact",
+        artifactId,
+      });
+      await loadAll(accessToken);
+    } catch (actionError) {
+      console.error("[PASSMATE] artifact verification failed", actionError);
+      setError("발행본 확인을 완료하지 못했습니다.");
+    } finally {
+      setBusyArtifact(null);
+    }
+  }
+
   if (access === "loading") {
     return <p className="admin-loading">관리자 권한을 확인하고 있습니다...</p>;
   }
@@ -253,9 +314,10 @@ export function AdminClient() {
         <Metric label="전체 주문" value={summary?.orders_total ?? 0} />
         <Metric label="결제 완료" value={summary?.orders_paid ?? 0} />
         <Metric label="자료 완료" value={summary?.orders_ready ?? 0} />
+        <Metric label="현재 발행본" value={summary?.artifacts_active ?? 0} />
         <Metric
-          label="자료 실패"
-          value={summary?.orders_fulfillment_failed ?? 0}
+          label="발행 확인 필요"
+          value={summary?.artifacts_integrity_attention ?? 0}
           alert
         />
         <Metric
@@ -263,7 +325,6 @@ export function AdminClient() {
           value={summary?.jobs_dead_letter ?? 0}
           alert
         />
-        <Metric label="오늘 다운로드" value={summary?.downloads_today ?? 0} />
       </div>
 
       <AdminSection title="최근 주문">
@@ -342,6 +403,60 @@ export function AdminClient() {
               })}
               {jobs.length === 0 && (
                 <tr><td colSpan={7}>발행 작업이 없습니다.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminSection>
+
+      <AdminSection title="발행 기록">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>내부 참조</th>
+                <th>상품</th>
+                <th>세대</th>
+                <th>수명주기</th>
+                <th>무결성</th>
+                <th>SHA-256</th>
+                <th>크기</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {artifacts.map((artifact) => (
+                <tr key={artifact.artifact_id}>
+                  <td><code>{shortInternalRef(artifact.internal_ref)}</code></td>
+                  <td>{artifact.product_code} · {artifact.product_version}</td>
+                  <td>G{artifact.generation}</td>
+                  <td>{statusLabel(artifact.lifecycle_status)}</td>
+                  <td className={
+                    artifact.integrity_status === "mismatch" ||
+                    artifact.integrity_status === "unavailable"
+                      ? "admin-integrity-attention"
+                      : ""
+                  }>
+                    {statusLabel(artifact.integrity_status)}
+                  </td>
+                  <td><code>{artifact.sha256.slice(0, 12)}</code></td>
+                  <td>{artifact.size_bytes.toLocaleString("ko-KR")} B</td>
+                  <td>
+                    <button
+                      className="admin-mini-button"
+                      type="button"
+                      onClick={() => verifyArtifact(artifact.artifact_id)}
+                      disabled={busyArtifact === artifact.artifact_id}
+                    >
+                      {busyArtifact === artifact.artifact_id
+                        ? "확인 중"
+                        : "무결성 확인"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {artifacts.length === 0 && (
+                <tr><td colSpan={8}>등록된 발행본이 없습니다.</td></tr>
               )}
             </tbody>
           </table>
