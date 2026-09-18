@@ -30,6 +30,9 @@ begin
     select 1 from public.products
     where code = 'PM-C2'
       and slug = 'computer-literacy-2'
+      and display_year = 2027
+      and badge = '2027 EDITION'
+      and jsonb_array_length(features) = 4
       and price_krw = 6900
       and is_active = true
   ) then
