@@ -132,3 +132,22 @@
 - Worker CI 검증 완료 확인.
 - Supabase 생성 후 migrations 0001~0004 적용 및 `--once` integration test.
 - Final PDF Processor Contract와 Storage Adapter 경계를 설계.
+
+## 2026-09-18 — Final PDF Processor Contract
+
+**한 일**
+- MASTER version directory에 `manifest.json` + SHA-256 검증 규칙 추가.
+- `ProductionPdfProcessor` 파이프라인 shell 구현.
+- `PdfTransformer`와 `ArtifactStore`를 분리해 PDF 변환과 저장소를 독립 교체 가능하게 설계.
+- MASTER와 byte-identical 결과물을 실판매 발행본으로 허용하지 않는 안전장치 추가.
+- 절대경로/`..` storage key 차단 및 PII-free storage path 규칙 추가.
+- stale completion 시 artifact 삭제 가능한 storage interface 추가.
+- manifest 변조, 동일 MASTER 복사, unsafe storage key를 검증하는 Python unit tests 추가.
+
+**막힌 것**
+- 실제 PASSMATE Supabase organization이 현재 연결 커넥터 목록에 아직 나타나지 않아 DB migration 적용은 계속 대기 중.
+- 최종 PDF 시각/내부 식별 transform 구현은 MASTER PDF 형식/정책 확정 후 진행.
+
+**다음 할 일**
+- Supabase organization 연결이 보이면 passmate-prod 생성 → migrations 0001~0004 적용.
+- Worker integration test 후 production storage adapter와 결제 Provider contract 진행.
