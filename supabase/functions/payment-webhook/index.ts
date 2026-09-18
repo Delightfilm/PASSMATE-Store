@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import * as PortOne from "jsr:@portone/server-sdk@0.19.0";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -13,9 +14,26 @@ async function sha256Hex(value: string): Promise<string> {
     new TextEncoder().encode(value)
   );
   return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
 }
+
+type PortOnePayment = {
+  paymentId?: string;
+  id?: string;
+  transactionId?: string;
+  status?: string;
+  storeId?: string;
+  currency?: string;
+  amount?: { total?: number };
+  failure?: {
+    reason?: string;
+    pgCode?: string;
+    pgMessage?: string;
+    code?: string;
+    message?: string;
+  };
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
@@ -23,36 +41,69 @@ Deno.serve(async (req: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const portoneApiSecret = Deno.env.get("PORTONE_API_SECRET");
+  const webhookSecret = Deno.env.get("PORTONE_WEBHOOK_SECRET");
+  const expectedStoreId = Deno.env.get("PORTONE_STORE_ID");
 
-  if (!supabaseUrl || !serviceRoleKey || !portoneApiSecret) {
+  if (
+    !supabaseUrl ||
+    !serviceRoleKey ||
+    !portoneApiSecret ||
+    !webhookSecret ||
+    !expectedStoreId
+  ) {
     return json(503, { error: "webhook_runtime_not_configured" });
   }
 
   const rawBody = await req.text();
-  let webhook: {
+
+  let verifiedWebhook: unknown;
+  try {
+    verifiedWebhook = await PortOne.Webhook.verify(
+      webhookSecret,
+      rawBody,
+      req.headers
+    );
+  } catch (error) {
+    console.warn("PortOne webhook signature verification failed", error);
+    return json(400, { error: "invalid_webhook_signature" });
+  }
+
+  if (PortOne.Webhook.isUnrecognizedWebhook(verifiedWebhook)) {
+    return json(200, { result: "ignored_unrecognized_webhook" });
+  }
+
+  const webhook = verifiedWebhook as {
     type?: string;
     timestamp?: string;
     data?: {
       paymentId?: string;
+      storeId?: string;
       transactionId?: string;
       cancellationId?: string;
     };
   };
 
-  try {
-    webhook = JSON.parse(rawBody);
-  } catch {
-    return json(400, { error: "invalid_json" });
-  }
-
   const paymentId = webhook.data?.paymentId;
   if (!paymentId) {
-    // Non-payment PortOne webhook; acknowledge without mutating PASSMATE state.
     return json(200, { result: "ignored" });
   }
 
-  // Authoritative verification strategy: never trust webhook status itself.
-  // Re-fetch the payment from PortOne V2 API and use that response only.
+  if (webhook.data?.storeId !== expectedStoreId) {
+    console.error("PortOne webhook store mismatch", {
+      paymentId,
+      storeId: webhook.data?.storeId ?? null,
+    });
+    return json(400, { error: "webhook_store_mismatch" });
+  }
+
+  if (webhook.type === "Transaction.PartialCancelled") {
+    console.error("Partial cancellation requires manual review", paymentId);
+    return json(200, {
+      result: "manual_review_required",
+      reason: "partial_cancellation_not_supported",
+    });
+  }
+
   const response = await fetch(
     `https://api.portone.io/payments/${encodeURIComponent(paymentId)}`,
     {
@@ -68,12 +119,7 @@ Deno.serve(async (req: Request) => {
     return json(502, { error: "provider_lookup_failed" });
   }
 
-  const payment = await response.json() as {
-    id?: string;
-    status?: string;
-    amount?: { total?: number };
-    failure?: { code?: string; message?: string };
-  };
+  const payment = (await response.json()) as PortOnePayment;
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -81,7 +127,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: attempt, error: attemptError } = await admin
     .from("payment_attempts")
-    .select("id,status,amount_krw")
+    .select("id,status,amount_krw,currency")
     .eq("provider", "portone_kcp")
     .eq("merchant_order_id", paymentId)
     .maybeSingle();
@@ -92,8 +138,31 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!attempt) {
-    // Unknown payment id: acknowledge so a foreign/test PortOne event does not retry forever.
     return json(200, { result: "unknown_payment" });
+  }
+
+  if (
+    payment.paymentId !== paymentId ||
+    payment.storeId !== expectedStoreId ||
+    payment.currency !== "KRW" ||
+    attempt.currency !== "KRW"
+  ) {
+    console.error("PortOne authoritative payment identity mismatch", {
+      paymentId,
+      providerPaymentId: payment.paymentId ?? null,
+      providerStoreId: payment.storeId ?? null,
+      providerCurrency: payment.currency ?? null,
+    });
+    return json(409, { error: "provider_identity_mismatch" });
+  }
+
+  if (
+    typeof payment.amount?.total !== "number" ||
+    !Number.isInteger(payment.amount.total) ||
+    payment.amount.total !== attempt.amount_krw
+  ) {
+    console.error("PortOne authoritative payment amount mismatch", paymentId);
+    return json(409, { error: "payment_amount_mismatch" });
   }
 
   let eventType: "paid" | "failed" | "cancelled" | "refunded" | null = null;
@@ -106,19 +175,43 @@ Deno.serve(async (req: Request) => {
       eventType = "failed";
       break;
     case "CANCELLED":
-      eventType = attempt.status === "paid" ? "refunded" : "cancelled";
+      eventType = attempt.status === "paid" || attempt.status === "refunded"
+        ? "refunded"
+        : "cancelled";
       break;
+    case "PARTIAL_CANCELLED":
+      console.error("Partial cancellation requires manual review", paymentId);
+      return json(200, {
+        result: "manual_review_required",
+        reason: "partial_cancellation_not_supported",
+      });
+    case "READY":
+    case "PENDING":
+    case "PAY_PENDING":
+    case "VIRTUAL_ACCOUNT_ISSUED":
+    case "CANCEL_PENDING":
+      return json(200, { result: "ignored_status", status: payment.status });
     default:
-      return json(200, { result: "ignored_status", status: payment.status ?? null });
+      console.error("Unexpected PortOne payment status", payment.status);
+      return json(200, {
+        result: "manual_review_required",
+        status: payment.status ?? null,
+      });
   }
 
   const fingerprint = await sha256Hex(rawBody);
   const providerEventId = [
     webhook.type ?? "Transaction.Unknown",
-    webhook.data?.transactionId ?? paymentId,
+    webhook.data?.transactionId ?? payment.transactionId ?? paymentId,
     webhook.data?.cancellationId ?? "-",
     webhook.timestamp ?? "-",
   ].join(":").slice(0, 160);
+
+  const providerPaymentId =
+    payment.transactionId ??
+    webhook.data?.transactionId ??
+    payment.id ??
+    payment.paymentId;
 
   const { data: result, error: applyError } = await admin.rpc(
     "apply_payment_event",
@@ -128,14 +221,17 @@ Deno.serve(async (req: Request) => {
       p_provider_event_id: providerEventId,
       p_event_type: eventType,
       p_payload_sha256: fingerprint,
-      p_provider_payment_id:
-        webhook.data?.transactionId ?? payment.id ?? paymentId,
-      p_amount_krw:
-        typeof payment.amount?.total === "number"
-          ? payment.amount.total
-          : null,
-      p_failure_code: payment.failure?.code ?? null,
-      p_failure_detail: payment.failure?.message ?? null,
+      p_provider_payment_id: providerPaymentId,
+      p_amount_krw: payment.amount.total,
+      p_failure_code:
+        payment.failure?.pgCode ??
+        payment.failure?.code ??
+        null,
+      p_failure_detail:
+        payment.failure?.reason ??
+        payment.failure?.pgMessage ??
+        payment.failure?.message ??
+        null,
     }
   );
 

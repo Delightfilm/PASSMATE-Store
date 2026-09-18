@@ -52,8 +52,23 @@ const idempotencyMigration = fs.readFileSync(
   ),
   "utf8"
 );
+const reconciliationMigration = fs.readFileSync(
+  new URL(
+    "../supabase/migrations/20260918131500_payment_p1_reconciliation.sql",
+    import.meta.url
+  ),
+  "utf8"
+);
 const paymentStart = fs.readFileSync(
   new URL("../supabase/functions/payment-start/index.ts", import.meta.url),
+  "utf8"
+);
+const paymentSync = fs.readFileSync(
+  new URL("../supabase/functions/payment-sync/index.ts", import.meta.url),
+  "utf8"
+);
+const paymentWebhook = fs.readFileSync(
+  new URL("../supabase/functions/payment-webhook/index.ts", import.meta.url),
   "utf8"
 );
 const checkout = fs.readFileSync(
@@ -84,6 +99,35 @@ if (
   !checkout.includes("idempotencyKey: checkoutIdempotencyKey.current")
 ) {
   throw new Error("checkout must reuse one logical idempotency key across preparation retries");
+}
+
+if (!reconciliationMigration.includes("return 'already_applied'")) {
+  throw new Error("payment events must converge across sync/webhook sources");
+}
+
+for (const required of [
+  'Deno.env.get("PORTONE_STORE_ID")',
+  'payment.currency !== "KRW"',
+  "payment.amount.total !== attempt.amount_krw",
+  'admin.rpc(\n    "apply_payment_event"',
+]) {
+  if (!paymentSync.includes(required)) {
+    throw new Error(`payment-sync hardening missing: ${required}`);
+  }
+}
+
+for (const required of [
+  'jsr:@portone/server-sdk@0.19.0',
+  "PortOne.Webhook.verify",
+  'Deno.env.get("PORTONE_WEBHOOK_SECRET")',
+  'webhook.data?.storeId !== expectedStoreId',
+  'payment.currency !== "KRW"',
+  "payment.amount.total !== attempt.amount_krw",
+  "partial_cancellation_not_supported",
+]) {
+  if (!paymentWebhook.includes(required)) {
+    throw new Error(`payment webhook hardening missing: ${required}`);
+  }
 }
 
 console.log("PASSMATE V3 payment contract OK");

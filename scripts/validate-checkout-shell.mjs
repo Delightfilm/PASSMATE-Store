@@ -6,6 +6,7 @@ const required = [
   "../components/checkout-client.tsx",
   "../components/checkout-complete-client.tsx",
   "../supabase/functions/payment-start/index.ts",
+  "../supabase/functions/payment-sync/index.ts",
 ];
 
 for (const file of required) {
@@ -28,6 +29,10 @@ const complete = fs.readFileSync(
 );
 const paymentStart = fs.readFileSync(
   new URL("../supabase/functions/payment-start/index.ts", import.meta.url),
+  "utf8"
+);
+const paymentSync = fs.readFileSync(
+  new URL("../supabase/functions/payment-sync/index.ts", import.meta.url),
   "utf8"
 );
 
@@ -108,6 +113,20 @@ for (const mapping of [
   if (!paymentStart.includes(mapping)) {
     throw new Error(`payment-start must return authoritative RPC field: ${mapping}`);
   }
+}
+
+if (
+  !complete.includes('"/functions/v1/payment-sync"') ||
+  !complete.includes("body: JSON.stringify({ paymentId })")
+) {
+  throw new Error("Completion page must request authenticated server reconciliation.");
+}
+
+if (
+  !paymentSync.includes(".eq("merchant_order_id", paymentId)") ||
+  !paymentSync.includes("order.user_id !== userData.user.id")
+) {
+  throw new Error("payment-sync must bind the payment to the authenticated purchaser.");
 }
 
 if (!complete.includes("provider_order_id")) {

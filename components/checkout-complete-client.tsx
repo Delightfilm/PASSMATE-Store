@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type OrderState = {
@@ -40,6 +41,38 @@ export function CheckoutCompleteClient() {
 
     const supabase = getSupabaseBrowserClient();
 
+    async function reconcile(accessToken: string) {
+      const { url, key } = getPublicSupabaseConfig();
+      try {
+        const response = await fetch(url + "/functions/v1/payment-sync", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            apikey: key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ paymentId }),
+        });
+
+        if (response.status === 401 || response.status === 404) {
+          return "not_found" as const;
+        }
+
+        if (response.status === 409) {
+          console.error("[PASSMATE] payment reconciliation requires review");
+          return "review" as const;
+        }
+
+        if (!response.ok && response.status !== 202) {
+          console.error("[PASSMATE] payment reconciliation failed", response.status);
+        }
+      } catch (error) {
+        console.error("[PASSMATE] payment reconciliation request failed", error);
+      }
+
+      return "ok" as const;
+    }
+
     async function check() {
       const { data: userData } = await supabase.auth.getUser();
 
@@ -50,6 +83,36 @@ export function CheckoutCompleteClient() {
           window.location.pathname + window.location.search;
         router.replace(
           "/account/login/?next=" + encodeURIComponent(next)
+        );
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        const next =
+          window.location.pathname + window.location.search;
+        router.replace(
+          "/account/login/?next=" + encodeURIComponent(next)
+        );
+        return;
+      }
+
+      // Browser success is not authoritative. Ask the authenticated server
+      // endpoint to re-fetch PortOne once, then observe the own-order state.
+      const reconcileResult = await reconcile(accessToken);
+      if (cancelled) return;
+
+      if (reconcileResult === "not_found") {
+        setState("invalid");
+        setDetail("이 계정의 결제 정보를 확인할 수 없습니다.");
+        return;
+      }
+
+      if (reconcileResult === "review") {
+        setState("failed");
+        setDetail(
+          "결제 정보 확인 중 확인이 필요한 상태가 발견되었습니다. 고객센터에 문의해주세요."
         );
         return;
       }
