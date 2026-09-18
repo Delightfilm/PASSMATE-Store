@@ -323,3 +323,25 @@
 **다음 할 일**
 - credential 없이 가능한 Checkout UI shell 및 V4/V5 Storage/다운로드 계약 선행 작업.
 - 콘솔 접근 가능해지면 PortOne credential 입력 → sandbox E2E.
+
+## 2026-09-18 — V3 Checkout UI Shell
+
+**한 일**
+- PortOne V2 공식 Browser SDK CDN을 Checkout에 연결.
+- 상품 상세 → \`/checkout/?product=<slug>\` 흐름으로 변경.
+- 로그인 세션 확인 후에만 \`payment-start\` Edge Function을 호출하도록 Checkout Client 구현.
+- Edge Function이 반환한 서버 검증 금액/주문명/Store ID/Channel Key만 결제창에 전달.
+- PortOne 결제 요청에 \`redirectUrl\`을 지정해 모바일 리다이렉트와 PC Promise 반환을 모두 지원.
+- \`/checkout/complete/\` 결과 화면 추가.
+- 완료 화면은 브라우저 결제 응답을 구매 성공 근거로 사용하지 않고, 로그인 사용자가 조회 가능한 own order의 \`provider_order_id\` 상태를 polling하여 paid 여부를 판단.
+- provider credential 미설정 또는 상품 version draft 상태에서는 기존 서버 fail-closed를 그대로 유지.
+- Checkout browser code에 server-only secret이 들어가지 않는지 검사하는 CI guard 추가.
+
+**막힌 것**
+- PortOne Store ID / KCP Channel Key / V2 API Secret 미입력.
+- PM-C2 \`2027-v1.0\`은 아직 draft라 실제 결제 시작은 의도적으로 차단.
+- Vercel Hobby build-rate-limit으로 Production UI 확인은 보류.
+
+**다음 할 일**
+- V4/V5 private Storage + 다운로드 계약 선행 작업.
+- 콘솔 접근 가능 시 PortOne credential 주입 후 sandbox E2E.

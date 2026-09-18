@@ -1,7 +1,7 @@
 import Script from "next/script";
-import { CheckoutClient } from "@/components/checkout-client";
+import { CheckoutCompleteClient } from "@/components/checkout-complete-client";
 
-export default function CheckoutPage() {
+export default function CheckoutCompletePage() {
   return (
     <>
       <Script
@@ -9,7 +9,7 @@ export default function CheckoutPage() {
         strategy="afterInteractive"
       />
       <section className="section page-section">
-        <CheckoutClient />
+        <CheckoutCompleteClient />
       </section>
     </>
   );

@@ -23,7 +23,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p>{product.description}</p>
           <ul className="check-list">{product.features.map((f) => <li key={f}>✓ {f}</li>)}</ul>
           <div className="price-row"><strong>{product.price.toLocaleString("ko-KR")}원</strong><span>디지털 PDF</span></div>
-          <Link href="/checkout" className="button button-primary button-wide">구매 준비 화면 보기</Link>
+          <Link href={"/checkout/?product=" + product.slug} className="button button-primary button-wide">구매 준비 화면 보기</Link>
           <p className="fine-print">※ 현재는 기반 구축 단계이며 실제 결제는 아직 연결하지 않았습니다.</p>
         </div>
       </div>

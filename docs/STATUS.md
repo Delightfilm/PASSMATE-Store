@@ -130,13 +130,16 @@ Last updated: 2026-09-18
 - [ ] PortOne Store ID 입력
 - [ ] KCP Channel Key 입력
 - [ ] PortOne V2 API Secret 입력
-- [ ] 실제 Checkout browser SDK 연결
+- [x] Checkout UI shell + PortOne V2 browser SDK 연결
+- [x] 모바일 redirect/PC Promise 공통 완료 화면 shell
+- [x] 완료 화면은 server-verified own-order 상태만 신뢰
+- [x] Checkout CI guard
 - [ ] sandbox 결제 E2E
 
 ## Next Priorities
 
-1. PortOne/KCP credential 없이 가능한 Checkout UI shell 준비
-2. 외부에서 가능한 V4/V5 Storage/다운로드 계약 선행 작업
+1. 외부에서 가능한 V4/V5 Storage/다운로드 계약 선행 작업
+2. Checkout shell build/Production 검증은 Vercel 제한 해제 후 수행
 3. 외부 작업 종료 후 PortOne Store ID / Channel Key / API Secret 입력
 4. Checkout browser SDK 실연동
 5. Vercel 제한 해제 후 V2/V3 Production UI 검증

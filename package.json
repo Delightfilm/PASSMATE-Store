@@ -10,8 +10,9 @@
     "check:orders": "node scripts/validate-order-state.mjs",
     "check:jobs": "node scripts/validate-issuance-job-contract.mjs",
     "check:auth": "node scripts/validate-auth-config.mjs",
-    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs && npm run check:auth && npm run check:payments",
-    "check:payments": "node scripts/validate-payment-contract.mjs"
+    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs && npm run check:auth && npm run check:payments && npm run check:checkout",
+    "check:payments": "node scripts/validate-payment-contract.mjs",
+    "check:checkout": "node scripts/validate-checkout-shell.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",
