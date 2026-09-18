@@ -1,4 +1,5 @@
 import catalog from "@/data/catalog.json";
+import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 
 export type Product = {
   slug: string;
@@ -47,14 +48,7 @@ export function getStaticProductSlugs() {
 }
 
 export async function getProducts(): Promise<Product[]> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  // V1 can build before the Supabase project exists.
-  // Once both public env values are configured, Supabase becomes the catalog source.
-  if (!url || !key) {
-    return localProducts;
-  }
+  const { url, key } = getPublicSupabaseConfig();
 
   const endpoint = new URL("/rest/v1/products", url);
   endpoint.searchParams.set(
@@ -72,10 +66,19 @@ export async function getProducts(): Promise<Product[]> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to load PASSMATE catalog: ${response.status}`);
+    console.warn(
+      `[PASSMATE] Supabase catalog request failed (${response.status}); using local fallback`
+    );
+    return localProducts;
   }
 
   const rows = (await response.json()) as ProductRow[];
+  if (rows.length === 0) {
+    console.warn("[PASSMATE] Supabase catalog returned no active products; using local fallback");
+    return localProducts;
+  }
+
+  console.info(`[PASSMATE] catalog source=supabase products=${rows.length}`);
   return rows.map(mapRow);
 }
 
