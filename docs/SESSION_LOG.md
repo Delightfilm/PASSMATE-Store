@@ -58,3 +58,16 @@
 - organization 생성 즉시 `passmate-prod` 프로젝트 생성.
 - migration/seed/smoke test 자동 적용.
 - Vercel 환경변수 및 Storefront catalog read 연결.
+
+## 2026-09-18 — V1 Catalog Adapter
+
+**한 일**
+- Supabase 프로젝트가 아직 없어도 배포가 깨지지 않도록 local catalog fallback을 유지하는 데이터 어댑터 구현.
+- `NEXT_PUBLIC_SUPABASE_URL`과 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`가 설정되면 Supabase REST catalog를 사용하도록 준비.
+- 홈/상품목록/상품상세를 동일 catalog adapter에 연결.
+
+**막힌 것**
+- 실제 Supabase 연결 검증은 PASSMATE organization/project 생성 이후 가능.
+
+**다음 할 일**
+- 새 Supabase project 생성 직후 환경변수만 넣으면 DB catalog source로 전환되는지 검증.
