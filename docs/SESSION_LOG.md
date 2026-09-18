@@ -410,3 +410,26 @@
 - migration 0010 live 적용.
 - admin-data / admin-action Edge Function 배포.
 - Security Advisor 및 service-role-only privilege 검증.
+
+## 2026-09-18 — V7 Admin Live Foundation
+
+**한 일**
+- \`0010_v7_admin_ops.sql\`을 PASSMATE Supabase에 실제 적용.
+- \`admin-data\`, \`admin-action\` Edge Function v1 배포 및 둘 다 ACTIVE/JWT required 확인.
+- Admin RPC 권한 검사: anon/authenticated 실행 불가, service_role만 실행 가능.
+- \`admin_action_events\` 고객 직접 SELECT 차단 확인.
+- Supabase Performance Advisor가 지적한 \`admin_action_events.actor_user_id\`, \`download_events.issuance_job_id\` FK covering index를 \`0011_v7_admin_indexes.sql\`로 보완.
+- V7 runtime verification 통과:
+  - 임의/non-admin actor가 Admin RPC 사용 시 DB에서 거절.
+  - 과거 G1 dead-letter + 최신 G2 queued일 때 order fulfillment가 queued로 정상 복귀.
+  - 구매 당시 정확한 버전이 archived된 뒤에도 generation > 1 재발행 가능.
+- 적용 후 Supabase Security Advisor **0 findings**.
+- Performance Advisor는 현재 신규/저사용 DB 특성의 unused-index INFO만 남고 unindexed FK 경고는 해소.
+
+**막힌 것**
+- 현재 PASSMATE Auth user가 0명이므로 실제 admin/customer 계정 브라우저 E2E는 아직 진행 불가.
+- 실제 dead-letter/retry-wait 버튼 E2E는 운영용 Auth admin + 테스트 job이 준비된 뒤 수행.
+
+**다음 할 일**
+- PC/계정 접근 가능 시 사용자 Admin 계정 생성/role 지정 후 \`/admin/\` 실제 접근 검증.
+- NAS 접근 가능 시 실제 실패 job을 대상으로 Admin 재시도 → Worker 처리까지 E2E.

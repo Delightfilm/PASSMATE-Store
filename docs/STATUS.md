@@ -173,8 +173,16 @@ Last updated: 2026-09-18
 - [x] /admin UI shell
 - [x] admin-data / admin-action Edge Function
 - [x] V7 CI contract validator
-- [ ] migration 0010 live 적용
-- [ ] Admin Edge Functions live deploy
+- [x] migration 0010 live 적용
+- [x] admin-data Edge Function ACTIVE (JWT required)
+- [x] admin-action Edge Function ACTIVE (JWT required)
+- [x] Admin RPC anon/authenticated 차단 + service_role only 검증
+- [x] admin_action_events client read 차단 검증
+- [x] non-admin DB actor rejection runtime verification
+- [x] latest-generation fulfillment aggregate runtime verification
+- [x] archived purchased version generation>1 reissue runtime verification
+- [x] Performance Advisor FK covering indexes 보완
+- [x] V7 적용 후 Security Advisor 0 findings
 - [ ] 실제 admin 계정 접근 E2E
 - [ ] 실제 dead-letter retry E2E
 - [ ] PG 실제 환불 Admin action
@@ -182,12 +190,12 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. V7 migration 0010 live 적용 + Admin Edge Functions deploy
-2. Security Advisor / RPC permission 검증
-3. 외부 작업 종료 후 실제 admin 계정 지정 + /admin E2E
-4. V5 실제 NAS PDF upload → signed download E2E
-5. PortOne credential 입력 + sandbox payment E2E
-6. Vercel 제한 해제 후 V2/V3/V7 Production UI 검증
+1. 외부 작업 종료 후 실제 admin 계정 지정 + /admin E2E
+2. 실제 dead-letter/retry-wait Admin action E2E
+3. V5 실제 NAS PDF upload → signed download E2E
+4. PortOne credential 입력 + sandbox payment E2E
+5. Vercel 제한 해제 후 V2/V3/V7 Production UI 검증
+6. V7 PG 환불/Admin 상품 mutation은 실제 PG 및 Release Gate 이후 진행
 
 
 ## Blocker
