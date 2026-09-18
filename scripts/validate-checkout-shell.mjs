@@ -5,6 +5,7 @@ const required = [
   "../app/checkout/complete/page.tsx",
   "../components/checkout-client.tsx",
   "../components/checkout-complete-client.tsx",
+  "../supabase/functions/payment-start/index.ts",
 ];
 
 for (const file of required) {
@@ -25,6 +26,10 @@ const complete = fs.readFileSync(
   new URL("../components/checkout-complete-client.tsx", import.meta.url),
   "utf8"
 );
+const paymentStart = fs.readFileSync(
+  new URL("../supabase/functions/payment-start/index.ts", import.meta.url),
+  "utf8"
+);
 
 if (!page.includes("https://cdn.portone.io/v2/browser-sdk.js")) {
   throw new Error("PortOne V2 browser SDK is not loaded.");
@@ -38,6 +43,73 @@ if (!client.includes("redirectUrl")) {
   throw new Error("Checkout must support mobile redirect flow.");
 }
 
+if (/\d[\d,]*\s*원/.test(client) || client.includes("컴퓨터활용능력 2급")) {
+  throw new Error("Checkout must not hardcode a product title or KRW amount.");
+}
+
+for (const dynamicField of [
+  "payment.orderName",
+  "payment.productCode",
+  "payment.productVersion",
+  "payment.amountKrw",
+]) {
+  if (!client.includes(dynamicField)) {
+    throw new Error(`Checkout must display server field: ${dynamicField}`);
+  }
+}
+
+if (
+  !client.includes('type="checkbox"') ||
+  !client.includes("checked={confirmed}") ||
+  !client.includes("disabled={!confirmed || busy}") ||
+  !client.includes("onClick={confirmPayment}")
+) {
+  throw new Error("Checkout must require explicit confirmation before payment.");
+}
+
+const confirmStart = client.indexOf("async function confirmPayment()");
+const requestPayment = client.indexOf("window.PortOne.requestPayment");
+const renderStart = client.indexOf("\n  return (", confirmStart);
+if (
+  confirmStart === -1 ||
+  requestPayment < confirmStart ||
+  renderStart === -1 ||
+  requestPayment > renderStart
+) {
+  throw new Error("PortOne must only be invoked by the explicit confirmation action.");
+}
+
+const requestBodyStart = client.indexOf("body: JSON.stringify({");
+const requestBodyEnd = client.indexOf("}),", requestBodyStart);
+if (requestBodyStart === -1 || requestBodyEnd === -1) {
+  throw new Error("Checkout payment-start request body is missing.");
+}
+
+const requestBody = client.slice(requestBodyStart, requestBodyEnd);
+if (/amount|price|orderName|productCode|productVersion|currency/i.test(requestBody)) {
+  throw new Error("Browser catalog values must not be sent to payment-start.");
+}
+
+if (
+  !paymentStart.includes(
+    'const allowedRequestFields = new Set(["productSlug", "idempotencyKey"])'
+  ) ||
+  !paymentStart.includes('error: "unexpected_checkout_field"')
+) {
+  throw new Error("payment-start must reject browser-supplied catalog fields.");
+}
+
+for (const mapping of [
+  "productCode: row.product_code",
+  "productVersion: row.product_version",
+  "orderName: row.product_title",
+  "amountKrw: row.amount_krw",
+]) {
+  if (!paymentStart.includes(mapping)) {
+    throw new Error(`payment-start must return authoritative RPC field: ${mapping}`);
+  }
+}
+
 if (!complete.includes("provider_order_id")) {
   throw new Error("Completion page must verify the server-side order state.");
 }
@@ -48,4 +120,4 @@ for (const source of [page, client, complete]) {
   }
 }
 
-console.log("PASSMATE V3 checkout shell guard OK");
+console.log("PASSMATE checkout authority guard OK");

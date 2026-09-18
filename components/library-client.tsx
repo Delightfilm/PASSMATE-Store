@@ -4,21 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DownloadButton } from "@/components/download-button";
+import {
+  isGrantDownloadReady,
+  selectPreferredLibraryGrants,
+  type LibraryGrant,
+  type LibraryOrderState,
+} from "@/lib/library-entitlements";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-type OrderRow = {
-  id: string;
-  status: string;
-  fulfillment_status: string;
-};
-
-type LibraryRow = {
-  id: string;
-  status: string;
-  granted_at: string;
-  product_id: string;
-  product_version_id: string | null;
-  source_order_id: string | null;
+type LibraryRow = LibraryGrant & {
   products: {
     title: string;
     slug: string;
@@ -33,7 +27,7 @@ type LibraryRow = {
 export function LibraryClient() {
   const router = useRouter();
   const [rows, setRows] = useState<LibraryRow[]>([]);
-  const [orders, setOrders] = useState<Record<string, OrderRow>>({});
+  const [orders, setOrders] = useState<Record<string, LibraryOrderState>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -69,20 +63,34 @@ export function LibraryClient() {
       }
 
       const entitlementRows = (data ?? []) as unknown as LibraryRow[];
-      const orderIds = entitlementRows
-        .map((row) => row.source_order_id)
-        .filter((value): value is string => Boolean(value));
+      const orderIds = [
+        ...new Set(
+          entitlementRows
+            .map((row) => row.source_order_id)
+            .filter((value): value is string => Boolean(value))
+        ),
+      ];
 
-      let orderMap: Record<string, OrderRow> = {};
+      let orderMap: Record<string, LibraryOrderState> = {};
 
       if (orderIds.length > 0) {
-        const { data: orderData } = await supabase
+        const { data: orderData, error: orderQueryError } = await supabase
           .from("orders")
           .select("id,status,fulfillment_status")
           .in("id", orderIds);
 
+        if (!active) return;
+
+        if (orderQueryError) {
+          setError(
+            "구매 자료 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요."
+          );
+          setLoading(false);
+          return;
+        }
+
         orderMap = Object.fromEntries(
-          ((orderData ?? []) as OrderRow[]).map((order) => [
+          ((orderData ?? []) as LibraryOrderState[]).map((order) => [
             order.id,
             order,
           ])
@@ -91,7 +99,7 @@ export function LibraryClient() {
 
       if (!active) return;
 
-      setRows(entitlementRows);
+      setRows(selectPreferredLibraryGrants(entitlementRows, orderMap));
       setOrders(orderMap);
       setLoading(false);
     }
@@ -128,12 +136,7 @@ export function LibraryClient() {
   return (
     <div className="library-grid">
       {rows.map((row) => {
-        const order = row.source_order_id
-          ? orders[row.source_order_id]
-          : undefined;
-        const ready =
-          order?.status === "paid" &&
-          order?.fulfillment_status === "ready";
+        const ready = isGrantDownloadReady(row, orders);
 
         return (
           <article className="library-item" key={row.id}>

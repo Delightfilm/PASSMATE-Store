@@ -320,3 +320,14 @@ real account
 → signed download
 → refund/revoke
 ```
+## P0 Resolution — 2026-09-18
+
+All three release blockers are resolved:
+
+1. **Worker artifact race:** stale lease-loss and rejected-completion paths no longer delete the deterministic published Storage key; the Worker and final processor tests cover the successor-Worker race.
+2. **Entitlement history:** the migration makes grants order/version scoped and backfills paid/refunded history. Duplicate webhooks are idempotent; repurchase and refund tests confirm an earlier paid grant survives a later-order refund. The Library selects the effective ready grant without hiding an older valid purchase.
+3. **Checkout authority:** `payment-start` rejects client amount/title fields and returns the current catalog code, version, title, and amount. The UI renders those fields and requires an explicit amount confirmation before PortOne.
+
+Local verification passed (`npm run build`, 28 Worker tests, Deno type check). Live Supabase verification passed after applying the three P0 migrations; fixtures were cleaned up, the payment-start v2 function is active with JWT verification, and Security Advisor reports zero findings.
+
+The P0 findings above remain in the historical sections for traceability. The remaining release gate is authenticated NAS/PortOne/Auth E2E plus the listed P1 payment and admin hardening items.

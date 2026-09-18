@@ -329,3 +329,6 @@ loop:
 - DB queue/RPC: `supabase/migrations/0004_issuance_jobs.sql`
 - DB tests: `supabase/tests/issuance_job_contract.sql`
 - CI validation: `scripts/validate-issuance-job-contract.mjs`
+## P0 stale-worker safety addendum
+
+When `renew_issuance_lease()` reports `false`, the Worker must not complete the job and must leave any deterministic published final object untouched. `discard()` is reserved for unpublished local temporary output; it must never delete a shared final Storage key. Cleanup of an orphaned shared key requires an ownership-aware server lifecycle, separate from stale-worker error handling.

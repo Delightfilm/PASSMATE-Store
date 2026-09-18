@@ -128,5 +128,9 @@ class ProductionPdfProcessor:
         )
 
     def discard(self, result: ArtifactResult) -> None:
-        if result.storage_key:
-            self.store.delete(result.storage_key)
+        # Final storage keys are deterministic for a job generation. Once an
+        # upload is visible, a successor may adopt the same object and commit
+        # it after this attempt loses its lease. Deleting here could therefore
+        # remove a successfully committed artifact. Final-object cleanup must
+        # be performed by an ownership-aware server-side lifecycle operation.
+        return None

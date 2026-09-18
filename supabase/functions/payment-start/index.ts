@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const allowedRequestFields = new Set(["productSlug", "idempotencyKey"]);
+
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -45,14 +47,22 @@ Deno.serve(async (req: Request) => {
     return json(401, { error: "invalid_session" });
   }
 
-  let body: { productSlug?: string; idempotencyKey?: string };
+  let body: Record<string, unknown>;
   try {
-    body = await req.json();
+    const parsed: unknown = await req.json();
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return json(400, { error: "invalid_request_body" });
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return json(400, { error: "invalid_json" });
   }
 
-  if (!body.productSlug || typeof body.productSlug !== "string") {
+  if (Object.keys(body).some((field) => !allowedRequestFields.has(field))) {
+    return json(400, { error: "unexpected_checkout_field" });
+  }
+
+  if (typeof body.productSlug !== "string" || body.productSlug.length === 0) {
     return json(400, { error: "product_slug_required" });
   }
 
@@ -86,6 +96,22 @@ Deno.serve(async (req: Request) => {
   const row = Array.isArray(data) ? data[0] : null;
   if (!row) return json(500, { error: "checkout_result_missing" });
 
+  if (
+    typeof row.order_id !== "string" ||
+    typeof row.payment_attempt_id !== "string" ||
+    typeof row.amount_krw !== "number" ||
+    !Number.isInteger(row.amount_krw) ||
+    row.amount_krw < 0 ||
+    typeof row.product_code !== "string" ||
+    row.product_code.length === 0 ||
+    typeof row.product_title !== "string" ||
+    row.product_title.length === 0 ||
+    typeof row.product_version !== "string" ||
+    row.product_version.length === 0
+  ) {
+    return json(500, { error: "checkout_result_invalid" });
+  }
+
   return json(200, {
     orderId: row.order_id,
     paymentAttemptId: row.payment_attempt_id,
@@ -93,6 +119,8 @@ Deno.serve(async (req: Request) => {
     idempotencyKey,
     storeId,
     channelKey,
+    productCode: row.product_code,
+    productVersion: row.product_version,
     orderName: row.product_title,
     amountKrw: row.amount_krw,
     currency: "KRW",

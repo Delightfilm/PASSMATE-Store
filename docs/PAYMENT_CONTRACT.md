@@ -118,6 +118,16 @@ order paid → refunded + revoked
 
 기존 refund trigger가 entitlement/issuance revoke를 이어서 처리한다.
 
+## P0 entitlement and checkout rules
+
+### Order-scoped entitlements
+
+Every successful order creates at most one grant for the tuple `(user_id, source_order_id, product_id, product_version_id)`. Replaying a paid or refunded provider event is a no-op. A repurchase creates a new order grant; refunding one order revokes only that order's grant, so an older paid order remains usable. The Library chooses one effective grant per product/version, preferring a paid and ready grant and then the newest active grant.
+
+### Server-authoritative checkout
+
+The browser sends only the catalog slug and an idempotency key to `payment-start`. The function resolves the currently purchasable catalog row and returns the exact product code, version, title, and KRW amount. Checkout displays those returned values and requires the customer to confirm the exact amount before calling PortOne with the same server-authoritative amount. Browser-supplied title or amount fields are rejected.
+
 ## Provider adapter
 
 `lib/payment-provider.ts`의 `PaymentProviderAdapter`가 provider-specific 코드를 감싼다.

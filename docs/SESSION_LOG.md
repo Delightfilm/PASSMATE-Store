@@ -547,3 +547,21 @@
 **다음 할 일**
 - 새 기능 추가보다 P0 3건을 먼저 수정.
 - P0 이후 payment/admin P1을 정리한 뒤 실환경 E2E 진행.
+## 2026-09-18 — P0 fixes and live verification
+
+The three release-blocking findings from the full code review are now closed in code, regression tests, and the live Supabase project.
+
+- Worker lease-loss handling no longer discards a deterministic published Storage object after a stale completion or rejected completion. The race test proves that a successor Worker’s artifact remains available.
+- Entitlements are now order-scoped (`user_id + source_order_id + product_id + product_version_id`). Duplicate paid/refund events are idempotent, a repurchase creates a separate grant, and refunding the later order preserves an earlier paid grant. Library selection deduplicates product/version cards and prefers a paid, ready grant.
+- Checkout receives title, product code, version, and amount from the authenticated `payment-start` response, renders that exact amount, and requires an explicit confirmation immediately before PortOne. The browser cannot provide the amount or title.
+
+Live verification:
+
+- Applied `20260918103548_preserve_entitlements_per_order`, `20260918103825_fix_entitlement_grant_null_type`, and `20260918103840_verify_p0_entitlement_order_grants`.
+- Runtime duplicate/repurchase/refund verification passed; all test fixtures were removed.
+- `payment-start` is ACTIVE version 2 with JWT verification enabled; an unauthenticated request returns 401.
+- Supabase Security Advisor is clean (0 findings).
+
+Local verification passed: `npm run build`, all 28 Worker tests, and Deno type checking for `payment-start`.
+
+The remaining launch gate is real NAS + authenticated account + PortOne sandbox E2E. Do not place server keys in Git or chat.

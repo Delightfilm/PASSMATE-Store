@@ -174,3 +174,36 @@ Never use reference mode for public sales.
 6. V5 signed download confirmation
 7. lease-loss/reclaim test
 8. continuous-mode soak test
+## 12. Post-P0 NAS rollout sequence
+
+Run these commands from the checked-out repository on the NAS. Replace `/path/to/PASSMATE-Store` with the actual folder; do not paste any secret into Git or chat.
+
+```bash
+cd /path/to/PASSMATE-Store
+git pull --ff-only origin main
+git rev-parse --short HEAD
+test -f worker/.env || cp worker/.env.example worker/.env
+
+# Edit worker/.env in the NAS editor. Keep this first pass disabled.
+docker compose --env-file worker/.env -f worker/docker-compose.yml config --quiet
+docker compose --env-file worker/.env -f worker/docker-compose.yml build --pull
+docker compose --env-file worker/.env -f worker/docker-compose.yml run --rm \
+  passmate-worker python -m passmate_worker.main --check-config
+docker compose --env-file worker/.env -f worker/docker-compose.yml run --rm \
+  passmate-worker python -m passmate_worker.master_tool verify \
+  --directory /data/master/PM-C2/2027-v1.0
+```
+
+After the disabled preflight succeeds, set `PASSMATE_PROCESSOR_MODE=production` in `worker/.env` and repeat `config --quiet`. Create one real authenticated sandbox paid test order through the storefront, then run exactly one job:
+
+```bash
+docker compose --env-file worker/.env -f worker/docker-compose.yml run --rm \
+  passmate-worker python -m passmate_worker.main --once
+```
+
+Confirm the job is `succeeded`, the order is `ready`, the private Storage object exists, the customer download works, and Admin integrity shows the expected SHA-256/size before enabling the daemon:
+
+```bash
+docker compose --env-file worker/.env -f worker/docker-compose.yml up -d --build
+docker compose --env-file worker/.env -f worker/docker-compose.yml logs --tail=100 -f passmate-worker
+```

@@ -79,6 +79,21 @@ class FinalProcessorTests(unittest.TestCase):
             self.assertEqual(len(result.sha256), 64)
             self.assertGreater(result.size_bytes, 0)
 
+    def test_discard_does_not_delete_published_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            master_root, work_root, store_root = self.make_fixture(Path(temp))
+            processor = ProductionPdfProcessor(
+                master_root=master_root,
+                work_root=work_root,
+                store=LocalArtifactStore(store_root),
+                transformer=MarkerTransformer(),
+            )
+            result = processor.process(job())
+
+            processor.discard(result)
+
+            self.assertTrue((store_root / result.storage_key).is_file())
+
     def test_identical_master_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             master_root, work_root, store_root = self.make_fixture(Path(temp))

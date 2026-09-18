@@ -13,6 +13,8 @@ type PaymentStart = {
   idempotencyKey: string;
   storeId: string;
   channelKey: string;
+  productCode: string;
+  productVersion: string;
   orderName: string;
   amountKrw: number;
   currency: "KRW";
@@ -47,16 +49,49 @@ declare global {
 
 const DEFAULT_PRODUCT = "computer-literacy-2";
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isPaymentStart(value: unknown): value is PaymentStart {
+  if (!value || typeof value !== "object") return false;
+
+  const payment = value as Record<string, unknown>;
+  return (
+    isNonEmptyString(payment.orderId) &&
+    isNonEmptyString(payment.paymentAttemptId) &&
+    isNonEmptyString(payment.paymentId) &&
+    isNonEmptyString(payment.idempotencyKey) &&
+    isNonEmptyString(payment.storeId) &&
+    isNonEmptyString(payment.channelKey) &&
+    isNonEmptyString(payment.productCode) &&
+    isNonEmptyString(payment.productVersion) &&
+    isNonEmptyString(payment.orderName) &&
+    typeof payment.amountKrw === "number" &&
+    Number.isInteger(payment.amountKrw) &&
+    payment.amountKrw >= 0 &&
+    payment.currency === "KRW" &&
+    payment.payMethod === "CARD"
+  );
+}
+
+function formatKrw(amountKrw: number) {
+  return amountKrw.toLocaleString("ko-KR") + "원";
+}
+
 export function CheckoutClient() {
   const router = useRouter();
   const [productSlug, setProductSlug] = useState(DEFAULT_PRODUCT);
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "preparing" | "paying">("idle");
+  const [payment, setPayment] = useState<PaymentStart | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
   const [statusKind, setStatusKind] = useState<"info" | "error" | "success">("info");
   const [statusText, setStatusText] = useState(
-    "현재 결제 오픈을 준비하고 있습니다."
+    "결제할 상품과 금액을 서버에서 확인해주세요."
   );
+  const busy = phase !== "idle";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -76,7 +111,7 @@ export function CheckoutClient() {
     router.replace(next);
   }
 
-  async function startPayment() {
+  async function preparePayment() {
     if (!email) {
       router.replace(
         "/account/login/?next=" +
@@ -85,9 +120,11 @@ export function CheckoutClient() {
       return;
     }
 
-    setBusy(true);
+    setPhase("preparing");
+    setPayment(null);
+    setConfirmed(false);
     setStatusKind("info");
-    setStatusText("결제를 준비하고 있습니다.");
+    setStatusText("서버에서 최신 상품과 결제 금액을 확인하고 있습니다.");
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -136,13 +173,38 @@ export function CheckoutClient() {
         throw new Error("payment-start:" + response.status);
       }
 
-      const payment = (await response.json()) as PaymentStart;
+      const preparedPayment: unknown = await response.json();
+      if (!isPaymentStart(preparedPayment)) {
+        throw new Error("invalid-payment-start-response");
+      }
 
+      setPayment(preparedPayment);
+      setStatusKind("success");
+      setStatusText(
+        "서버에서 확정된 상품과 금액입니다. 아래 내용을 확인하고 결제에 동의해주세요."
+      );
+    } catch (error) {
+      console.error("[PASSMATE] payment preparation failed", error);
+      setStatusKind("error");
+      setStatusText(
+        "결제 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요."
+      );
+    } finally {
+      setPhase("idle");
+    }
+  }
+
+  async function confirmPayment() {
+    if (!payment || !confirmed || busy || !email) return;
+
+    setPhase("paying");
+    setStatusKind("info");
+    setStatusText("확인한 금액으로 결제창을 여는 중입니다.");
+
+    try {
       if (!window.PortOne) {
         throw new Error("portone-sdk-not-ready");
       }
-
-      setStatusText("결제창을 여는 중입니다.");
 
       const result = await window.PortOne.requestPayment({
         storeId: payment.storeId,
@@ -177,7 +239,7 @@ export function CheckoutClient() {
         "결제를 시작하지 못했습니다. 잠시 후 다시 시도해주세요."
       );
     } finally {
-      setBusy(false);
+      setPhase("idle");
     }
   }
 
@@ -206,24 +268,60 @@ export function CheckoutClient() {
       </div>
 
       <aside className="order-box">
-        <span>2027 컴퓨터활용능력 2급</span>
-        <strong>6,900원</strong>
-
-        {!ready ? (
-          <button disabled>계정 확인 중</button>
+        {payment ? (
+          <>
+            <span>{payment.orderName}</span>
+            <small>
+              상품 코드 {payment.productCode} · 버전 {payment.productVersion}
+            </small>
+            <strong>{formatKrw(payment.amountKrw)}</strong>
+            <p className="checkout-account-note">
+              결제 직전 서버에서 확정한 상품과 금액입니다.
+            </p>
+            <label>
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(event) => setConfirmed(event.target.checked)}
+                disabled={busy}
+              />{" "}
+              위 상품과 {formatKrw(payment.amountKrw)} 결제에 동의합니다.
+            </label>
+            <button
+              type="button"
+              onClick={confirmPayment}
+              disabled={!confirmed || busy}
+              className="checkout-pay-button"
+            >
+              {phase === "paying"
+                ? "결제창 여는 중..."
+                : formatKrw(payment.amountKrw) + " 결제창 열기"}
+            </button>
+          </>
         ) : (
-          <button
-            type="button"
-            onClick={startPayment}
-            disabled={busy}
-            className="checkout-pay-button"
-          >
-            {busy
-              ? "처리 중..."
-              : email
-                ? "결제 준비하기"
-                : "로그인 후 구매"}
-          </button>
+          <>
+            <span>결제 상품 및 금액</span>
+            <strong>서버 확인 전</strong>
+            <p className="checkout-account-note">
+              최신 상품명, 버전, 결제 금액을 서버에서 확인한 뒤 결제를 진행합니다.
+            </p>
+            {!ready ? (
+              <button disabled>계정 확인 중</button>
+            ) : (
+              <button
+                type="button"
+                onClick={preparePayment}
+                disabled={busy}
+                className="checkout-pay-button"
+              >
+                {phase === "preparing"
+                  ? "결제 정보 확인 중..."
+                  : email
+                    ? "결제 정보 확인하기"
+                    : "로그인 후 구매"}
+              </button>
+            )}
+          </>
         )}
 
         <p className="checkout-account-note">
@@ -232,7 +330,7 @@ export function CheckoutClient() {
             : "구매하려면 먼저 로그인해주세요."}
         </p>
 
-        <Link href="/products/computer-literacy-2">
+        <Link href={"/products/" + encodeURIComponent(productSlug)}>
           ← 상품으로 돌아가기
         </Link>
       </aside>

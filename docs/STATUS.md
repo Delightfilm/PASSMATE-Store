@@ -245,9 +245,18 @@ Last updated: 2026-09-18
 Repository + live Supabase 전면 검토 완료. 상세: `docs/CODE_REVIEW_2026-09-18.md`.
 
 출시 차단(P0):
-- [ ] stale Worker가 다른 Worker가 성공시킨 동일 Storage object를 삭제할 수 있는 lease-loss race
-- [ ] 동일 상품 재구매/환불 시 기존 정상 구매 entitlement까지 잃을 수 있는 grant 모델
-- [ ] Checkout의 하드코딩 가격/상품과 서버 실제 결제금액이 달라질 수 있는 표시-청구 불일치
+- [x] stale Worker는 lease 상실 또는 완료 거절 뒤 결정적 shared Storage key를 삭제하지 않음. production `discard()`도 no-op이며 회귀 테스트 통과
+- [x] entitlement를 사용자+원본 주문+상품+버전 단위 grant로 전환. duplicate paid/refund, 재구매, 최신 주문 환불 뒤 과거 정상 권리 보존 회귀 테스트 통과
+- [x] Checkout 하드코딩 상품명/가격 제거. `payment-start`가 반환한 서버 기준 상품/버전/제목/금액을 표시하고 명시 확인 뒤에만 PortOne 호출
+
+Live Supabase 확인:
+- [x] `20260918103548 preserve_entitlements_per_order`
+- [x] `20260918103825 fix_entitlement_grant_null_type`
+- [x] `20260918103840 verify_p0_entitlement_order_grants`
+- [x] duplicate/repurchase/refund runtime verification 통과 및 fixture cleanup 0건
+- [x] entitlement unique constraint와 `apply_payment_event()` 권한(`postgres`, `service_role` only) 확인
+- [x] `payment-start` v2 ACTIVE, `verify_jwt=true`, 비인증 요청 401 확인
+- [x] 적용 후 Supabase Security Advisor 0 findings
 
 우선(P1):
 - [ ] end-to-end payment idempotency
@@ -258,16 +267,15 @@ Repository + live Supabase 전면 검토 완료. 상세: `docs/CODE_REVIEW_2026-
 - [ ] production catalog fallback fail-closed
 - [ ] MASTER version immutable registration
 
-결론: V1~V7 기반은 견고하지만, V8 판매 오픈 전 P0와 결제/관리 P1을 먼저 닫는다.
+결론: 코드리뷰 P0 3건은 코드·회귀 테스트·live Supabase 검증까지 닫혔다. 판매 오픈 전 실제 NAS/PortOne/Auth E2E와 결제/관리 P1을 이어서 닫는다.
 
 ## Next Priorities
 
-1. Code Review P0-1: stale Worker Storage delete race 수정 + concurrency regression test
-2. Code Review P0-2: entitlement/duplicate purchase/refund 모델 수정
-3. Code Review P0-3: Checkout server-authoritative 상품/금액 확인 UI
+1. NAS disabled preflight → MASTER verify → production `--once` 발행
+2. Supabase job/order/artifact + private Storage + 고객 다운로드 + Admin 무결성 확인 E2E
+3. PortOne sandbox 결제/환불 및 실제 Auth 계정 E2E
 4. Payment P1: idempotency + completion reconciliation + webhook hardening
 5. Admin/Supabase P1: direct DML/hard-delete 제한 + modern secret key migration
-6. 이후 실제 NAS/PortOne/Auth E2E Gate 진행
 
 
 ## Blocker

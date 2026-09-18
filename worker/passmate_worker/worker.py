@@ -97,17 +97,15 @@ class PassmateWorker:
             on_renew=lambda: self._report_worker(job.job_id),
         )
         heartbeat.start()
-        result = None
-
         try:
             result = self.processor.process(job)
 
             if heartbeat.lost:
                 logger.warning(
-                    "lease lost before completion job=%s; discarding output",
+                    "lease lost before completion job=%s; "
+                    "leaving published output untouched",
                     job.job_id,
                 )
-                self.processor.discard(result)
                 return True
 
             completed = self.client.complete(
@@ -119,10 +117,10 @@ class PassmateWorker:
 
             if not completed:
                 logger.warning(
-                    "completion rejected job=%s; discarding output",
+                    "completion rejected job=%s; "
+                    "leaving published output untouched",
                     job.job_id,
                 )
-                self.processor.discard(result)
                 return True
 
             logger.info(
