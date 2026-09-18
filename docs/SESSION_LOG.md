@@ -284,3 +284,23 @@
 **다음 할 일**
 - Toss Payments / PortOne 등 실제 PG 후보를 비교해 1개 선정.
 - 선택 provider의 sandbox adapter와 webhook verifier 구현.
+
+## 2026-09-18 — V3.1 PortOne + NHN KCP Server Boundary
+
+**한 일**
+- 초기 운영비 최소화 방침에 따라 PortOne V2 + NHN KCP를 V3 1차 provider로 고정.
+- 실제 외부 credential 없이 진행 가능한 서버 경계를 먼저 구현.
+- 로그인 사용자/활성 상품/published version/DB 가격을 기준으로 주문+결제시도를 한 transaction에서 만드는 `create_direct_checkout()` RPC 작성.
+- Supabase Edge Function `payment-start` 설계: JWT 사용자 검증 후 service-role RPC 호출, PortOne Store ID/Channel Key가 없으면 주문 생성 전에 fail-closed.
+- Supabase Edge Function `payment-webhook` 설계: 외부 webhook body를 신뢰하지 않고 PortOne V2 API로 paymentId를 재조회한 결과만 DB에 반영.
+- raw webhook body는 저장하지 않고 기존 payment event contract의 SHA-256 fingerprint만 사용.
+- PortOne/KCP credential은 GitHub에 넣지 않고 Edge Function secret/env로만 주입하도록 문서화.
+
+**막힌 것**
+- PortOne Store ID, KCP Channel Key, V2 API Secret은 사용자 PortOne 콘솔에서 발급/확인이 필요.
+- 실제 브라우저 결제창과 sandbox E2E는 credential 입력 후 가능.
+
+**다음 할 일**
+- migration 0008 실제 적용.
+- payment-start / payment-webhook Edge Function deploy.
+- Security Advisor 및 fail-closed 동작 확인.

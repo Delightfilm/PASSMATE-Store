@@ -114,14 +114,28 @@ Last updated: 2026-09-18
 - [ ] PG sandbox 결제 승인/실패/취소/환불 E2E
 - [ ] 실제 webhook signature 검증
 
+## V3.1 PortOne + KCP Progress
+
+- [x] Provider 결정: PortOne V2 + NHN KCP
+- [x] direct checkout DB RPC 설계
+- [x] authenticated payment-start Edge Function
+- [x] PortOne payment re-fetch 기반 webhook Edge Function
+- [x] provider secret 미설정 시 fail-closed
+- [x] KCP Store ID / Channel Key / API Secret 환경변수 경계 정의
+- [ ] PortOne Store ID 입력
+- [ ] KCP Channel Key 입력
+- [ ] PortOne V2 API Secret 입력
+- [ ] 실제 Checkout browser SDK 연결
+- [ ] sandbox 결제 E2E
+
 ## Next Priorities
 
-1. 실제 PG 후보/수수료/개발 난이도 비교 후 provider 선정
-2. 선택한 PG sandbox adapter + webhook signature 검증 구현
-3. Vercel 제한 해제 후 V2/V3 Production UI 검증
-4. 실제 회원가입/로그인 + own-row RLS 검증
-5. NAS Worker 실제 Supabase `--once` integration test
-6. V3 sandbox 결제 → paid → entitlement → issuance E2E
+1. migration 0008 live 적용 + Edge Functions deploy
+2. PortOne/KCP credential 없이 가능한 negative-path 검증
+3. 외부 작업 종료 후 PortOne Store ID / Channel Key / API Secret 입력
+4. Checkout browser SDK 연결
+5. Vercel 제한 해제 후 V2/V3 Production UI 검증
+6. sandbox 결제 → paid → entitlement → issuance E2E
 
 
 ## Blocker
