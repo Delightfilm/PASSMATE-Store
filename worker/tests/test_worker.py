@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from passmate_worker.errors import WorkerError
 from passmate_worker.models import ArtifactResult, IssuanceJob
 from passmate_worker.worker import PassmateWorker
 
@@ -68,6 +69,15 @@ class FakeProcessor:
         self.discarded.append(result.storage_key)
 
 
+class FailingProcessor(FakeProcessor):
+    def process(self, job):
+        raise WorkerError(
+            "MASTER_NOT_FOUND",
+            "missing master",
+            retryable=False,
+        )
+
+
 class WorkerTests(unittest.TestCase):
     def build(self, client, processor):
         return PassmateWorker(
@@ -108,6 +118,18 @@ class WorkerTests(unittest.TestCase):
 
         self.assertFalse(worker.run_once())
         self.assertEqual(len(client.completed), 0)
+
+    def test_typed_processor_error_is_reported(self) -> None:
+        client = FakeClient()
+        processor = FailingProcessor()
+        worker = self.build(client, processor)
+
+        self.assertTrue(worker.run_once())
+        self.assertEqual(
+            client.failed,
+            [("MASTER_NOT_FOUND", False)],
+        )
+        self.assertEqual(client.completed, [])
 
 
 if __name__ == "__main__":
