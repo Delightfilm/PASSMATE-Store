@@ -116,9 +116,15 @@ for (const required of [
   }
 }
 
+if (paymentWebhook.includes("isUnrecognizedWebhook")) {
+  throw new Error("payment webhook must not assume Webhook.verify returns a decoded payload");
+}
+
 for (const required of [
   'jsr:@portone/server-sdk@0.19.0',
   "PortOne.Webhook.verify",
+  "Object.fromEntries(req.headers.entries())",
+  "JSON.parse(rawBody)",
   'Deno.env.get("PORTONE_WEBHOOK_SECRET")',
   'webhook.data?.storeId !== expectedStoreId',
   'payment.currency !== "KRW"',
