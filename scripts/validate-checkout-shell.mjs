@@ -124,7 +124,7 @@ if (
 
 if (
   !paymentSync.includes('.eq("merchant_order_id", paymentId)') ||
-  !paymentSync.includes("order.user_id !== userData.user.id")
+  !paymentSync.includes("order.user_id !== ctx.userClaims.id")
 ) {
   throw new Error("payment-sync must bind the payment to the authenticated purchaser.");
 }
@@ -134,7 +134,7 @@ if (!complete.includes("provider_order_id")) {
 }
 
 for (const source of [page, client, complete]) {
-  if (/PORTONE_API_SECRET|SUPABASE_SERVICE_ROLE_KEY/.test(source)) {
+  if (/PORTONE_API_SECRET|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY/.test(source)) {
     throw new Error("Checkout browser code contains a server-only secret name.");
   }
 }
