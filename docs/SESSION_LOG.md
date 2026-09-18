@@ -90,3 +90,24 @@
 **다음 할 일**
 - PASSMATE Supabase 생성 후 migrations 0001~0003 적용 및 illegal transition 차단 검증.
 - 이후 NAS Worker의 Queue/Issuing/Ready/Failed 전이를 이 계약에 맞춰 설계.
+
+## 2026-09-18 — V1.5 NAS Job Contract
+
+**한 일**
+- NAS가 inbound 서버가 아니라 Supabase를 outbound polling하는 구조로 Job Contract 확정.
+- `issuance_jobs` queue schema와 atomic claim(`FOR UPDATE SKIP LOCKED`) RPC 작성.
+- lease token / worker id / 300초 lease / 60초 heartbeat 규칙 확정.
+- retryable failure는 `retry_wait`, 최대 5회 이후 `dead_letter`로 이동하도록 설계.
+- stale Worker 방지를 위해 lease 만료 후 completion 거절, heartbeat 실패 시 결과 폐기 규칙 추가.
+- 완료 결과는 storage_key / SHA-256 / size만 저장하고 claim payload에서 고객 PII를 금지.
+- 환불 시 미완료 job cancel + entitlement revoke 경로 추가.
+- 다중 상품 주문에서 첫 작업 완료 후 남은 작업이 있으면 order fulfillment가 `issuing -> queued`로 돌아가도록 상태 머신 보완.
+- Job event audit trail, SQL smoke test, JSON contract validator, TS 타입, NAS Worker README 추가.
+- Production build quality gate에 issuance job contract validator 추가.
+
+**막힌 것**
+- 실제 atomic claim/lease/RPC SQL 검증은 PASSMATE 전용 Supabase 생성 이후 가능.
+
+**다음 할 일**
+- NAS Worker reference loop와 RPC 호출 순서를 코드 수준으로 고정.
+- 이후 Payment Provider contract를 설계해 `paid -> enqueue` 경계를 확정.
