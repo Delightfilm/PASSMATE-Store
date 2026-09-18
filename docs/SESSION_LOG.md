@@ -40,3 +40,21 @@
 
 **다음 할 일**
 - PASSMATE 전용 organization이 생성되는 즉시 새 프로젝트 생성부터 자동으로 이어서 진행.
+
+## 2026-09-18 — V1 Offline Preparation
+
+**한 일**
+- 사용자 PC 없이 진행 가능한 V1 사전작업을 계속 진행.
+- PM-C2 상품 정보를 `data/catalog.json` 단일 소스로 정리하고 CI 검증 스크립트 추가.
+- Supabase core schema의 권한을 재검토하여 고객이 자신의 `role`을 admin으로 변경할 수 있는 권한 상승 가능성을 차단.
+- 상품 메타데이터(display_year, badge, features)를 DB schema에 반영.
+- `0002_seed_catalog.sql`, `v1_smoke.sql`, V1 데이터 모델 문서, Supabase Setup Runbook 추가.
+
+**막힌 것**
+- PASSMATE 전용 Supabase organization 생성은 현재 연결 도구에서 수행할 수 없음.
+- 실제 migration/RLS 테스트는 새 organization/project 생성 이후 가능.
+
+**다음 할 일**
+- organization 생성 즉시 `passmate-prod` 프로젝트 생성.
+- migration/seed/smoke test 자동 적용.
+- Vercel 환경변수 및 Storefront catalog read 연결.
