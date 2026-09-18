@@ -28,3 +28,9 @@ Open http://localhost:3000
 
 ## Deploy
 GitHub `Delightfilm/PASSMATE-Store` -> Vercel 자동 배포를 기준으로 운영합니다.
+
+## Project docs
+- [Final Roadmap](docs/ROADMAP.md)
+- [Current Status](docs/STATUS.md)
+- [Session Log](docs/SESSION_LOG.md)
+- [V1 Supabase migration](supabase/migrations/0001_v1_core.sql)
