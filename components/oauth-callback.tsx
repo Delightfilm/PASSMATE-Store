@@ -19,13 +19,16 @@ export function OAuthCallback() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const nextPath = getSafeNextPath(params.get("next"));
+    const storedNext = window.sessionStorage.getItem("passmate.oauth.next");
+    const nextPath = getSafeNextPath(params.get("next") || storedNext);
+    const clearStoredNext = () => window.sessionStorage.removeItem("passmate.oauth.next");
     const loginUrl = new URL("/account/login/", window.location.origin);
     loginUrl.searchParams.set("next", nextPath);
     setLoginPath(`${loginUrl.pathname}${loginUrl.search}`);
 
     const providerError = getProviderError();
     if (providerError) {
+      clearStoredNext();
       loginUrl.searchParams.set(
         "oauth_error",
         /access_denied|cancel/i.test(providerError) ? "cancelled" : "failed"
@@ -41,6 +44,7 @@ export function OAuthCallback() {
     const finish = () => {
       if (!active || completed) return;
       completed = true;
+      clearStoredNext();
       router.replace(nextPath);
       router.refresh();
     };

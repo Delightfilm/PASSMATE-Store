@@ -45,9 +45,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
     setOAuthBusy(provider);
     const supabase = getSupabaseBrowserClient();
     const redirectUrl = new URL("/account/oauth-callback/", window.location.origin);
-    redirectUrl.searchParams.set("next", nextPath);
 
     try {
+      window.sessionStorage.setItem("passmate.oauth.next", nextPath);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -59,6 +59,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       if (!data.url) throw new Error("OAuth 로그인 주소를 만들지 못했습니다.");
       window.location.assign(data.url);
     } catch (error) {
+      window.sessionStorage.removeItem("passmate.oauth.next");
       const text = error instanceof Error ? error.message : String(error);
       setMessage({ kind: "error", text: getAuthErrorMessage(text) });
       setOAuthBusy(null);

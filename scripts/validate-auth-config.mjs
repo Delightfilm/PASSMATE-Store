@@ -70,8 +70,16 @@ for (const required of [
   }
 }
 
-if (!authForm.includes("skipBrowserRedirect: true") || !authForm.includes("window.location.assign(data.url)")) {
-  throw new Error("OAuth navigation must preserve the current deployment origin explicitly.");
+if (
+  !authForm.includes("skipBrowserRedirect: true") ||
+  !authForm.includes("window.location.assign(data.url)") ||
+  !authForm.includes('sessionStorage.setItem("passmate.oauth.next"')
+) {
+  throw new Error("OAuth navigation must preserve the current deployment origin and next path explicitly.");
+}
+
+if (!oauthCallback.includes('sessionStorage.getItem("passmate.oauth.next")')) {
+  throw new Error("OAuth callback must restore the next path without widening redirect URL matching.");
 }
 
 if (!oauthCallback.includes("getSafeNextPath") || !oauthCallback.includes("getSession")) {
