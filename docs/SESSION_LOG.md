@@ -190,3 +190,19 @@
 - Vercel Supabase env 연결 후 Storefront DB catalog 조회 검증.
 - 테스트 Auth 사용자 RLS 검증.
 - NAS Worker service-role integration test.
+
+## 2026-09-18 — Storefront Supabase Wiring
+
+**한 일**
+- Vercel connector의 환경변수 입력 기능/프로젝트 조회 문제를 우회하기 위해 Supabase **publishable** URL/key만 browser-safe public config로 연결.
+- service-role secret은 GitHub/브라우저에 추가하지 않음.
+- Storefront catalog adapter가 Supabase를 우선 조회하고, API 실패/빈 결과일 때 local catalog로 안전하게 fallback하도록 보강.
+- 최신 코드 push 후 Vercel 상태 확인.
+
+**막힌 것**
+- 최신 Vercel deployment는 코드 오류가 아니라 Hobby plan **build-rate-limit** 상태로 실패 처리됨.
+- 따라서 production build에서 `catalog source=supabase` 로그 확인은 rate limit 해제 후 재검증 필요.
+
+**다음 할 일**
+- Vercel build 제한 해제 후 production deployment 검증.
+- 이후 Auth-user RLS / NAS Worker real integration test 진행.
