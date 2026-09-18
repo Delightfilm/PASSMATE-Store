@@ -244,3 +244,25 @@
 **다음 할 일**
 - 수정 commit의 build 상태 확인.
 - Production에서 signup/login/password reset/RLS 실사용 검증.
+
+## 2026-09-18 — V3 Payment Contract Start
+
+**한 일**
+- 실제 PG를 아직 선택하지 않은 상태에서 V3를 provider-neutral contract로 시작.
+- `payment_attempts` / `payment_events` schema 설계.
+- provider + idempotency key, provider + event id unique constraint로 중복 요청/웹훅 중복 처리 방지.
+- 브라우저가 주문을 paid로 바꿀 수 없도록 모든 payment RPC를 service_role only로 설계.
+- `start_payment_attempt()`에서 주문 금액/상품 버전/로그인 사용자 조건을 서버에서 검증.
+- `apply_payment_event()`에서 paid/failed/cancelled/refunded를 기존 order state machine과 연결.
+- 결제 성공 시 entitlement grant 및 issuance enqueue를 같은 DB transaction 경계에서 수행.
+- webhook raw body는 저장하지 않고 SHA-256 fingerprint만 저장하도록 개인정보 최소화.
+- PG adapter TypeScript interface + JSON contract + CI validator 작성.
+
+**막힌 것**
+- 실제 PG 사업자 계정/테스트 키가 없으므로 Toss/PortOne 등 provider-specific API와 webhook signature 검증은 아직 연결하지 않음.
+- Vercel Hobby build-rate-limit으로 Production checkout 연결 테스트는 보류.
+
+**다음 할 일**
+- migration 0007 live 적용 및 provider-neutral runtime test.
+- Security Advisor 재검사.
+- 실제 PG 후보 비교 후 하나를 선정해 sandbox adapter 구현.

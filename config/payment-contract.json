@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "currency": "KRW",
+  "provider": {
+    "selected": null,
+    "allowed_pattern": "^[a-z0-9_-]{2,32}$"
+  },
+  "attempt": {
+    "statuses": ["pending", "paid", "failed", "cancelled", "refunded"],
+    "terminal": ["cancelled", "refunded"]
+  },
+  "events": {
+    "types": ["paid", "failed", "cancelled", "refunded"],
+    "dedupe_key": ["provider", "provider_event_id"],
+    "store_raw_payload": false,
+    "payload_fingerprint": "sha256_lowercase_hex_64"
+  },
+  "idempotency": {
+    "attempt_key": ["provider", "idempotency_key"],
+    "max_key_length": 128
+  },
+  "security": {
+    "browser_can_mark_paid": false,
+    "rpc_role": "service_role",
+    "direct_order_requires_user": true
+  },
+  "paid_side_effects": [
+    "order_paid",
+    "entitlement_grant_if_user",
+    "issuance_enqueue"
+  ]
+}

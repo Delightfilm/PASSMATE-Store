@@ -4,7 +4,7 @@ Last updated: 2026-09-18
 
 ## Current Version
 
-**V2 — 고객 계정 구현 중 (V1/V1.5 실환경 종료 Gate 병행 보류)**
+**V3 — 결제 기반 구현 중 (V1/V1.5/V2 실환경 종료 Gate 병행 보류)**
 
 ## Completed
 
@@ -91,14 +91,33 @@ Last updated: 2026-09-18
 - [ ] 실제 사용자 own-row RLS 검증
 - [ ] Production Vercel에서 Auth flow 검증
 
+## V3 Payment Progress
+
+- [x] PG 독립 Payment Provider contract
+- [x] payment_attempts / payment_events DB schema
+- [x] provider + idempotency key 중복 방지
+- [x] provider event 중복 처리 방지
+- [x] 결제 금액/통화 서버 검증
+- [x] pending → paid/failed/cancelled DB transition 연결
+- [x] paid → refunded DB transition 연결
+- [x] paid 시 entitlement grant + issuance enqueue 경계
+- [x] direct order는 로그인 사용자 필수 규칙
+- [x] raw webhook payload 비저장, SHA-256 fingerprint만 보관
+- [x] Payment RPC service-role only
+- [x] Payment contract CI validator
+- [ ] 실제 PG 선정
+- [ ] 실제 PG adapter 구현
+- [ ] PG sandbox 결제 승인/실패/취소/환불 E2E
+- [ ] 실제 webhook signature 검증
+
 ## Next Priorities
 
-1. V2 Auth UI/코드 build 검증
-2. Vercel Hobby build-rate-limit 해제 후 최신 배포 확인
-3. Supabase Auth Redirect URL production 설정 확인
-4. 실제 회원가입/로그인 + own-row RLS 검증
-5. NAS Worker 실제 Supabase `--once` integration test
-6. Payment Provider contract 설계
+1. V3 migration 0007 적용 + runtime contract 검증
+2. Supabase Security Advisor 재검사
+3. 실제 PG 후보/수수료/개발 난이도 비교 후 provider 선정
+4. Vercel 제한 해제 후 V2/V3 Production UI 검증
+5. 실제 회원가입/로그인 + own-row RLS 검증
+6. NAS Worker 실제 Supabase `--once` integration test
 
 
 ## Blocker
