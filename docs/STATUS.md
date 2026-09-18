@@ -27,6 +27,8 @@ Last updated: 2026-09-18
 - [x] V1 schema/RLS smoke test SQL 준비
 - [x] Storefront catalog JSON 단일 소스화
 - [x] Catalog CI validation 추가
+- [x] Supabase catalog adapter 구현 (env 미설정 시 local fallback)
+- [x] Home / 상품목록 / 상품상세를 catalog adapter에 연결
 - [x] Supabase Setup Runbook 작성
 - [ ] PASSMATE 전용 Supabase organization 생성
 - [ ] PASSMATE 전용 Supabase 프로젝트 생성
