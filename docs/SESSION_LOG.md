@@ -206,3 +206,25 @@
 **다음 할 일**
 - Vercel build 제한 해제 후 production deployment 검증.
 - 이후 Auth-user RLS / NAS Worker real integration test 진행.
+
+## 2026-09-18 — V2 Customer Account Implementation
+
+**한 일**
+- V1/V1.5의 실환경 마지막 Gate는 보류하고 V2 고객 계정 구현 시작.
+- Supabase browser client를 추가하고 이메일/비밀번호 로그인/회원가입 흐름 구현.
+- 회원가입 metadata의 `name`을 기존 auth trigger가 `profiles.display_name`으로 생성하도록 연결.
+- 비밀번호 재설정 요청/변경 페이지 구현.
+- Header 로그인 상태 UI와 내 계정 profile 조회/수정/로그아웃 구현.
+- `내 자료`를 실제 `entitlements` + 상품/버전 metadata 조회 UI로 교체.
+- 구매 후 상품이 비활성화되어도 기존 구매자는 자료 metadata를 볼 수 있도록 V2 RLS migration 작성.
+- browser-safe publishable key만 사용하는지 CI에서 검사하는 Auth guard 추가.
+- 정적 export를 유지해 현재 Vercel 구조를 깨지 않고 Client Auth로 동작하도록 설계.
+
+**막힌 것**
+- 실제 이메일 확인/비밀번호 재설정 redirect는 Supabase Auth URL 설정과 Production 배포 확인이 필요.
+- Vercel Hobby build-rate-limit 때문에 Production Auth 검증은 제한 해제 후 진행.
+
+**다음 할 일**
+- migration 0006 실제 적용 + Supabase Advisor 재검사.
+- GitHub Actions build 확인.
+- 실사용 테스트 회원으로 signup/login/RLS 검증 후 V2 종료 Gate 판단.

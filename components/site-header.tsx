@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PassmateLogo } from "./logo";
+import { AuthNav } from "./auth-nav";
 
 export function SiteHeader() {
   return (
@@ -11,6 +12,7 @@ export function SiteHeader() {
           <Link href="/library">내 자료</Link>
         </nav>
         <Link href="/products/computer-literacy-2" className="nav-cta">첫 상품 보기</Link>
+        <AuthNav />
       </div>
     </header>
   );

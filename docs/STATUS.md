@@ -4,7 +4,7 @@ Last updated: 2026-09-18
 
 ## Current Version
 
-**V1 + V1.5 — Supabase 기반 준비와 주문 상태 머신 병행 구축 중**
+**V2 — 고객 계정 구현 중 (V1/V1.5 실환경 종료 Gate 병행 보류)**
 
 ## Completed
 
@@ -72,13 +72,30 @@ Last updated: 2026-09-18
 - [x] NAS Queue RPC 권한 및 runtime contract 검증
 - [ ] NAS Worker를 실제 Supabase service-role credential로 `--once` integration test
 
+## V2 Customer Account Progress
+
+- [x] Supabase browser Auth client
+- [x] 이메일/비밀번호 로그인
+- [x] 회원가입 + display_name profile 연동
+- [x] 이메일 확인 redirect 처리 기반
+- [x] 비밀번호 재설정 요청/변경 화면
+- [x] 로그인 상태 Header UI
+- [x] 내 계정 profile 조회/이름 수정/로그아웃
+- [x] 내 자료 entitlement 조회 UI
+- [x] 구매 후 비활성 상품도 본인이 metadata를 볼 수 있는 RLS migration
+- [x] Auth public-config CI guard
+- [ ] Supabase Auth Redirect URL production 설정 확인
+- [ ] 실제 테스트 회원 가입/로그인
+- [ ] 실제 사용자 own-row RLS 검증
+- [ ] Production Vercel에서 Auth flow 검증
+
 ## Next Priorities
 
-1. Vercel Hobby build-rate-limit 해제 후 최신 배포 확인
-2. Production deployment 로그에서 Supabase catalog source 확인
-3. 테스트 Auth 사용자 own-row/RLS 검증
-4. NAS Worker 실제 Supabase `--once` integration test
-5. Production storage adapter 설계
+1. V2 Auth UI/코드 CI build 검증
+2. Supabase migration 0006 적용 및 advisor 재검사
+3. Vercel Hobby build-rate-limit 해제 후 최신 배포 확인
+4. 실제 회원가입/로그인 + own-row RLS 검증
+5. NAS Worker 실제 Supabase `--once` integration test
 6. Payment Provider contract 설계
 
 
