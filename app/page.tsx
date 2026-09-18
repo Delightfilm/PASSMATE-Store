@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { PassmateLogo } from "@/components/logo";
-import { products } from "@/lib/products";
+import { getProducts } from "@/lib/products";
 
-export default function Home() {
+export default async function Home() {
+  const products = await getProducts();
   return (
     <>
       <section className="hero section">
