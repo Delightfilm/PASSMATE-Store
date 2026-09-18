@@ -64,6 +64,7 @@ for (const [from, to] of requiredOrderEdges) {
 const requiredFulfillmentEdges = [
   ["not_started", "queued"],
   ["queued", "issuing"],
+  ["issuing", "queued"],
   ["issuing", "ready"],
   ["issuing", "failed"],
   ["failed", "queued"],
