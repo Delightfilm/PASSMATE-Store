@@ -1,30 +1,55 @@
 # PASSMATE NAS Worker
 
-This directory documents the NAS-side execution contract.
+Reference implementation of the PASSMATE outbound NAS Worker.
+
+## What is implemented
+
+- Supabase RPC client using server-only service-role credentials
+- atomic queue claim contract
+- lease/heartbeat ownership
+- typed retry/non-retry failure reporting
+- stale completion rejection handling
+- SHA-256 output verification
+- reference copy processor guarded by an explicit safety flag
+- Docker / docker-compose scaffold
+- Python unit tests and GitHub Actions CI
+
+## What is intentionally not production yet
+
+The current processor does **not** apply final customer PDF transformation, watermarking, or temporary cloud-download upload.
+
+`PASSMATE_ALLOW_REFERENCE_COPY` defaults to `false` so a MASTER PDF cannot accidentally be distributed unchanged.
+
+## Run modes
+
+Config preflight:
+
+```bash
+python -m passmate_worker.main --check-config
+```
+
+One queue item:
+
+```bash
+python -m passmate_worker.main --once
+```
+
+Continuous:
+
+```bash
+python -m passmate_worker.main
+```
 
 ## Security boundary
 
-- NAS is not exposed as a public web server.
-- Worker only makes outbound requests to Supabase/storage.
-- Worker credentials are server-only and never shipped to the browser.
-- Claim payload intentionally excludes customer PII.
-- MASTER directory is read-only to the Worker.
-- Issued/temp directories are writable.
+- NAS exposes no public Worker port.
+- Worker makes outbound calls only.
+- MASTER mount is read-only.
+- service-role key is server-only.
+- queue payload excludes customer PII.
+- lost lease means the Worker must abandon the result.
 
-## Runtime loop
+See:
 
-1. Reap expired jobs that exhausted attempts.
-2. Claim exactly one job using the atomic claim RPC.
-3. Verify local MASTER for `product_code/product_version`.
-4. Heartbeat the lease every 60 seconds.
-5. Produce the requested artifact.
-6. Compute SHA-256.
-7. Upload/store output.
-8. Complete with storage key/hash/size.
-9. On error, report typed failure and let the server decide retry/dead-letter.
-
-## Important rule
-
-If heartbeat/complete reports that the lease is lost, the Worker must abandon that result. Never force-complete a job without the current lease token.
-
-See `docs/NAS_JOB_CONTRACT.md`.
+- `docs/NAS_JOB_CONTRACT.md`
+- `worker/DEPLOY.md`
