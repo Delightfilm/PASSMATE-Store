@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run check:catalog && npm run check:orders && next build",
     "start": "next start",
     "check:catalog": "node scripts/validate-catalog.mjs",
-    "check": "npm run check:catalog && npm run check:orders && npm run build",
+    "check": "npm run check:catalog && npm run check:orders",
     "check:orders": "node scripts/validate-order-state.mjs"
   },
   "dependencies": {
