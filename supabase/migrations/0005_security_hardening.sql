@@ -218,6 +218,14 @@ for delete
 to authenticated
 using ((select private.is_admin()));
 
+drop policy if exists "order_state_events_admin_read" on public.order_state_events;
+
+create policy "order_state_events_admin_read"
+on public.order_state_events
+for select
+to authenticated
+using ((select private.is_admin()));
+
 -- Queue tables are server-only. Keep explicit deny policies for client roles.
 drop policy if exists "issuance_jobs_client_deny" on public.issuance_jobs;
 create policy "issuance_jobs_client_deny"
