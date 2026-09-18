@@ -457,3 +457,22 @@
 - migration 0012 실제 Supabase 적용 + runtime/권한/Security Advisor 검증.
 - GitHub Actions Worker CI 확인.
 - NAS 접근 가능 시 real MASTER → --once → private Storage → ready → signed download E2E.
+
+## 2026-09-18 — V4 Worker Runtime Live Verification
+
+**한 일**
+- `0012_v4_worker_runtime.sql`을 PASSMATE Supabase에 실제 적용.
+- `report_worker_node()` runtime verification 통과: production worker heartbeat row 생성/검증/cleanup.
+- 권한 검사 결과 `report_worker_node()`는 anon/authenticated 실행 불가, service_role만 실행 가능.
+- `worker_nodes` 테이블도 anon/authenticated 직접 SELECT 불가.
+- 적용 후 Supabase Security Advisor **0 findings**.
+- Performance Advisor는 신규 DB 특성의 unused-index INFO만 남음.
+- 로컬 환경의 pypdf 5.9.0으로도 동일 clone/rewrite API를 별도 확인해 2페이지 보존, Producer 변경, MASTER와 byte-different 출력 확인. 배포 pin은 pypdf 6.19.0.
+
+**막힌 것**
+- GitHub connector가 push-triggered Workflow run을 직접 조회하지 못해 Worker Actions의 최종 green 상태는 별도 확인 필요.
+- 실NAS preflight / 실제 MASTER / service-role Worker E2E는 NAS 접근 가능 시 진행.
+
+**다음 할 일**
+- NAS 접근 가능 시 `--check-config` → `master_tool verify` → `--once` 순서로 실환경 Gate 진행.
+- 성공 artifact를 V5 `download-url`까지 이어서 전체 자동 발행/다운로드 E2E 수행.

@@ -152,8 +152,11 @@ Last updated: 2026-09-18
 - [x] Docker non-root/read-only/cap-drop/no-new-privileges hardening
 - [x] pypdf pinned dependency + Worker CI install
 - [x] production wiring/unit tests 작성
-- [ ] migration 0012 live 적용
-- [ ] Worker runtime DB verification
+- [x] migration 0012 live 적용
+- [x] Worker runtime DB verification 통과
+- [x] report_worker_node RPC anon/authenticated 차단 + service_role only 검증
+- [x] worker_nodes client read 차단 검증
+- [x] V4 적용 후 Security Advisor 0 findings
 - [ ] 실제 NAS --check-config
 - [ ] 실제 PM-C2 MASTER manifest verify
 - [ ] 실제 Supabase service-role로 --once
@@ -214,10 +217,10 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. V4 migration 0012 live 적용 + Worker heartbeat runtime 검증
-2. Worker GitHub Actions production wiring tests 확인
-3. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
-4. 실제 service-role Worker --once → Storage → ready → V5 download E2E
+1. Worker GitHub Actions production wiring tests 확인
+2. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
+3. 실제 service-role Worker --once → Storage → ready → V5 download E2E
+4. real NAS lease-loss/reclaim + continuous soak test
 5. PortOne credential 입력 + sandbox payment E2E
 6. 실제 admin 계정 지정 + /admin E2E
 
