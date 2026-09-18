@@ -37,3 +37,4 @@ GitHub `Delightfilm/PASSMATE-Store` -> Vercel 자동 배포를 기준으로 운�
 - [V1 Data Model](docs/V1_DATA_MODEL.md)
 - [Supabase Setup Runbook](docs/SUPABASE_SETUP.md)
 - [Order State Machine](docs/ORDER_STATE_MACHINE.md)
+- [NAS Job Contract](docs/NAS_JOB_CONTRACT.md)
