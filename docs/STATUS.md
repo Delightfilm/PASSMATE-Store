@@ -40,5 +40,10 @@ Last updated: 2026-09-18
 
 ## Blocker
 
-Supabase 새 프로젝트 생성 전, 사용할 organization 확인이 필요함.
-현재 연결 계정에서 확인된 organization: **DF-AUTOSYNC**
+PASSMATE는 DF-AUTOSYNC organization과 분리해서 운영하기로 확정.
+현재 연결된 Supabase 계정에서 확인되는 organization은 **DF-AUTOSYNC** 하나뿐이며, 현재 도구에서는 새 organization 생성 기능을 제공하지 않음.
+
+필요 조치:
+1. Supabase Dashboard에서 PASSMATE 전용 organization 생성
+2. 생성 후 organization이 커넥터에 보이는지 확인
+3. 해당 organization 안에 PASSMATE 프로젝트 생성
