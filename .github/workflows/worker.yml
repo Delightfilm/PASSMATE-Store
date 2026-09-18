@@ -1,0 +1,27 @@
+name: Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker/**"
+      - ".github/workflows/worker.yml"
+  pull_request:
+    paths:
+      - "worker/**"
+      - ".github/workflows/worker.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile worker
+        run: python -m compileall worker/passmate_worker
+      - name: Run worker unit tests
+        env:
+          PYTHONPATH: worker
+        run: python -m unittest discover -s worker/tests -v
