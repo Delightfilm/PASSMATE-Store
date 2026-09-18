@@ -122,6 +122,11 @@ Last updated: 2026-09-18
 - [x] PortOne payment re-fetch 기반 webhook Edge Function
 - [x] provider secret 미설정 시 fail-closed
 - [x] KCP Store ID / Channel Key / API Secret 환경변수 경계 정의
+- [x] migration 0008 실제 적용
+- [x] payment-start Edge Function ACTIVE (JWT required)
+- [x] payment-webhook Edge Function ACTIVE (PortOne API re-fetch 검증)
+- [x] create_direct_checkout RPC service_role only 검증
+- [x] Edge Function 배포 후 Security Advisor 0 findings
 - [ ] PortOne Store ID 입력
 - [ ] KCP Channel Key 입력
 - [ ] PortOne V2 API Secret 입력
@@ -130,10 +135,10 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. migration 0008 live 적용 + Edge Functions deploy
-2. PortOne/KCP credential 없이 가능한 negative-path 검증
+1. PortOne/KCP credential 없이 가능한 Checkout UI shell 준비
+2. 외부에서 가능한 V4/V5 Storage/다운로드 계약 선행 작업
 3. 외부 작업 종료 후 PortOne Store ID / Channel Key / API Secret 입력
-4. Checkout browser SDK 연결
+4. Checkout browser SDK 실연동
 5. Vercel 제한 해제 후 V2/V3 Production UI 검증
 6. sandbox 결제 → paid → entitlement → issuance E2E
 

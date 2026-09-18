@@ -304,3 +304,22 @@
 - migration 0008 실제 적용.
 - payment-start / payment-webhook Edge Function deploy.
 - Security Advisor 및 fail-closed 동작 확인.
+
+## 2026-09-18 — V3.1 Edge Functions Live
+
+**한 일**
+- `0008_v3_direct_checkout.sql`을 PASSMATE Supabase에 실제 적용.
+- `payment-start` Edge Function v1 배포 및 ACTIVE 확인. Supabase JWT 필수.
+- `payment-webhook` Edge Function v1 배포 및 ACTIVE 확인.
+- webhook은 외부 요청 특성상 gateway JWT를 사용하지 않고, PortOne V2 API에서 paymentId를 재조회한 결과만 신뢰하도록 설계.
+- `create_direct_checkout()` 권한 검증: anon/authenticated 실행 불가, service_role만 실행 가능.
+- 배포 후 Supabase Security Advisor **0 findings** 확인.
+- PortOne Store ID / KCP Channel Key가 없으면 주문 생성 전에 중단하고, PortOne API Secret이 없으면 webhook 처리를 중단하는 fail-closed 경계 유지.
+
+**막힌 것**
+- PortOne Store ID / KCP Channel Key / V2 API Secret은 아직 미입력.
+- 실제 카드 결제 sandbox는 PortOne 콘솔 접근 가능 시 진행.
+
+**다음 할 일**
+- credential 없이 가능한 Checkout UI shell 및 V4/V5 Storage/다운로드 계약 선행 작업.
+- 콘솔 접근 가능해지면 PortOne credential 입력 → sandbox E2E.
