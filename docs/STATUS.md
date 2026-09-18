@@ -56,6 +56,13 @@ Last updated: 2026-09-18
 - [x] Multi-item order aggregation 규칙 반영
 - [x] NAS queue SQL smoke test 작성
 - [x] NAS job contract CI validation 추가
+- [x] NAS Worker reference implementation
+- [x] Supabase RPC client
+- [x] lease heartbeat thread
+- [x] guarded reference processor (default disabled)
+- [x] Dockerfile / docker-compose scaffold
+- [x] Python unit tests + Worker CI
+- [x] NAS deployment runbook
 - [ ] PASSMATE Supabase에서 migrations 0003~0004 실제 적용
 - [ ] DB illegal transition 차단 실제 검증
 - [ ] NAS Worker가 fulfillment transition 계약을 사용하도록 연결
@@ -66,8 +73,9 @@ Last updated: 2026-09-18
 2. V1/V1.5 migrations(0001~0003) 실제 적용
 3. order state SQL smoke test 실행
 4. passmate-prod 프로젝트/Storefront 연동 검증
-5. NAS Worker reference loop 구현
-6. Payment Provider contract 설계
+5. NAS Worker 실제 Supabase integration test
+6. Final PDF processor contract 설계
+7. Payment Provider contract 설계
 
 
 ## Blocker
