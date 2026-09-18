@@ -156,8 +156,8 @@ using (id = auth.uid() or public.is_admin());
 create policy "profiles_update_own"
 on public.profiles for update
 to authenticated
-using (id = auth.uid() or public.is_admin())
-with check (id = auth.uid() or public.is_admin());
+using (id = auth.uid())
+with check (id = auth.uid());
 
 create policy "products_public_read_active"
 on public.products for select
@@ -220,3 +220,29 @@ on public.entitlements for all
 to authenticated
 using (public.is_admin())
 with check (public.is_admin());
+
+
+-- Explicit API privileges
+-- Keep customer-visible reads narrow and prevent privilege escalation through profiles.role.
+revoke all on public.profiles from anon, authenticated;
+grant select on public.profiles to authenticated;
+grant update (display_name) on public.profiles to authenticated;
+
+revoke all on public.products from anon, authenticated;
+grant select on public.products to anon, authenticated;
+grant insert, update, delete on public.products to authenticated;
+
+revoke all on public.product_versions from anon, authenticated;
+grant select on public.product_versions to anon, authenticated;
+grant insert, update, delete on public.product_versions to authenticated;
+
+revoke all on public.orders from anon, authenticated;
+grant select, insert, update, delete on public.orders to authenticated;
+
+revoke all on public.order_items from anon, authenticated;
+grant select, insert, update, delete on public.order_items to authenticated;
+
+revoke all on public.entitlements from anon, authenticated;
+grant select, insert, update, delete on public.entitlements to authenticated;
+
+-- role changes are intentionally server-side/service-role only.
