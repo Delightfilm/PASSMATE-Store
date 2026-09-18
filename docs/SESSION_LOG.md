@@ -151,3 +151,17 @@
 **다음 할 일**
 - Supabase organization 연결이 보이면 passmate-prod 생성 → migrations 0001~0004 적용.
 - Worker integration test 후 production storage adapter와 결제 Provider contract 진행.
+
+## 2026-09-18 — PASSMATE Supabase Organization Confirmed
+
+**한 일**
+- 사용자 Supabase Organizations 화면에서 `PASSMATE / Free Plan / 1 project` 생성을 시각적으로 확인.
+- PASSMATE가 DF-AUTOSYNC와 분리된 organization으로 존재하는 상태를 GitHub 진행상황에 반영.
+
+**막힌 것**
+- 현재 ChatGPT에 연결된 Supabase connector는 아직 DF-AUTOSYNC organization만 반환함.
+- 새 PASSMATE organization/project가 connector에 동기화되거나 권한이 갱신되기 전에는 migration 적용 불가.
+
+**다음 할 일**
+- PASSMATE 프로젝트 ref 확인 또는 Supabase connector 재연결 후 프로젝트 접근 확인.
+- 접근 확인 즉시 migrations 0001~0004, seed, RLS/state-machine/NAS queue smoke tests 적용.
