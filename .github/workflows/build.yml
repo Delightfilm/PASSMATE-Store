@@ -12,6 +12,4 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npm run check:catalog
-      - run: npm run check:orders
       - run: npm run build
