@@ -105,6 +105,10 @@ Last updated: 2026-09-18
 - [x] raw webhook payload 비저장, SHA-256 fingerprint만 보관
 - [x] Payment RPC service-role only
 - [x] Payment contract CI validator
+- [x] Supabase migration 0007 실제 적용
+- [x] V3 provider-neutral runtime verification 통과
+- [x] Payment RPC anon/authenticated 차단 + service_role only 검증
+- [x] migration 0007 적용 후 Security Advisor 0 findings
 - [ ] 실제 PG 선정
 - [ ] 실제 PG adapter 구현
 - [ ] PG sandbox 결제 승인/실패/취소/환불 E2E
@@ -112,12 +116,12 @@ Last updated: 2026-09-18
 
 ## Next Priorities
 
-1. V3 migration 0007 적용 + runtime contract 검증
-2. Supabase Security Advisor 재검사
-3. 실제 PG 후보/수수료/개발 난이도 비교 후 provider 선정
-4. Vercel 제한 해제 후 V2/V3 Production UI 검증
-5. 실제 회원가입/로그인 + own-row RLS 검증
-6. NAS Worker 실제 Supabase `--once` integration test
+1. 실제 PG 후보/수수료/개발 난이도 비교 후 provider 선정
+2. 선택한 PG sandbox adapter + webhook signature 검증 구현
+3. Vercel 제한 해제 후 V2/V3 Production UI 검증
+4. 실제 회원가입/로그인 + own-row RLS 검증
+5. NAS Worker 실제 Supabase `--once` integration test
+6. V3 sandbox 결제 → paid → entitlement → issuance E2E
 
 
 ## Blocker

@@ -266,3 +266,21 @@
 - migration 0007 live 적용 및 provider-neutral runtime test.
 - Security Advisor 재검사.
 - 실제 PG 후보 비교 후 하나를 선정해 sandbox adapter 구현.
+
+## 2026-09-18 — V3 Payment Contract Live Verification
+
+**한 일**
+- `0007_v3_payment_contract.sql`을 PASSMATE Supabase에 실제 적용.
+- provider-neutral runtime verification을 실행해 idempotent payment start, paid, duplicate event 무시, refund, failed, retry payment, cancel 흐름 통과.
+- paid event에서 order가 `paid`가 되고 issuance queue가 `queued`로 연결되는 것까지 실제 DB에서 검증.
+- refund event에서 order가 `refunded + revoked`로 전환되는 것 확인.
+- Payment RPC 권한 검사 결과 anon/authenticated는 실행 불가, service_role만 실행 가능.
+- Supabase Security Advisor 재검사 결과 **0 security findings**.
+
+**막힌 것**
+- 실제 PG가 아직 선정되지 않아 sandbox API / webhook signature 검증 / 실결제 UI는 미구현.
+- Vercel Hobby build-rate-limit으로 최신 V2/V3 코드의 Production build는 보류.
+
+**다음 할 일**
+- Toss Payments / PortOne 등 실제 PG 후보를 비교해 1개 선정.
+- 선택 provider의 sandbox adapter와 webhook verifier 구현.
