@@ -20,23 +20,31 @@ Last updated: 2026-09-18
 
 ## V1 Progress
 
-- [x] V1 데이터 모델 초안 확정
-- [x] Supabase migration 파일 작성
+- [x] V1 데이터 모델 확정
+- [x] Supabase core migration 작성
+- [x] RLS/권한 하드닝 반영
+- [x] PM-C2 초기 catalog seed SQL 준비
+- [x] V1 schema/RLS smoke test SQL 준비
+- [x] Storefront catalog JSON 단일 소스화
+- [x] Catalog CI validation 추가
+- [x] Supabase Setup Runbook 작성
+- [ ] PASSMATE 전용 Supabase organization 생성
 - [ ] PASSMATE 전용 Supabase 프로젝트 생성
-- [ ] V1 migration 실제 적용
-- [ ] RLS 정책 검증
-- [ ] 테스트 상품 생성
+- [ ] V1 migrations 실제 적용
+- [ ] RLS 정책 실제 검증
+- [ ] PM-C2 seed 실제 적용
 - [ ] 테스트 사용자 기준 조회 검증
 - [ ] Vercel 환경변수 연결
 - [ ] Storefront에서 Supabase 상품 데이터 조회
 
 ## Next Priorities
 
-1. PASSMATE 전용 Supabase 프로젝트 생성
-2. V1 migration 적용
-3. RLS/테이블 검증
-4. 제품 seed 입력
-5. Storefront Supabase 연결
+1. PASSMATE 전용 Supabase organization 생성
+2. passmate-prod 프로젝트 생성 (Seoul)
+3. V1 migrations + seed 적용
+4. smoke test / RLS 검증
+5. Vercel 환경변수 연결
+6. Storefront Supabase catalog 연결
 
 ## Blocker
 
