@@ -56,23 +56,18 @@ Deno.serve(async (req: Request) => {
 
   const rawBody = await req.text();
 
-  let verifiedWebhook: unknown;
   try {
-    verifiedWebhook = await PortOne.Webhook.verify(
+    await PortOne.Webhook.verify(
       webhookSecret,
       rawBody,
-      req.headers
+      Object.fromEntries(req.headers.entries())
     );
   } catch (error) {
     console.warn("PortOne webhook signature verification failed", error);
     return json(400, { error: "invalid_webhook_signature" });
   }
 
-  if (PortOne.Webhook.isUnrecognizedWebhook(verifiedWebhook)) {
-    return json(200, { result: "ignored_unrecognized_webhook" });
-  }
-
-  const webhook = verifiedWebhook as {
+  let webhook: {
     type?: string;
     timestamp?: string;
     data?: {
@@ -82,6 +77,16 @@ Deno.serve(async (req: Request) => {
       cancellationId?: string;
     };
   };
+
+  try {
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return json(400, { error: "invalid_webhook_body" });
+    }
+    webhook = parsed as typeof webhook;
+  } catch {
+    return json(400, { error: "invalid_webhook_json" });
+  }
 
   const paymentId = webhook.data?.paymentId;
   if (!paymentId) {
