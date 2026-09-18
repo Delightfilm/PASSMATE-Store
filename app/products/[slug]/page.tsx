@@ -3,6 +3,10 @@ import Link from "next/link";
 import { ProductCover } from "@/components/product-cover";
 import { getProduct } from "@/lib/products";
 
+export function generateStaticParams() {
+  return [{ slug: "computer-literacy-2" }];
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = getProduct(slug);
