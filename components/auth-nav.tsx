@@ -11,6 +11,25 @@ export function AuthNav() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const oauthError =
+      search.get("error_description") ||
+      search.get("error") ||
+      hash.get("error_description") ||
+      hash.get("error");
+
+    if (oauthError && !window.location.pathname.startsWith("/account/")) {
+      const loginUrl = new URL("/account/login/", window.location.origin);
+      loginUrl.searchParams.set("next", "/library/");
+      loginUrl.searchParams.set(
+        "oauth_error",
+        /access_denied|cancel/i.test(oauthError) ? "cancelled" : "failed"
+      );
+      window.location.replace(`${loginUrl.pathname}${loginUrl.search}`);
+      return;
+    }
+
     const supabase = getSupabaseBrowserClient();
 
     async function sync(sessionUser: User | null) {

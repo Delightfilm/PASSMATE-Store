@@ -16,6 +16,10 @@ const oauthCallback = fs.readFileSync(
   new URL("../components/oauth-callback.tsx", import.meta.url),
   "utf8"
 );
+const authNav = fs.readFileSync(
+  new URL("../components/auth-nav.tsx", import.meta.url),
+  "utf8"
+);
 
 if (!publicConfig.includes("sb_publishable_")) {
   throw new Error("Auth config must use a Supabase publishable key.");
@@ -26,6 +30,7 @@ for (const [name, source] of [
   ["browser client", browserClient],
   ["auth form", authForm],
   ["OAuth callback", oauthCallback],
+  ["auth nav", authNav],
 ]) {
   const forbiddenPatterns = [
     /SUPABASE_SERVICE_ROLE_KEY/,
@@ -65,8 +70,16 @@ for (const required of [
   }
 }
 
+if (!authForm.includes("skipBrowserRedirect: true") || !authForm.includes("window.location.assign(data.url)")) {
+  throw new Error("OAuth navigation must preserve the current deployment origin explicitly.");
+}
+
 if (!oauthCallback.includes("getSafeNextPath") || !oauthCallback.includes("getSession")) {
   throw new Error("OAuth callback must validate next and restore the Supabase session.");
+}
+
+if (!authNav.includes('search.get("error_description")') || !authNav.includes('"oauth_error"')) {
+  throw new Error("Global auth navigation must recover OAuth errors that fall back to the Site URL.");
 }
 
 console.log("PASSMATE V2 auth public-config guard OK");

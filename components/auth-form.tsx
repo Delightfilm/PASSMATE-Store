@@ -48,11 +48,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
     redirectUrl.searchParams.set("next", nextPath);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: redirectUrl.toString() },
+        options: {
+          redirectTo: redirectUrl.toString(),
+          skipBrowserRedirect: true,
+        },
       });
       if (error) throw error;
+      if (!data.url) throw new Error("OAuth 로그인 주소를 만들지 못했습니다.");
+      window.location.assign(data.url);
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);
       setMessage({ kind: "error", text: getAuthErrorMessage(text) });
