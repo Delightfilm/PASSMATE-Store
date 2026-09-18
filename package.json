@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check:catalog": "node scripts/validate-catalog.mjs",
+    "check": "npm run check:catalog && npm run build"
   },
   "dependencies": {
     "next": "15.5.24",
