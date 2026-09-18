@@ -387,3 +387,26 @@
 **다음 할 일**
 - NAS 접근 전에는 V7 Admin 선행 또는 V4 production Worker wiring을 계속 진행 가능.
 - NAS 접근 가능 시 SupabaseArtifactStore upload → complete job → ready → download-url 전체 E2E.
+
+## 2026-09-18 — V7 Admin Console Foundation
+
+**한 일**
+- 외부에서 진행 가능한 V7 관리자 콘솔 선행작업 시작.
+- 관리자 권한을 UI 표시만으로 판단하지 않고 Browser role 확인 → Edge Function role 재확인 → DB admin actor 재확인의 3중 경계로 설계.
+- 운영 Summary, 최근 주문, 발행 Job, 상품/버전 현황 조회 RPC 작성.
+- \`retry_wait\`은 즉시 재시도 가능하게 하고, \`dead_letter\`는 기존 이력을 보존한 채 generation +1의 새 queued job을 만드는 안전한 재발행 방식으로 구현.
+- generation 재발행 때문에 과거 dead-letter가 주문을 영구 failed로 고정하지 않도록 fulfillment aggregate를 artifact별 최신 generation 기준으로 변경.
+- 구매 당시 버전이 이후 archived되어도 generation > 1 재발행은 가능하도록 issuance validation 보강. 최초 generation은 계속 published만 허용.
+- \`admin_action_events\` audit 추가.
+- \`/admin/\` 운영 UI, \`admin-data\`, \`admin-action\` Edge Function 작성.
+- PG 실제 환불 버튼은 provider refund 성공 이전에 DB만 바뀌는 위험을 막기 위해 의도적으로 미구현.
+- 상품 publish/가격 변경 mutation도 Release Gate를 우회할 수 있어 1차 V7에서는 조회만 제공.
+
+**막힌 것**
+- 현재 PASSMATE Auth user가 없어 실제 admin/customer 계정 권한 E2E는 아직 불가.
+- NAS가 없어 실제 dead-letter fixture 기반 재발행 E2E는 이후 진행.
+
+**다음 할 일**
+- migration 0010 live 적용.
+- admin-data / admin-action Edge Function 배포.
+- Security Advisor 및 service-role-only privilege 검증.

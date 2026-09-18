@@ -1,6 +1,6 @@
 {
   "name": "passmate-store",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,10 +10,11 @@
     "check:orders": "node scripts/validate-order-state.mjs",
     "check:jobs": "node scripts/validate-issuance-job-contract.mjs",
     "check:auth": "node scripts/validate-auth-config.mjs",
-    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs && npm run check:auth && npm run check:payments && npm run check:checkout && npm run check:downloads",
+    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs && npm run check:auth && npm run check:payments && npm run check:checkout && npm run check:downloads && npm run check:admin",
     "check:payments": "node scripts/validate-payment-contract.mjs",
     "check:checkout": "node scripts/validate-checkout-shell.mjs",
-    "check:downloads": "node scripts/validate-download-contract.mjs"
+    "check:downloads": "node scripts/validate-download-contract.mjs",
+    "check:admin": "node scripts/validate-admin-contract.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",

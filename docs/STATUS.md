@@ -4,7 +4,7 @@ Last updated: 2026-09-18
 
 ## Current Version
 
-**V3 — 결제 기반 구현 중 (V1/V1.5/V2 실환경 종료 Gate 병행 보류)**
+**V7 — 관리자 콘솔 선행 구현 중 (V1~V5 실환경 종료 Gate 병행 보류)**
 
 ## Completed
 
@@ -158,15 +158,36 @@ Last updated: 2026-09-18
 - [ ] 실제 NAS PDF upload → signed download E2E
 - [ ] 환불 후 download 재발급 차단 E2E
 
+## V7 Admin Console Progress
+
+- [x] admin role 3중 검증: UI / Edge / DB actor
+- [x] 운영 Summary RPC
+- [x] 최근 주문 Admin 조회
+- [x] 발행 Job Admin 조회
+- [x] 상품/버전 현황 Admin 조회
+- [x] retry_wait 즉시 재시도
+- [x] dead_letter 새 generation 재발행
+- [x] latest-generation 기준 fulfillment aggregate
+- [x] archived 구매버전 admin reissue 허용
+- [x] admin action audit schema
+- [x] /admin UI shell
+- [x] admin-data / admin-action Edge Function
+- [x] V7 CI contract validator
+- [ ] migration 0010 live 적용
+- [ ] Admin Edge Functions live deploy
+- [ ] 실제 admin 계정 접근 E2E
+- [ ] 실제 dead-letter retry E2E
+- [ ] PG 실제 환불 Admin action
+- [ ] 상품/버전 mutation Admin action
+
 ## Next Priorities
 
-1. V5 실제 NAS PDF upload → signed download E2E
-2. 환불 후 새 다운로드 링크 발급 차단 E2E
-3. Checkout shell build/Production 검증은 Vercel 제한 해제 후 수행
-3. 외부 작업 종료 후 PortOne Store ID / Channel Key / API Secret 입력
-4. Checkout browser SDK 실연동
-5. Vercel 제한 해제 후 V2/V3 Production UI 검증
-6. sandbox 결제 → paid → entitlement → issuance E2E
+1. V7 migration 0010 live 적용 + Admin Edge Functions deploy
+2. Security Advisor / RPC permission 검증
+3. 외부 작업 종료 후 실제 admin 계정 지정 + /admin E2E
+4. V5 실제 NAS PDF upload → signed download E2E
+5. PortOne credential 입력 + sandbox payment E2E
+6. Vercel 제한 해제 후 V2/V3/V7 Production UI 검증
 
 
 ## Blocker
