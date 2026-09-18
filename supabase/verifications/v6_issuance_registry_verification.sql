@@ -58,7 +58,7 @@ begin
   )
   values (
     'paid',
-    'queued',
+    'issuing',
     'test',
     100,
     'KRW'
