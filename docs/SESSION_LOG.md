@@ -111,3 +111,24 @@
 **다음 할 일**
 - NAS Worker reference loop와 RPC 호출 순서를 코드 수준으로 고정.
 - 이후 Payment Provider contract를 설계해 `paid -> enqueue` 경계를 확정.
+
+## 2026-09-18 — NAS Worker Reference Implementation
+
+**한 일**
+- Supabase RPC 기반 NAS Worker Python reference implementation 작성.
+- `claim -> heartbeat -> process -> hash -> complete/fail` 실행 루프 구현.
+- lease 상실 또는 completion 거절 시 결과물을 폐기하도록 stale-result 방어 추가.
+- MASTER 경로 segment 검증으로 path traversal 방지.
+- ReferenceCopyProcessor는 실판매용이 아니며 `PASSMATE_ALLOW_REFERENCE_COPY=false`가 기본값이 되도록 안전장치 추가.
+- Dockerfile / docker-compose / env example / NAS 배포 Runbook 추가.
+- Python compile + unittest GitHub Actions Workflow 추가.
+- config/model/processor/worker 단위 테스트 추가.
+
+**막힌 것**
+- 실제 Supabase RPC integration은 PASSMATE 전용 Supabase 프로젝트 생성 전까지 실행 불가.
+- 최종 고객 PDF 변환 및 임시 다운로드 Storage는 아직 reference processor 밖의 후속 작업.
+
+**다음 할 일**
+- Worker CI 검증 완료 확인.
+- Supabase 생성 후 migrations 0001~0004 적용 및 `--once` integration test.
+- Final PDF Processor Contract와 Storage Adapter 경계를 설계.
