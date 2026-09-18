@@ -1,0 +1,3 @@
+"""PASSMATE NAS Worker reference implementation."""
+
+__version__ = "0.1.0"
