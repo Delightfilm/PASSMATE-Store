@@ -14,3 +14,17 @@
 **다음 할 일**
 - organization 확인 후 PASSMATE Supabase 프로젝트 생성.
 - V1 migration 적용 → RLS 검증 → 테스트 상품 입력 → Storefront 연결.
+
+## 2026-09-18 — V1 Supabase Organization Decision
+
+**한 일**
+- PASSMATE Supabase 환경을 DF-AUTOSYNC와 분리하기로 확정.
+- 현재 연결 계정의 organization 목록 재확인.
+
+**막힌 것**
+- 연결된 계정에는 현재 DF-AUTOSYNC organization만 존재.
+- 현재 Supabase 도구에는 organization 생성 기능이 없어 Dashboard에서 1회 생성 필요.
+
+**다음 할 일**
+- PASSMATE 전용 organization 생성 확인.
+- 새 organization에 PASSMATE 프로젝트 생성 → V1 migration 적용 → RLS 검증.
