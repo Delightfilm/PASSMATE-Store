@@ -589,3 +589,29 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - GitHub Build CI 최종 green 확인.
 - PortOne credential + webhook secret 설정 및 sandbox E2E.
 - 이어서 Admin direct DML/hard-delete P1 제거.
+
+## 2026-09-18 — Remaining P1 hardening
+
+**한 일**
+- Admin direct DML P1 live 적용: authenticated 관리자에게 남아 있던 products/product_versions/orders/order_items/entitlements의 INSERT/UPDATE/DELETE 정책과 권한 제거.
+- commercial/payment/issuance/audit 14개 핵심 테이블에 runtime DELETE/TRUNCATE 차단 trigger를 적용하고 service_role DELETE/TRUNCATE 권한도 제거.
+- live verification 결과 legacy admin mutation policy 0개, hard-delete guard 28개 trigger, fixture cleanup 0건. Security Advisor 0 findings.
+- Storefront catalog를 fail-closed로 변경. Supabase 오류/비정상 payload/active product 0건에서 로컬 catalog가 자동으로 판매상품을 부활시키지 않으며, 명시적 `PASSMATE_ALLOW_LOCAL_CATALOG_FALLBACK=true`만 개발 escape hatch로 허용.
+- static product slug 생성도 local JSON이 아니라 authoritative catalog source를 사용하도록 변경.
+- MASTER registration을 immutable로 변경. 이미 `master.pdf` 또는 `manifest.json`이 있는 product/version은 init overwrite를 거부하며 변경된 PDF는 새 version을 요구. Worker regression test 추가.
+- Supabase modern API key migration: Edge Function 6개를 pinned `@supabase/server@1.7.0` context로 전환하여 legacy `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY` 참조 제거.
+- live Edge 재배포: payment-start v4, payment-sync v2, payment-webhook v4, download-url v2, admin-data v3, admin-action v3 모두 ACTIVE.
+- NAS Worker는 `SUPABASE_SECRET_KEY=sb_secret_...`를 우선 사용하고 modern secret에는 `apikey`만 전송하도록 변경. production mode에서 legacy service_role key 사용을 거부하도록 Gate 추가.
+- modern-key CI guard 추가. Worker CI green, catalog/MASTER 변경 Build+Worker CI green.
+- 현재 Vercel 계정을 직접 조회한 결과 PASSMATE 프로젝트는 없고 `led-stage-editor`만 존재함을 확인.
+
+**막힌 것**
+- NAS의 실제 `worker/.env`에는 아직 modern PASSMATE secret을 직접 넣지 않았음. Secret 값은 채팅/Git에 노출하지 않고 Dashboard에서 확인해 NAS에 직접 입력해야 함.
+- PortOne Store/KCP/API/Webhook secret 및 sandbox E2E는 외부 연동 Gate로 남음.
+- Vercel에 PASSMATE 프로젝트가 현재 연결되어 있지 않아 production deployment/env 검증 불가.
+- MASTER 실제 PDF가 아직 없어 NAS 발행 E2E는 대기.
+
+**다음 할 일**
+- Vercel PASSMATE 프로젝트 Import/연결.
+- PortOne + Auth sandbox E2E.
+- NAS PASSMATE URL + modern secret 교체 후 MASTER verify → production --once.

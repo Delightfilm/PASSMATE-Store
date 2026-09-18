@@ -348,3 +348,15 @@ Remaining operational gate:
 - run authenticated sandbox success/failure/cancel/refund E2E, including browser redirect and signed webhook delivery.
 
 The historical P1 findings above remain for traceability.
+
+## Remaining P1 Resolution — 2026-09-18
+
+The remaining repository-review P1 code findings are now addressed.
+
+1. **Authenticated admin direct DML removed:** browser-authenticated admins no longer have direct INSERT/UPDATE/DELETE paths for catalog/order/entitlement records. Mutations must use audited service-side RPC/Edge paths. Live privilege/policy verification passed.
+2. **Hard-delete blocked:** service-role DELETE/TRUNCATE privileges were revoked from commercial/payment/issuance/audit records and runtime API DELETE/TRUNCATE triggers reject destructive request contexts. Migration/maintenance SQL outside request context remains available for deliberate fixture cleanup. Live verification passed.
+3. **Modern Supabase keys:** all six Edge Functions now use pinned `@supabase/server@1.7.0` and no longer read legacy anon/service-role environment variables. The live functions were redeployed successfully. The NAS Worker supports `sb_secret_...` via `apikey` only and refuses legacy service-role credentials in production mode.
+4. **Catalog fail-closed:** runtime catalog failures and zero active products no longer fall back to local sale inventory by default. The local JSON escape hatch is explicit and off by default.
+5. **Immutable MASTER registration:** the same product/version directory cannot be initialized twice; changed bytes require a new product version. Regression tests preserve the original PDF and manifest after a rejected overwrite.
+
+Remaining operational tasks are not repository P1 fixes: provision the modern secret on the NAS without exposing it in Git/chat, reconnect the missing Vercel PASSMATE project, and complete real Auth/PortOne/NAS end-to-end testing.

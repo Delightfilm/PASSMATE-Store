@@ -140,7 +140,7 @@ Last updated: 2026-09-18
 - [x] P1-2: authenticated `payment-sync` Edge Function 추가, browser completion에서 PortOne authoritative re-fetch
 - [x] P1-2 sync/webhook race가 `already_applied`로 수렴하는 DB verification 통과
 - [x] P1-3: Standard Webhooks HMAC signature + Store ID + KRW + authoritative amount 검증
-- [x] `payment-start` v3 / `payment-sync` v1 / `payment-webhook` v3 ACTIVE
+- [x] `payment-start` v4 / `payment-sync` v2 / `payment-webhook` v4 ACTIVE
 - [x] Payment P1 적용 후 Supabase Security Advisor 0 findings
 - [ ] `PORTONE_STORE_ID` / KCP Channel Key / API Secret / Webhook Secret 실제 값 최종 확인
 - [ ] PortOne webhook URL 등록 + signed sandbox webhook 수신 확인
@@ -212,7 +212,7 @@ Last updated: 2026-09-18
 - [x] migration 0013 live 적용
 - [x] V6 runtime registry verification 통과
 - [x] succeeded → active / new generation → superseded / refund → revoked 검증
-- [x] admin-data / admin-action Edge Functions v2 ACTIVE
+- [x] admin-data / admin-action Edge Functions v3 ACTIVE (modern Supabase server context)
 - [x] V6 Admin RPC anon/authenticated 차단 + service_role only 검증
 - [x] Registry/Event table client read 차단 검증
 - [x] Performance Advisor FK covering indexes 보완 (0014)
@@ -236,8 +236,8 @@ Last updated: 2026-09-18
 - [x] admin-data / admin-action Edge Function
 - [x] V7 CI contract validator
 - [x] migration 0010 live 적용
-- [x] admin-data Edge Function ACTIVE (JWT required)
-- [x] admin-action Edge Function ACTIVE (JWT required)
+- [x] admin-data Edge Function v3 ACTIVE (JWT required, modern Supabase server context)
+- [x] admin-action Edge Function v3 ACTIVE (JWT required, modern Supabase server context)
 - [x] Admin RPC anon/authenticated 차단 + service_role only 검증
 - [x] admin_action_events client read 차단 검증
 - [x] non-admin DB actor rejection runtime verification
@@ -272,20 +272,21 @@ Live Supabase 확인:
 - [x] end-to-end payment idempotency — replay는 기존 order/attempt/paymentId 반환, concurrent create advisory lock 적용
 - [x] browser completion → server payment reconciliation — authenticated `payment-sync`가 PortOne 재조회 후 DB event 적용
 - [x] PortOne webhook signature + currency/store 검증 — Standard Webhooks 검증 + authoritative re-fetch + Store/KRW/amount gate
-- [ ] authenticated admin direct DML 제거 및 hard-delete 차단
-- [ ] Supabase legacy service_role/anon → secret/publishable key migration
-- [ ] production catalog fallback fail-closed
-- [ ] MASTER version immutable registration
+- [x] authenticated admin direct DML 제거 및 hard-delete 차단 — live migration/verification 통과
+- [x] Supabase Edge/Worker code를 modern publishable/secret key 모델로 전환 — Edge 6개 live 재배포, Worker production은 legacy key 거부
+- [x] production catalog fallback fail-closed — DB 0 active/error 시 local catalog 자동 부활 금지
+- [x] MASTER version immutable registration — 기존 product/version의 master.pdf/manifest overwrite 거부
+- [ ] NAS 실제 환경의 legacy service_role 값을 PASSMATE `SUPABASE_SECRET_KEY`로 교체
 
 결론: 코드리뷰 P0 3건은 코드·회귀 테스트·live Supabase 검증까지 닫혔다. 판매 오픈 전 실제 NAS/PortOne/Auth E2E와 결제/관리 P1을 이어서 닫는다.
 
 ## Next Priorities
 
-1. PortOne 실제 환경변수/웹훅 시크릿 확인 → webhook URL 등록 → sandbox 결제/취소/환불 + 실제 Auth 계정 E2E
-2. Admin P1: authenticated direct DML 제거 + 금융/발행 기록 hard-delete 차단
-3. Supabase P1: legacy service_role/anon 의존을 modern secret/publishable key로 단계적 전환
-4. Storefront production catalog fail-closed + MASTER version immutable registration
-5. MASTER PDF 준비 후 NAS를 올바른 PASSMATE project ref로 재검증 → production `--once` → download/integrity E2E
+1. Vercel에 `PASSMATE-Store` 프로젝트를 다시 Import/연결하고 production env 구성
+2. PortOne 실제 환경변수/웹훅 시크릿 확인 → webhook URL 등록 → sandbox 결제/취소/환불 + 실제 Auth 계정 E2E
+3. NAS `worker/.env`를 PASSMATE ref `fmecqeadghrdisirucqm` + modern `SUPABASE_SECRET_KEY`로 교체
+4. MASTER PDF 등록/verify → production `--once` → Storage/Registry/download/integrity E2E
+5. P2 dependency lock/CSP/least-privilege 후 public sale gate 재검토
 
 
 ## Blocker
@@ -293,9 +294,8 @@ Live Supabase 확인:
 Supabase 프로젝트는 project ref로 직접 접근 가능해져 DB 작업 blocker는 해소됨.
 
 현재 남은 외부 연동 blocker:
-- Vercel connector에서는 아직 `passmate-store` 프로젝트가 404로 조회되어 환경변수 자동 입력 불가
-- browser-safe Supabase URL/publishable key fallback을 코드에 연결해 이 blocker는 우회했으나, 최신 Vercel 배포는 Hobby build-rate-limit으로 지연/실패 상태
+- 현재 연결된 Vercel 계정/팀을 직접 조회하면 프로젝트 목록에는 `led-stage-editor`만 있고 `passmate-store`/PASSMATE 프로젝트가 없음. 따라서 PASSMATE production deployment/env 자동 설정은 아직 불가
 - PortOne sandbox E2E는 Store ID / KCP Channel Key / API Secret / Webhook Secret 실제 설정과 PortOne webhook URL 등록이 필요
-- NAS 실제 integration test는 MASTER PDF가 필요하며, 다음 실행 전 `worker/.env`의 Supabase URL을 PASSMATE project ref `fmecqeadghrdisirucqm`로 맞추고 같은 프로젝트의 server key를 사용해야 함
+- NAS 실제 integration test는 MASTER PDF가 필요하며, 다음 실행 전 `worker/.env`의 Supabase URL을 PASSMATE project ref `fmecqeadghrdisirucqm`로 맞추고 같은 프로젝트의 modern `SUPABASE_SECRET_KEY`를 사용해야 함. production mode는 legacy service_role key를 코드에서 거부함
 
 참고: 현재 PASSMATE Supabase 프로젝트 region은 **ap-northeast-1 (Tokyo)** 이다. 기존 계획의 Seoul(ap-northeast-2)과 다르므로 region 변경이 필요하면 별도 프로젝트 migration으로 처리해야 한다.
