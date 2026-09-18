@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run check:catalog && npm run check:orders && next build",
+    "build": "npm run check:catalog && npm run check:orders && npm run check:jobs && next build",
     "start": "next start",
     "check:catalog": "node scripts/validate-catalog.mjs",
-    "check": "npm run check:catalog && npm run check:orders",
-    "check:orders": "node scripts/validate-order-state.mjs"
+    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs",
+    "check:orders": "node scripts/validate-order-state.mjs",
+    "check:jobs": "node scripts/validate-issuance-job-contract.mjs"
   },
   "dependencies": {
     "next": "15.5.24",
