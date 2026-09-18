@@ -38,3 +38,4 @@ GitHub `Delightfilm/PASSMATE-Store` -> Vercel 자동 배포를 기준으로 운�
 - [Supabase Setup Runbook](docs/SUPABASE_SETUP.md)
 - [Order State Machine](docs/ORDER_STATE_MACHINE.md)
 - [NAS Job Contract](docs/NAS_JOB_CONTRACT.md)
+- [PDF Processor Contract](docs/PDF_PROCESSOR_CONTRACT.md)
