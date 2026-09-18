@@ -63,10 +63,12 @@ const paymentStart = fs.readFileSync(
   new URL("../supabase/functions/payment-start/index.ts", import.meta.url),
   "utf8"
 );
-const paymentSync = fs.readFileSync(
-  new URL("../supabase/functions/payment-sync/index.ts", import.meta.url),
-  "utf8"
-);
+const paymentSync = fs
+  .readFileSync(
+    new URL("../supabase/functions/payment-sync/index.ts", import.meta.url),
+    "utf8"
+  )
+  .replaceAll("\r\n", "\n");
 const paymentWebhook = fs.readFileSync(
   new URL("../supabase/functions/payment-webhook/index.ts", import.meta.url),
   "utf8"

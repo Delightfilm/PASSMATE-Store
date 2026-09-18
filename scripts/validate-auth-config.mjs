@@ -8,6 +8,14 @@ const browserClient = fs.readFileSync(
   new URL("../lib/supabase-browser.ts", import.meta.url),
   "utf8"
 );
+const authForm = fs.readFileSync(
+  new URL("../components/auth-form.tsx", import.meta.url),
+  "utf8"
+);
+const oauthCallback = fs.readFileSync(
+  new URL("../components/oauth-callback.tsx", import.meta.url),
+  "utf8"
+);
 
 if (!publicConfig.includes("sb_publishable_")) {
   throw new Error("Auth config must use a Supabase publishable key.");
@@ -16,6 +24,8 @@ if (!publicConfig.includes("sb_publishable_")) {
 for (const [name, source] of [
   ["public config", publicConfig],
   ["browser client", browserClient],
+  ["auth form", authForm],
+  ["OAuth callback", oauthCallback],
 ]) {
   const forbiddenPatterns = [
     /SUPABASE_SERVICE_ROLE_KEY/,
@@ -36,11 +46,27 @@ for (const route of [
   "../app/account/signup/page.tsx",
   "../app/account/forgot-password/page.tsx",
   "../app/account/reset-password/page.tsx",
+  "../app/account/oauth-callback/page.tsx",
   "../app/library/page.tsx",
 ]) {
   if (!fs.existsSync(new URL(route, import.meta.url))) {
     throw new Error(`Missing V2 auth route: ${route}`);
   }
+}
+
+for (const required of [
+  'signInWithOAuth("google")',
+  'signInWithOAuth("kakao")',
+  "signInWithOAuth",
+  "/account/oauth-callback/",
+]) {
+  if (!authForm.includes(required)) {
+    throw new Error(`Missing SNS auth integration: ${required}`);
+  }
+}
+
+if (!oauthCallback.includes("getSafeNextPath") || !oauthCallback.includes("getSession")) {
+  throw new Error("OAuth callback must validate next and restore the Supabase session.");
 }
 
 console.log("PASSMATE V2 auth public-config guard OK");

@@ -7,6 +7,7 @@ import { getAuthErrorMessage, getSafeNextPath } from "@/lib/auth-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type Mode = "login" | "signup" | "forgot" | "reset";
+type OAuthProvider = "google" | "kakao";
 
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
@@ -16,11 +17,18 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [nextPath, setNextPath] = useState("/library/");
   const [busy, setBusy] = useState(false);
+  const [oauthBusy, setOAuthBusy] = useState<OAuthProvider | null>(null);
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNextPath(getSafeNextPath(params.get("next")));
+
+    if (params.get("oauth_error") === "cancelled") {
+      setMessage({ kind: "error", text: "SNS 로그인이 취소되었습니다. 다시 시도해주세요." });
+    } else if (params.get("oauth_error") === "failed") {
+      setMessage({ kind: "error", text: "SNS 로그인을 완료하지 못했습니다. 잠시 후 다시 시도해주세요." });
+    }
 
     if (mode === "login" && params.get("confirmed") === "1") {
       const supabase = getSupabaseBrowserClient();
@@ -29,6 +37,28 @@ export function AuthForm({ mode }: { mode: Mode }) {
       });
     }
   }, [mode, router]);
+
+  async function signInWithOAuth(provider: OAuthProvider) {
+    if (busy || oauthBusy) return;
+
+    setMessage(null);
+    setOAuthBusy(provider);
+    const supabase = getSupabaseBrowserClient();
+    const redirectUrl = new URL("/account/oauth-callback/", window.location.origin);
+    redirectUrl.searchParams.set("next", nextPath);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: redirectUrl.toString() },
+      });
+      if (error) throw error;
+    } catch (error) {
+      const text = error instanceof Error ? error.message : String(error);
+      setMessage({ kind: "error", text: getAuthErrorMessage(text) });
+      setOAuthBusy(null);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,15 +89,17 @@ export function AuthForm({ mode }: { mode: Mode }) {
           return;
         }
 
-        const emailRedirectTo = `${window.location.origin}/account/login/?confirmed=1`;
+        const emailRedirectUrl = new URL("/account/login/", window.location.origin);
+        emailRedirectUrl.searchParams.set("confirmed", "1");
+        emailRedirectUrl.searchParams.set("next", nextPath);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { name: displayName.trim() }, emailRedirectTo },
+          options: { data: { name: displayName.trim() }, emailRedirectTo: emailRedirectUrl.toString() },
         });
         if (error) throw error;
         if (data.session) {
-          router.replace("/library/");
+          router.replace(nextPath);
           return;
         }
         setMessage({ kind: "success", text: "가입 요청이 완료되었습니다. 이메일 인증 메일이 도착했다면 인증 후 로그인해주세요." });
@@ -111,6 +143,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
     reset: { eyebrow: "NEW PASSWORD", title: "새 비밀번호 설정", lead: "새로 사용할 비밀번호를 입력해주세요.", submit: "비밀번호 변경" },
   };
   const copy = titles[mode];
+  const supportsOAuth = mode === "login" || mode === "signup";
+  const isBusy = busy || oauthBusy !== null;
+  const nextQuery = `?next=${encodeURIComponent(nextPath)}`;
 
   return (
     <div className="account-shell">
@@ -118,18 +153,33 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <h1 className="page-title">{copy.title}</h1>
       <p className="page-lead">{copy.lead}</p>
       <div className="auth-card">
+        {supportsOAuth && (
+          <>
+            <div className="auth-social" aria-label="SNS 로그인">
+              <button className="auth-social-button auth-social-button--google" type="button" onClick={() => signInWithOAuth("google")} disabled={isBusy}>
+                <span className="auth-social-icon auth-social-icon--google" aria-hidden="true">G</span>
+                {oauthBusy === "google" ? "Google 연결 중..." : "Google로 계속하기"}
+              </button>
+              <button className="auth-social-button auth-social-button--kakao" type="button" onClick={() => signInWithOAuth("kakao")} disabled={isBusy}>
+                <span className="auth-social-icon auth-social-icon--kakao" aria-hidden="true">●</span>
+                {oauthBusy === "kakao" ? "카카오 연결 중..." : "카카오로 계속하기"}
+              </button>
+            </div>
+            <div className="auth-divider"><span>또는</span></div>
+          </>
+        )}
         <form className="auth-form" onSubmit={submit}>
           {mode === "signup" && <div className="auth-field"><label htmlFor="display-name">이름</label><input id="display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} autoComplete="name" required /></div>}
           {mode !== "reset" && <div className="auth-field"><label htmlFor="email">이메일</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></div>}
           {(mode === "login" || mode === "signup" || mode === "reset") && <div className="auth-field"><label htmlFor="password">{mode === "reset" ? "새 비밀번호" : "비밀번호"}</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={8} required /></div>}
           {(mode === "signup" || mode === "reset") && <div className="auth-field"><label htmlFor="password-confirm">비밀번호 확인</label><input id="password-confirm" type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} autoComplete="new-password" minLength={8} required /></div>}
-          <button className="button button-primary button-wide auth-submit" type="submit" disabled={busy}>{busy ? "처리 중..." : copy.submit}</button>
+          <button className="button button-primary button-wide auth-submit" type="submit" disabled={isBusy}>{busy ? "처리 중..." : copy.submit}</button>
         </form>
         {message && <p className={`auth-message auth-message--${message.kind}`} role="status">{message.text}</p>}
         {mode === "login" ? (
-          <div className="auth-links"><Link href="/account/signup/">회원가입</Link><Link href="/account/forgot-password/">비밀번호 찾기</Link></div>
+          <div className="auth-links"><Link href={`/account/signup/${nextQuery}`}>회원가입</Link><Link href="/account/forgot-password/">비밀번호 찾기</Link></div>
         ) : (
-          <div className="auth-links"><Link href="/account/login/">로그인으로 돌아가기</Link></div>
+          <div className="auth-links"><Link href={`/account/login/${nextQuery}`}>로그인으로 돌아가기</Link></div>
         )}
       </div>
     </div>
