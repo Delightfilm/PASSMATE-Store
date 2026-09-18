@@ -34,3 +34,5 @@ GitHub `Delightfilm/PASSMATE-Store` -> Vercel 자동 배포를 기준으로 운�
 - [Current Status](docs/STATUS.md)
 - [Session Log](docs/SESSION_LOG.md)
 - [V1 Supabase migration](supabase/migrations/0001_v1_core.sql)
+- [V1 Data Model](docs/V1_DATA_MODEL.md)
+- [Supabase Setup Runbook](docs/SUPABASE_SETUP.md)
