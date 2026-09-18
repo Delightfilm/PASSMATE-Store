@@ -240,14 +240,34 @@ Last updated: 2026-09-18
 - [ ] PG 실제 환불 Admin action
 - [ ] 상품/버전 mutation Admin action
 
+## Full Code Review — 2026-09-18
+
+Repository + live Supabase 전면 검토 완료. 상세: `docs/CODE_REVIEW_2026-09-18.md`.
+
+출시 차단(P0):
+- [ ] stale Worker가 다른 Worker가 성공시킨 동일 Storage object를 삭제할 수 있는 lease-loss race
+- [ ] 동일 상품 재구매/환불 시 기존 정상 구매 entitlement까지 잃을 수 있는 grant 모델
+- [ ] Checkout의 하드코딩 가격/상품과 서버 실제 결제금액이 달라질 수 있는 표시-청구 불일치
+
+우선(P1):
+- [ ] end-to-end payment idempotency
+- [ ] browser completion → server payment reconciliation
+- [ ] PortOne webhook signature + currency/store 검증
+- [ ] authenticated admin direct DML 제거 및 hard-delete 차단
+- [ ] Supabase legacy service_role/anon → secret/publishable key migration
+- [ ] production catalog fallback fail-closed
+- [ ] MASTER version immutable registration
+
+결론: V1~V7 기반은 견고하지만, V8 판매 오픈 전 P0와 결제/관리 P1을 먼저 닫는다.
+
 ## Next Priorities
 
-1. 외부 작업 종료 후 NAS --check-config + PM-C2 MASTER manifest verify
-2. 실제 Worker --once → V6 artifact registry → V5 signed download E2E
-3. 실제 admin 계정 지정 후 private artifact 무결성 확인 E2E
-4. real NAS lease-loss/reclaim + continuous soak test
-5. PortOne credential 입력 + sandbox payment E2E
-6. Vercel 제한 해제 후 V2/V3/V6/V7 Production UI 검증
+1. Code Review P0-1: stale Worker Storage delete race 수정 + concurrency regression test
+2. Code Review P0-2: entitlement/duplicate purchase/refund 모델 수정
+3. Code Review P0-3: Checkout server-authoritative 상품/금액 확인 UI
+4. Payment P1: idempotency + completion reconciliation + webhook hardening
+5. Admin/Supabase P1: direct DML/hard-delete 제한 + modern secret key migration
+6. 이후 실제 NAS/PortOne/Auth E2E Gate 진행
 
 
 ## Blocker

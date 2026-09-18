@@ -522,3 +522,28 @@
 **다음 할 일**
 - NAS 접근 가능 시 V4 실제 `--once` 발행으로 V6 Registry 실데이터 생성.
 - 같은 artifact를 Admin 무결성 확인 → V5 고객 다운로드까지 한 번에 E2E.
+
+## 2026-09-18 — Full Repository / Live DB Code Review
+
+**한 일**
+- Next storefront/Auth/Checkout/Library/Admin, Supabase migrations 0001~0014, Edge Functions, NAS Worker, Storage, tests/CI를 전면 검토.
+- live Supabase의 function/table privileges와 RLS policy를 직접 재점검. Security Advisor는 0 findings 유지.
+- 현재 공식 Next/Supabase/PortOne/pypdf 문서와 구현 가정을 교차 확인.
+- V8 출시 전 막아야 할 P0 3건 발견:
+  1. stale Worker discard가 재claim Worker가 성공시킨 동일 Storage key를 삭제할 수 있는 race.
+  2. entitlement unique(user, product) + paid upsert 때문에 재구매 후 최신 주문 환불 시 과거 정상 구매 권한도 revoke될 수 있음.
+  3. Checkout UI는 PM-C2/6,900원을 하드코딩하지만 실제 charge amount/product는 live DB에서 오므로 가격/상품 표시와 청구가 달라질 수 있음.
+- P1로 payment idempotency, browser payment reconciliation, webhook signature/currency/store validation, admin direct DML/hard-delete, Supabase legacy server key migration, catalog fail-closed, MASTER immutability를 식별.
+- 상세 보고서를 `docs/CODE_REVIEW_2026-09-18.md`에 기록.
+
+**확인된 강점**
+- 서비스 RPC 권한 분리, customer RLS, profile role escalation 방지, private Storage/signed URL, order/fulfillment state machine, queue lease/retry/dead-letter, V6 lifecycle은 전반적으로 잘 방어됨.
+- Next 15.5.24와 pypdf 6.19.0은 현재 확인한 보안 패치 수준에 맞음.
+
+**막힌 것**
+- 최신 main Vercel status는 여전히 Hobby build-rate-limit failure라 Production build 결과는 Vercel로 확인 불가.
+- 실제 Auth/NAS/PortOne credential E2E는 외부 접근 제약 때문에 별도 Gate로 남음.
+
+**다음 할 일**
+- 새 기능 추가보다 P0 3건을 먼저 수정.
+- P0 이후 payment/admin P1을 정리한 뒤 실환경 E2E 진행.
