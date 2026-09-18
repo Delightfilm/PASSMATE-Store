@@ -1,0 +1,18 @@
+services:
+  passmate-worker:
+    build:
+      context: ..
+      dockerfile: worker/Dockerfile
+    container_name: passmate-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PASSMATE_MASTER_ROOT: /data/master
+      PASSMATE_WORK_ROOT: /data/work
+      PASSMATE_OUTPUT_ROOT: /data/output
+    volumes:
+      - ${PASSMATE_NAS_MASTER_PATH:?set PASSMATE_NAS_MASTER_PATH}:/data/master:ro
+      - ${PASSMATE_NAS_WORK_PATH:?set PASSMATE_NAS_WORK_PATH}:/data/work
+      - ${PASSMATE_NAS_OUTPUT_PATH:?set PASSMATE_NAS_OUTPUT_PATH}:/data/output
+    stop_grace_period: 30s
