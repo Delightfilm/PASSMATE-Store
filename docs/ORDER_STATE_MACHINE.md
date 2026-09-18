@@ -64,6 +64,7 @@ stateDiagram-v2
     not_started --> queued
     queued --> issuing
     issuing --> ready
+    issuing --> queued: 다른 항목이 대기 중
 
     queued --> failed
     issuing --> failed
@@ -86,6 +87,12 @@ stateDiagram-v2
 | `ready` | 고객 자료 준비 완료 |
 | `failed` | 발행 실패, 재시도 가능 |
 | `revoked` | 환불 등으로 접근 종료 |
+
+---
+
+### Multi-item order
+
+한 주문에 여러 order item이 있을 수 있으므로, 한 job이 끝난 뒤 다른 job이 아직 대기 중이면 order-level fulfillment는 `issuing -> queued`로 돌아갈 수 있다. 이 전이는 재시도가 아니라 **남은 항목 대기 상태의 집계 결과**다.
 
 ---
 
