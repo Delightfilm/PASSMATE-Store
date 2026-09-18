@@ -4,7 +4,7 @@ Last updated: 2026-09-18
 
 ## Current Version
 
-**V1 — 회원·상품·주문 DB 기반 구축 중**
+**V1 + V1.5 — Supabase 기반 준비와 주문 상태 머신 병행 구축 중**
 
 ## Completed
 
@@ -39,14 +39,29 @@ Last updated: 2026-09-18
 - [ ] Vercel 환경변수 연결
 - [ ] Storefront에서 Supabase 상품 데이터 조회
 
+## V1.5 Order State Machine Progress
+
+- [x] 주문/결제 상태와 자료 발행 상태 분리
+- [x] Order transition contract 작성
+- [x] Fulfillment transition contract 작성
+- [x] TypeScript 상태/라벨 helper 작성
+- [x] state_version optimistic concurrency 규칙 추가
+- [x] order_state_events audit trail 설계
+- [x] DB transition enforcement migration 작성
+- [x] SQL state-machine smoke test 작성
+- [x] CI contract validation 추가
+- [ ] PASSMATE Supabase에서 migration 실제 적용
+- [ ] DB illegal transition 차단 실제 검증
+- [ ] NAS Worker가 fulfillment transition 계약을 사용하도록 연결
+
 ## Next Priorities
 
 1. PASSMATE 전용 Supabase organization 생성
-2. passmate-prod 프로젝트 생성 (Seoul)
-3. V1 migrations + seed 적용
-4. smoke test / RLS 검증
-5. Vercel 환경변수 연결
-6. Storefront Supabase catalog 연결
+2. V1/V1.5 migrations(0001~0003) 실제 적용
+3. order state SQL smoke test 실행
+4. passmate-prod 프로젝트/Storefront 연동 검증
+5. NAS Worker job contract 설계
+
 
 ## Blocker
 
