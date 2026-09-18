@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "bucket": "passmate-artifacts",
+  "bucket_public": false,
+  "allowed_mime_types": ["application/pdf"],
+  "max_file_size_bytes": 52428800,
+  "signed_url_ttl_seconds": 60,
+  "browser_direct_storage_read": false,
+  "download_requires": [
+    "authenticated_user",
+    "active_entitlement",
+    "paid_source_order",
+    "ready_fulfillment",
+    "succeeded_issuance_job"
+  ],
+  "permanent_url_persisted": false,
+  "raw_signed_url_logged": false,
+  "artifact_source": "issuance_jobs.result_storage_key"
+}

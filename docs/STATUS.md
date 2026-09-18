@@ -136,10 +136,28 @@ Last updated: 2026-09-18
 - [x] Checkout CI guard
 - [ ] sandbox 결제 E2E
 
+## V5 Private Storage & Download Progress
+
+- [x] private artifact bucket contract
+- [x] 60초 signed URL contract
+- [x] active entitlement + paid/ready order + succeeded job download gate
+- [x] download event audit schema
+- [x] download-url Edge Function
+- [x] 내 자료 Download button UI
+- [x] permanent public URL 비저장 규칙
+- [x] NAS SupabaseArtifactStore adapter
+- [x] immutable key + retry hash verification
+- [x] V5 CI contract validator
+- [ ] migration 0009 live 적용
+- [ ] download-url Edge Function live deploy
+- [ ] 실제 NAS PDF upload → signed download E2E
+- [ ] 환불 후 download 재발급 차단 E2E
+
 ## Next Priorities
 
-1. 외부에서 가능한 V4/V5 Storage/다운로드 계약 선행 작업
-2. Checkout shell build/Production 검증은 Vercel 제한 해제 후 수행
+1. V5 migration 0009 실제 적용 + download-url Edge Function deploy
+2. Storage bucket privacy / RPC permission / Security Advisor 검증
+3. Checkout shell build/Production 검증은 Vercel 제한 해제 후 수행
 3. 외부 작업 종료 후 PortOne Store ID / Channel Key / API Secret 입력
 4. Checkout browser SDK 실연동
 5. Vercel 제한 해제 후 V2/V3 Production UI 검증

@@ -345,3 +345,25 @@
 **다음 할 일**
 - V4/V5 private Storage + 다운로드 계약 선행 작업.
 - 콘솔 접근 가능 시 PortOne credential 주입 후 sandbox E2E.
+
+## 2026-09-18 — V5 Private Storage & Auto Download Prework
+
+**한 일**
+- 발행본 전용 private Supabase Storage bucket \`passmate-artifacts\` 계약 작성.
+- PDF MIME only / 50 MiB limit / public=false 규칙 고정.
+- 영구 public URL을 저장하지 않고 60초 signed URL만 서버에서 발급하는 다운로드 계약 작성.
+- \`resolve_download_artifact()\` service-role RPC 설계: 로그인 사용자, active entitlement, paid source order, ready fulfillment, succeeded issuance job을 모두 확인해야 storage key를 반환.
+- signed URL 발급 사실만 기록하는 \`download_events\` audit schema 추가. signed URL 원문은 저장하지 않음.
+- JWT 기반 \`download-url\` Edge Function 구현.
+- 내 자료 화면에 \`자료 준비 중 / 다운로드 가능 / PDF 다운로드\` 상태 및 버튼 추가.
+- NAS용 \`SupabaseArtifactStore\` 구현: private bucket upload, immutable key, 재시도 시 기존 object SHA-256 검증, stale discard delete.
+- V5 contract JSON + CI validator + Worker storage unit test 추가.
+
+**막힌 것**
+- 실제 NAS PDF 업로드 E2E는 NAS 접근 가능 시 수행.
+- 현재 DB에는 실제 구매 Auth user/ready issuance artifact가 없어 고객 signed download 전체 E2E는 이후 진행.
+
+**다음 할 일**
+- migration 0009 실제 적용.
+- download-url Edge Function deploy.
+- bucket privacy / RPC privilege / Security Advisor 검증.

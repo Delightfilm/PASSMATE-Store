@@ -83,3 +83,14 @@ NAS Worker는 고객에게 직접 URL을 제공하지 않는다.
 - `worker/passmate_worker/final_processor.py`
 - `worker/passmate_worker/storage.py`
 - `worker/tests/test_final_processor.py`
+
+
+## Production private Storage adapter
+
+V5 선행작업에서 \`SupabaseArtifactStore\`가 추가되었다.
+
+- bucket: \`passmate-artifacts\` (private)
+- NAS Worker의 service-role credential만 사용
+- object key는 기존 PII-free \`issued/...pdf\` 규칙 유지
+- public URL을 생성하거나 DB에 저장하지 않음
+- 고객 다운로드 URL 생성은 Worker가 아니라 \`download-url\` Edge Function 책임
