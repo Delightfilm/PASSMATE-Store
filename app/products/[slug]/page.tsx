@@ -12,10 +12,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProduct(slug);
   if (!product) notFound();
 
+  const isStageSoundCore = product.code === "PM-SS3-CORE";
+  const packageFeatures = isStageSoundCore
+    ? product.features.slice(0, 3)
+    : product.features.slice(0, 4);
+
   return (
     <section className="section page-section product-detail">
       <div className="container product-detail-grid">
-        <div className="product-cover-wrap"><ProductCover /></div>
+        <div className="product-cover-wrap">
+          <ProductCover
+            theme={isStageSoundCore ? "light" : "dark"}
+            year={product.year}
+            titleLines={isStageSoundCore ? ["무대음향", "3급"] : ["컴퓨터활용능력", "2급"]}
+            label="핵심요약 NOTE"
+            subtitle={isStageSoundCore ? "기출 기반 핵심 개념 · 공식 · 숫자 · 함정" : "필기 + 실기 + 벼락치기"}
+            series={isStageSoundCore ? "STAGE SOUND" : "CORE 01"}
+          />
+        </div>
         <div className="product-info">
           <span className="pill">PASSMATE CORE 01</span>
           <h1>{product.year}<br/>{product.title}</h1>
@@ -27,11 +41,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p className="fine-print">※ 현재는 기반 구축 단계이며 실제 결제는 아직 연결하지 않았습니다.</p>
         </div>
       </div>
-      <div className="container detail-band">
-        <div><b>CORE</b><span>20~30P 핵심요약</span></div>
-        <div><b>CRAM</b><span>약 10P 벼락치기</span></div>
-        <div><b>SHEET</b><span>함수·개념 치트시트</span></div>
-        <div><b>CHECK</b><span>실수방지 체크리스트</span></div>
+      <div className="container detail-band detail-band--dynamic">
+        {packageFeatures.map((feature) => {
+          const [first, ...rest] = feature.split(" ");
+          const hasCode = ["CORE", "SHEET", "CHECK", "PASS"].includes(first);
+          return (
+            <div key={feature}>
+              <b>{hasCode ? first : "INCLUDED"}</b>
+              <span>{hasCode ? rest.join(" ") : feature}</span>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
