@@ -10,6 +10,9 @@ const cartClient = read("../components/cart-client.tsx");
 const checkout = read("../components/checkout-client.tsx");
 const paymentStart = read("../supabase/functions/payment-start/index.ts");
 const migration = read("../supabase/migrations/20260919063638_cart_checkout.sql");
+const catalogNormalization = read(
+  "../supabase/migrations/20260919124500_normalize_stage_sound_core_slug.sql"
+);
 
 if (
   cart.includes("PACKAGE_PRICES") ||
@@ -71,6 +74,16 @@ if (
   !paymentStart.includes("amountKrw: row.amount_krw")
 ) {
   throw new Error("Multi-item checkout must remain server-authoritative.");
+}
+
+for (const required of [
+  "code = 'PM-SS3-CORE'",
+  "slug = 'stage-sound-level-3'",
+  "PM-SS3-CORE slug normalization failed",
+]) {
+  if (!catalogNormalization.includes(required)) {
+    throw new Error("Stage sound cart slug normalization missing: " + required);
+  }
 }
 
 console.log("PASSMATE cart + dynamic pricing contract OK");
