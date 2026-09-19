@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -105,10 +105,6 @@ function shortId(value: string): string {
   return value.slice(0, 8);
 }
 
-function shortInternalRef(value: string): string {
-  return value.replace("IA-", "").slice(0, 10).toUpperCase();
-}
-
 function statusLabel(value: string | null): string {
   const labels: Record<string, string> = {
     pending: "주문 대기",
@@ -118,9 +114,9 @@ function statusLabel(value: string | null): string {
     cancelled: "취소",
     refunded: "환불",
     not_started: "준비 전",
-    queued: "대기열",
-    issuing: "처리 중",
-    ready: "완료",
+    queued: "발행 대기",
+    issuing: "발행 중",
+    ready: "자료 완료",
     revoked: "회수",
     leased: "작업 중",
     retry_wait: "재시도 대기",
@@ -132,6 +128,9 @@ function statusLabel(value: string | null): string {
     verified: "정상",
     mismatch: "불일치",
     unavailable: "확인 불가",
+    draft: "초안",
+    published: "게시됨",
+    archived: "보관됨",
   };
   return value ? labels[value] ?? value : "-";
 }
@@ -147,6 +146,11 @@ export function AdminClient() {
   const [error, setError] = useState("");
   const [busyJob, setBusyJob] = useState<string | null>(null);
   const [busyArtifact, setBusyArtifact] = useState<string | null>(null);
+
+  const activeProducts = useMemo(
+    () => catalog.filter((product) => product.is_active).length,
+    [catalog]
+  );
 
   async function token(): Promise<string | null> {
     const supabase = getSupabaseBrowserClient();
@@ -288,239 +292,250 @@ export function AdminClient() {
   }
 
   if (access === "loading") {
-    return <p className="admin-loading">관리자 권한을 확인하고 있습니다...</p>;
+    return <p className="admin-loading">관리자 계정을 확인하고 있습니다...</p>;
   }
 
   if (access === "denied") {
     return (
       <div className="admin-denied">
-        <strong>접근 권한이 없습니다.</strong>
-        <p>관리자 계정으로 로그인해주세요.</p>
+        <strong>관리자 전용 페이지입니다.</strong>
+        <p>지정된 카카오 관리자 계정으로 로그인해주세요.</p>
+        <Link className="button button-primary" href="/account/login/?next=/admin/">
+          관리자 로그인
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="admin-console">
-      <div className="admin-toolbar">
-        <span>운영 데이터</span>
-        <button type="button" onClick={refresh}>새로고침</button>
+    <div className="admin-console admin-dashboard">
+      <div className="admin-dashboard-head">
+        <div>
+          <span className="eyebrow">PASSMATE ADMIN</span>
+          <h2>운영 대시보드</h2>
+          <p>상품, 주문, 자료 발행 상태를 여기서 한 번에 확인합니다.</p>
+        </div>
+        <button className="button button-ghost" type="button" onClick={refresh}>
+          새로고침
+        </button>
       </div>
 
       {error && (
         <p className="auth-message auth-message--error">{error}</p>
       )}
 
-      <div className="admin-metrics">
-        <Metric label="전체 주문" value={summary?.orders_total ?? 0} />
-        <Metric label="결제 완료" value={summary?.orders_paid ?? 0} />
-        <Metric label="자료 완료" value={summary?.orders_ready ?? 0} />
-        <Metric label="현재 발행본" value={summary?.artifacts_active ?? 0} />
-        <Metric
-          label="발행 확인 필요"
-          value={summary?.artifacts_integrity_attention ?? 0}
-          alert
-        />
-        <Metric
-          label="수동 확인"
-          value={summary?.jobs_dead_letter ?? 0}
-          alert
-        />
-      </div>
-
-      <AdminSection title="최근 주문">
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>주문</th>
-                <th>상품</th>
-                <th>결제</th>
-                <th>자료</th>
-                <th>금액</th>
-                <th>일시</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.order_id}>
-                  <td><code>{shortId(order.order_id)}</code></td>
-                  <td>{order.product_summary}</td>
-                  <td>{statusLabel(order.status)}</td>
-                  <td>{statusLabel(order.fulfillment_status)}</td>
-                  <td>{order.total_amount_krw.toLocaleString("ko-KR")}원</td>
-                  <td>{new Date(order.created_at).toLocaleString("ko-KR")}</td>
-                </tr>
-              ))}
-              {orders.length === 0 && (
-                <tr><td colSpan={6}>주문이 없습니다.</td></tr>
-              )}
-            </tbody>
-          </table>
+      <section className="admin-quick-actions">
+        <h3>빠른 작업</h3>
+        <div className="admin-quick-grid">
+          <Link className="admin-quick-card admin-quick-card--primary" href="/admin/products/PM-SS3-CORE/preview/">
+            <b>무대음향 테스트 상품</b>
+            <span>지금 만든 5,900원 핵심요약 패키지 미리보기</span>
+          </Link>
+          <a className="admin-quick-card" href="#catalog">
+            <b>상품 관리</b>
+            <span>가격 · 공개상태 · 버전 확인</span>
+          </a>
+          <a className="admin-quick-card" href="#orders">
+            <b>주문 확인</b>
+            <span>결제와 자료 준비 상태 확인</span>
+          </a>
+          <a className="admin-quick-card" href="#jobs">
+            <b>발행 상태</b>
+            <span>PDF 작업 대기 · 실패 · 재시도 확인</span>
+          </a>
+          <Link className="admin-quick-card" href="/library/">
+            <b>내 자료 테스트</b>
+            <span>고객에게 보이는 Library 화면 확인</span>
+          </Link>
+          <Link className="admin-quick-card" href="/products/">
+            <b>스토어 보기</b>
+            <span>현재 고객에게 공개된 상품 확인</span>
+          </Link>
         </div>
-      </AdminSection>
+      </section>
 
-      <AdminSection title="발행 작업">
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>작업</th>
-                <th>상품</th>
-                <th>상태</th>
-                <th>세대</th>
-                <th>시도</th>
-                <th>오류</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((job) => {
-                const canRetry =
-                  job.status === "dead_letter" ||
-                  job.status === "retry_wait";
-                return (
-                  <tr key={job.job_id}>
-                    <td><code>{shortId(job.job_id)}</code></td>
-                    <td>{job.product_code} · {job.product_version}</td>
-                    <td>{statusLabel(job.status)}</td>
-                    <td>G{job.generation}</td>
-                    <td>{job.attempt_count}/{job.max_attempts}</td>
-                    <td>{job.last_error_code ?? "-"}</td>
-                    <td>
-                      {canRetry && (
-                        <button
-                          className="admin-mini-button"
-                          type="button"
-                          onClick={() => retryJob(job.job_id)}
-                          disabled={busyJob === job.job_id}
-                        >
-                          {busyJob === job.job_id ? "처리 중" : "재시도"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {jobs.length === 0 && (
-                <tr><td colSpan={7}>발행 작업이 없습니다.</td></tr>
-              )}
-            </tbody>
-          </table>
+      <section className="admin-overview">
+        <DashboardMetric label="전체 상품" value={catalog.length} note="등록된 상품" />
+        <DashboardMetric label="판매중" value={activeProducts} note="고객에게 공개" />
+        <DashboardMetric label="전체 주문" value={summary?.orders_total ?? 0} note="누적" />
+        <DashboardMetric label="결제 완료" value={summary?.orders_paid ?? 0} note="paid" />
+        <DashboardMetric label="자료 완료" value={summary?.orders_ready ?? 0} note="다운로드 가능" />
+        <DashboardMetric label="오늘 다운로드" value={summary?.downloads_today ?? 0} note="오늘 발급" />
+      </section>
+
+      <section className="admin-dashboard-section" id="catalog">
+        <div className="admin-section-title">
+          <div>
+            <span className="eyebrow">PRODUCTS</span>
+            <h3>상품</h3>
+          </div>
+          <span>{catalog.length}개 등록</span>
         </div>
-      </AdminSection>
 
-      <AdminSection title="발행 기록">
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>내부 참조</th>
-                <th>상품</th>
-                <th>세대</th>
-                <th>수명주기</th>
-                <th>무결성</th>
-                <th>SHA-256</th>
-                <th>크기</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {artifacts.map((artifact) => (
-                <tr key={artifact.artifact_id}>
-                  <td><code>{shortInternalRef(artifact.internal_ref)}</code></td>
-                  <td>{artifact.product_code} · {artifact.product_version}</td>
-                  <td>G{artifact.generation}</td>
-                  <td>{statusLabel(artifact.lifecycle_status)}</td>
-                  <td className={
-                    artifact.integrity_status === "mismatch" ||
-                    artifact.integrity_status === "unavailable"
-                      ? "admin-integrity-attention"
-                      : ""
-                  }>
-                    {statusLabel(artifact.integrity_status)}
-                  </td>
-                  <td><code>{artifact.sha256.slice(0, 12)}</code></td>
-                  <td>{artifact.size_bytes.toLocaleString("ko-KR")} B</td>
-                  <td>
+        <div className="admin-product-grid">
+          {catalog.map((product) => (
+            <article className="admin-product-card" key={product.product_id}>
+              <div className="admin-product-card-top">
+                <span>{product.code}</span>
+                <span className={product.is_active ? "admin-state admin-state--on" : "admin-state"}>
+                  {product.is_active ? "판매중" : "비공개"}
+                </span>
+              </div>
+              <h4>{product.title}</h4>
+              <strong>{product.price_krw.toLocaleString("ko-KR")}원</strong>
+              <p>
+                최신 버전 {product.latest_version ?? "-"} ·{" "}
+                {statusLabel(product.latest_version_status)}
+              </p>
+              <div className="admin-card-actions">
+                <Link
+                  className="button button-primary"
+                  href={`/admin/products/${encodeURIComponent(product.code)}/preview/`}
+                >
+                  미리보기
+                </Link>
+              </div>
+            </article>
+          ))}
+          {catalog.length === 0 && <p className="admin-empty">등록된 상품이 없습니다.</p>}
+        </div>
+      </section>
+
+      <section className="admin-dashboard-section" id="orders">
+        <div className="admin-section-title">
+          <div>
+            <span className="eyebrow">ORDERS</span>
+            <h3>최근 주문</h3>
+          </div>
+          <span>최근 {Math.min(orders.length, 10)}건</span>
+        </div>
+
+        <div className="admin-simple-list">
+          {orders.slice(0, 10).map((order) => (
+            <div className="admin-simple-row" key={order.order_id}>
+              <div>
+                <strong>{order.product_summary}</strong>
+                <span>{new Date(order.created_at).toLocaleString("ko-KR")}</span>
+              </div>
+              <div className="admin-simple-row-right">
+                <b>{order.total_amount_krw.toLocaleString("ko-KR")}원</b>
+                <span>{statusLabel(order.status)} · {statusLabel(order.fulfillment_status)}</span>
+              </div>
+            </div>
+          ))}
+          {orders.length === 0 && <p className="admin-empty">아직 주문이 없습니다.</p>}
+        </div>
+      </section>
+
+      <section className="admin-dashboard-section" id="jobs">
+        <div className="admin-section-title">
+          <div>
+            <span className="eyebrow">ISSUANCE</span>
+            <h3>자료 발행</h3>
+          </div>
+          <span>
+            대기 {(summary?.jobs_queued ?? 0) + (summary?.jobs_retry_wait ?? 0)} ·
+            확인필요 {summary?.jobs_dead_letter ?? 0}
+          </span>
+        </div>
+
+        <div className="admin-simple-list">
+          {jobs.slice(0, 12).map((job) => {
+            const canRetry = job.status === "dead_letter" || job.status === "retry_wait";
+            return (
+              <div className="admin-simple-row" key={job.job_id}>
+                <div>
+                  <strong>{job.product_code} · {job.product_version}</strong>
+                  <span>작업 {shortId(job.job_id)} · G{job.generation}</span>
+                </div>
+                <div className="admin-simple-row-right">
+                  <b>{statusLabel(job.status)}</b>
+                  {canRetry && (
                     <button
                       className="admin-mini-button"
                       type="button"
-                      onClick={() => verifyArtifact(artifact.artifact_id)}
-                      disabled={busyArtifact === artifact.artifact_id}
+                      onClick={() => retryJob(job.job_id)}
+                      disabled={busyJob === job.job_id}
                     >
-                      {busyArtifact === artifact.artifact_id
-                        ? "확인 중"
-                        : "무결성 확인"}
+                      {busyJob === job.job_id ? "처리 중" : "재시도"}
                     </button>
-                  </td>
-                </tr>
-              ))}
-              {artifacts.length === 0 && (
-                <tr><td colSpan={8}>등록된 발행본이 없습니다.</td></tr>
-              )}
-            </tbody>
-          </table>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {jobs.length === 0 && <p className="admin-empty">진행 중인 발행 작업이 없습니다.</p>}
         </div>
-      </AdminSection>
+      </section>
 
-      <AdminSection title="상품 / 버전">
-        <div className="admin-catalog-grid">
-          {catalog.map((product) => (
-            <article className="admin-catalog-card" key={product.product_id}>
-              <span>{product.code}</span>
-              <strong>{product.title}</strong>
-              <p>
-                {product.price_krw.toLocaleString("ko-KR")}원 ·{" "}
-                {product.is_active ? "판매 표시" : "비활성"}
-              </p>
-              <small>
-                최신 {product.latest_version ?? "-"} ·{" "}
-                {product.latest_version_status ?? "-"} · 총{" "}
-                {product.version_count}개 버전
-              </small>
-              <Link
-                className="admin-preview-link"
-                href={`/admin/products/${encodeURIComponent(product.code)}/preview/`}
-              >
-                상품 미리보기 →
-              </Link>
-            </article>
-          ))}
+      <details className="admin-detail-panel">
+        <summary>고급 운영 정보 보기</summary>
+        <div className="admin-detail-content">
+          <div className="admin-detail-summary">
+            <span>발행본 {summary?.artifacts_active ?? 0}</span>
+            <span>무결성 확인 필요 {summary?.artifacts_integrity_attention ?? 0}</span>
+            <span>결제 실패 {summary?.payment_failures ?? 0}</span>
+            <span>자료 실패 {summary?.orders_fulfillment_failed ?? 0}</span>
+          </div>
+
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>발행본</th>
+                  <th>상품</th>
+                  <th>상태</th>
+                  <th>무결성</th>
+                  <th>크기</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {artifacts.map((artifact) => (
+                  <tr key={artifact.artifact_id}>
+                    <td><code>{shortId(artifact.artifact_id)}</code></td>
+                    <td>{artifact.product_code} · {artifact.product_version}</td>
+                    <td>{statusLabel(artifact.lifecycle_status)}</td>
+                    <td>{statusLabel(artifact.integrity_status)}</td>
+                    <td>{artifact.size_bytes.toLocaleString("ko-KR")} B</td>
+                    <td>
+                      <button
+                        className="admin-mini-button"
+                        type="button"
+                        onClick={() => verifyArtifact(artifact.artifact_id)}
+                        disabled={busyArtifact === artifact.artifact_id}
+                      >
+                        {busyArtifact === artifact.artifact_id ? "확인 중" : "무결성 확인"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {artifacts.length === 0 && (
+                  <tr><td colSpan={6}>등록된 발행본이 없습니다.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </AdminSection>
+      </details>
     </div>
   );
 }
 
-function Metric({
+function DashboardMetric({
   label,
   value,
-  alert = false,
+  note,
 }: {
   label: string;
   value: number;
-  alert?: boolean;
+  note: string;
 }) {
   return (
-    <div className={"admin-metric" + (alert && value > 0 ? " admin-metric--alert" : "")}>
+    <article className="admin-overview-card">
       <span>{label}</span>
       <strong>{value.toLocaleString("ko-KR")}</strong>
-    </div>
-  );
-}
-
-function AdminSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="admin-section">
-      <h2>{title}</h2>
-      {children}
-    </section>
+      <small>{note}</small>
+    </article>
   );
 }
