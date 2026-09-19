@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProductCover } from "@/components/product-cover";
 import { getProduct, getStaticProductSlugs } from "@/lib/products";
+import { ProductPurchaseOptions } from "@/components/product-purchase-options";
 
 export async function generateStaticParams() {
   return await getStaticProductSlugs();
@@ -36,9 +37,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p className="product-subtitle">{product.subtitle}</p>
           <p>{product.description}</p>
           <ul className="check-list">{product.features.map((f) => <li key={f}>✓ {f}</li>)}</ul>
-          <div className="price-row"><strong>{product.price.toLocaleString("ko-KR")}원</strong><span>디지털 PDF</span></div>
-          <Link href={"/checkout/?product=" + product.slug} className="button button-primary button-wide">구매 준비 화면 보기</Link>
-          <p className="fine-print">※ 현재는 기반 구축 단계이며 실제 결제는 아직 연결하지 않았습니다.</p>
+          <div className="price-row"><strong>{product.price.toLocaleString("ko-KR")}원부터</strong><span>디지털 PDF</span></div>
+          <ProductPurchaseOptions slug={product.slug} title={product.title} corePrice={product.price} />
         </div>
       </div>
       <div className="container detail-band detail-band--dynamic">

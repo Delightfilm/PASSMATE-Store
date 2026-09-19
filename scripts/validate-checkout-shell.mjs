@@ -97,7 +97,7 @@ if (/amount|price|orderName|productCode|productVersion|currency/i.test(requestBo
 
 if (
   !paymentStart.includes(
-    'const allowedRequestFields = new Set(["productSlug", "idempotencyKey"])'
+    'const allowedRequestFields = new Set(["productSlug", "productSlugs", "idempotencyKey"])'
   ) ||
   !paymentStart.includes('error: "unexpected_checkout_field"')
 ) {

@@ -83,6 +83,7 @@ export function CheckoutClient() {
   const router = useRouter();
   const checkoutIdempotencyKey = useRef<string | null>(null);
   const [productSlug, setProductSlug] = useState(DEFAULT_PRODUCT);
+  const [productSlugs, setProductSlugs] = useState<string[]>([DEFAULT_PRODUCT]);
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<"idle" | "preparing" | "paying">("idle");
@@ -97,6 +98,7 @@ export function CheckoutClient() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setProductSlug(params.get("product") || DEFAULT_PRODUCT);
+    setProductSlugs((params.get("products") || params.get("product") || DEFAULT_PRODUCT).split(",").filter(Boolean));
 
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getUser().then(({ data }) => {
@@ -154,7 +156,8 @@ export function CheckoutClient() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productSlug,
+          productSlug: productSlugs[0],
+          productSlugs,
           idempotencyKey: checkoutIdempotencyKey.current,
         }),
       });

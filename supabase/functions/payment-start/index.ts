@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const allowedRequestFields = new Set(["productSlug", "idempotencyKey"]);
+const allowedRequestFields = new Set(["productSlug", "productSlugs", "idempotencyKey"]);
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -48,7 +48,10 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "unexpected_checkout_field" });
   }
 
-  if (typeof body.productSlug !== "string" || body.productSlug.length === 0) {
+  const productSlugs = Array.isArray(body.productSlugs)
+    ? body.productSlugs.filter((value): value is string => typeof value === "string" && value.length > 0)
+    : typeof body.productSlug === "string" && body.productSlug.length > 0 ? [body.productSlug] : [];
+  if (productSlugs.length === 0 || productSlugs.length > 20) {
     return json(400, { error: "product_slug_required" });
   }
 
@@ -66,7 +69,8 @@ Deno.serve(async (req: Request) => {
 
   const { data, error } = await admin.rpc("create_direct_checkout", {
     p_user_id: ctx.userClaims.id,
-    p_product_slug: body.productSlug,
+    p_product_slug: productSlugs[0],
+    p_product_slugs: productSlugs,
     p_provider: "portone_kcp",
     p_merchant_order_id: proposedPaymentId,
     p_idempotency_key: idempotencyKey,

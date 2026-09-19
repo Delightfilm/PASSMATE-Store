@@ -1,0 +1,5 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { CartItem, readCart, writeCart } from "@/lib/cart";
+export function CartClient() { const [items, setItems] = useState<CartItem[]>([]); useEffect(() => setItems(readCart()), []); const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0); function update(next: CartItem[]) { setItems(next); writeCart(next); } return <div className="cart-layout"><div>{items.length ? items.map((item) => <div className="cart-item" key={`${item.slug}-${item.packageType}`}><div><b>{item.title}</b><span>{item.packageType === "pass" ? "합격팩" : "핵심요약"}</span></div><strong>{(item.price * item.quantity).toLocaleString("ko-KR")}원</strong><button onClick={() => update(items.filter((entry) => entry !== item))}>삭제</button></div>) : <p className="page-lead">장바구니가 비어 있습니다.</p>}</div><aside className="order-box"><span>장바구니 합계</span><strong>{total.toLocaleString("ko-KR")}원</strong><Link className="button button-primary button-wide" href={items.length ? `/checkout/?products=${encodeURIComponent(items.map((item) => item.slug).join(","))}` : "/products/"}>결제하기</Link></aside></div>; }
