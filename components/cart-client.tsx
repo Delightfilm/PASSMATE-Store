@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CartItem,
   PACKAGE_LABELS,
@@ -12,11 +13,14 @@ import {
   fetchLiveProductPrices,
   LiveProductPriceMap,
 } from "@/lib/live-product-prices";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function CartClient() {
+  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [prices, setPrices] = useState<LiveProductPriceMap>({});
   const [priceLoading, setPriceLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   async function refresh(nextItems = readCart()) {
     setItems(nextItems);
@@ -41,6 +45,18 @@ export function CartClient() {
   }
 
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) {
+        router.replace("/account/login/?next=%2Fcart%2F");
+        return;
+      }
+      setAuthReady(true);
+    });
+  }, [router]);
+
+  useEffect(() => {
+    if (!authReady) return;
     const handleRefresh = () => {
       void refresh();
     };
@@ -55,7 +71,9 @@ export function CartClient() {
       window.removeEventListener("storage", handleRefresh);
       window.removeEventListener("passmate-cart-change", handleRefresh);
     };
-  }, []);
+  }, [authReady]);
+
+  if (!authReady) return <p className="page-lead">계정을 확인하고 있습니다.</p>;
 
   const checkoutReady =
     items.length > 0 &&
