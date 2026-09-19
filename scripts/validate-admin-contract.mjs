@@ -5,10 +5,10 @@ for (const path of [
   "../components/admin-client.tsx",
   "../supabase/functions/admin-data/index.ts",
   "../supabase/functions/admin-action/index.ts",
-  "../supabase/migrations/0010_v7_admin_ops.sql",
-  "../supabase/migrations/20260918143000_admin_p1_dml_hard_delete.sql",
-  "../supabase/migrations/20260919042000_admin_product_data_management.sql",
-  "../supabase/migrations/20260919043500_admin_create_product.sql",
+  "../supabase/migrations/20260918082635_v7_admin_ops.sql",
+  "../supabase/migrations/20260918131010_admin_p1_dml_hard_delete.sql",
+  "../supabase/migrations/20260919024757_admin_product_data_management.sql",
+  "../supabase/migrations/20260919024837_admin_create_product.sql",
   "../app/admin/products/preview/page.tsx",
   "../components/admin-product-preview-query.tsx",
 ]) {
@@ -31,7 +31,7 @@ const actionFunction = fs.readFileSync(
 );
 const adminHardening = fs.readFileSync(
   new URL(
-    "../supabase/migrations/20260918143000_admin_p1_dml_hard_delete.sql",
+    "../supabase/migrations/20260918131010_admin_p1_dml_hard_delete.sql",
     import.meta.url
   ),
   "utf8"

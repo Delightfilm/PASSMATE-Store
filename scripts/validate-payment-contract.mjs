@@ -47,14 +47,14 @@ for (const required of [
 
 const idempotencyMigration = fs.readFileSync(
   new URL(
-    "../supabase/migrations/20260918130000_payment_p1_idempotent_checkout.sql",
+    "../supabase/migrations/20260918125429_payment_p1_idempotent_checkout.sql",
     import.meta.url
   ),
   "utf8"
 );
 const reconciliationMigration = fs.readFileSync(
   new URL(
-    "../supabase/migrations/20260918131500_payment_p1_reconciliation.sql",
+    "../supabase/migrations/20260918125922_payment_p1_reconciliation.sql",
     import.meta.url
   ),
   "utf8"

@@ -64,7 +64,7 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 
 **paid 결제가 실제 DB에 기록되기 전에는 V3 완료로 표시하지 않는다.**
 
-### B. Cart / Package Selection — GitHub branch 정리 완료
+### B. Cart / Package Selection — GitHub/live 반영 완료
 
 `feature/cart-v1-locked-skus`에서 다음 기준으로 정리했다.
 
@@ -75,8 +75,8 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 - 같은 자격증의 CORE/PASS는 장바구니에서 수량 증가가 아니라 선택 교체
 - 서로 다른 자격증은 multi-item checkout 가능
 - idempotency replay는 동일 cart SKU set일 때만 허용
-- `20260919100000_cart_checkout.sql`과 branch `payment-start`는 아직 live Supabase에 적용하지 않음
-- main merge / Supabase 반영 / Vercel Production은 최종 검증 후 한 번에 진행
+- `cart_checkout` migration과 CORE/PASS 2-SKU가 live Supabase에 반영됨
+- `payment-start` 실결제 E2E는 Payment 항목에서 별도로 검증
 
 ### C. NAS
 

@@ -18,6 +18,7 @@
 - 2026-09-19 Work 변경: 장바구니 + 패키지 선택 UI가 main에 반영됨
 - 해당 main commit의 Vercel status는 **success**
 - 관리자 Workspace V2, static-export-safe 상품 Preview, 상품 create/edit 코드 반영
+- Supabase Preview용 local/live migration history 35/35 정합화
 - 불필요한 Vercel 반복 배포는 중단하고 변경을 묶어서 진행
 
 ### Product / Supabase Catalog

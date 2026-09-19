@@ -175,7 +175,7 @@
 - V1 read-only smoke test 통과.
 - Connector가 일반 SQL write를 read-only transaction으로 실행하는 제약 때문에 runtime 검증을 별도 verification migration으로 수행.
 - 주문 상태머신 + issuance queue runtime verification 통과: unpaid enqueue 차단, paid transition, idempotent enqueue, lease/heartbeat, retry, stale completion 차단, refund invariant 검증.
-- Supabase Security Advisor 실행 후 발견된 SECURITY DEFINER RPC 노출, mutable search_path, RLS policy 중복/성능 문제를 `0005_security_hardening.sql`로 수정.
+- Supabase Security Advisor 실행 후 발견된 SECURITY DEFINER RPC 노출, mutable search_path, RLS policy 중복/성능 문제를 `20260918064544_security_hardening.sql`로 수정.
 - `private.is_admin()` helper로 admin check를 API 노출 schema에서 분리하고 Worker RPC는 service_role only로 제한.
 - client roles의 issuance queue 접근을 explicit deny policy로 고정.
 - FK covering indexes 추가 및 RLS auth.uid initplan 개선.
@@ -232,7 +232,7 @@
 ## 2026-09-18 — V2 RLS Applied & Auth Guard Fix
 
 **한 일**
-- `0006_v2_customer_account_rls.sql`을 PASSMATE Supabase에 실제 적용.
+- `20260918070526_v2_customer_account_rls.sql`을 PASSMATE Supabase에 실제 적용.
 - 적용 후 Supabase Security Advisor 재검사 결과 **0 findings** 확인.
 - V2 첫 배포 시 Auth CI guard가 공개 설정 파일의 설명 주석 `service-role` 문자열까지 secret으로 오탐하는 문제 발견.
 - 실제 secret pattern만 검사하도록 guard를 수정해 설명 주석은 허용하고 `SUPABASE_SERVICE_ROLE_KEY`/service-role JWT 흔적만 차단하도록 보정.
@@ -270,7 +270,7 @@
 ## 2026-09-18 — V3 Payment Contract Live Verification
 
 **한 일**
-- `0007_v3_payment_contract.sql`을 PASSMATE Supabase에 실제 적용.
+- `20260918073544_v3_payment_contract.sql`을 PASSMATE Supabase에 실제 적용.
 - provider-neutral runtime verification을 실행해 idempotent payment start, paid, duplicate event 무시, refund, failed, retry payment, cancel 흐름 통과.
 - paid event에서 order가 `paid`가 되고 issuance queue가 `queued`로 연결되는 것까지 실제 DB에서 검증.
 - refund event에서 order가 `refunded + revoked`로 전환되는 것 확인.
@@ -308,7 +308,7 @@
 ## 2026-09-18 — V3.1 Edge Functions Live
 
 **한 일**
-- `0008_v3_direct_checkout.sql`을 PASSMATE Supabase에 실제 적용.
+- `20260918080428_v3_direct_checkout.sql`을 PASSMATE Supabase에 실제 적용.
 - `payment-start` Edge Function v1 배포 및 ACTIVE 확인. Supabase JWT 필수.
 - `payment-webhook` Edge Function v1 배포 및 ACTIVE 확인.
 - webhook은 외부 요청 특성상 gateway JWT를 사용하지 않고, PortOne V2 API에서 paymentId를 재조회한 결과만 신뢰하도록 설계.
@@ -371,7 +371,7 @@
 ## 2026-09-18 — V5 Private Storage Live Foundation
 
 **한 일**
-- \`0009_v5_private_download.sql\` 실제 PASSMATE Supabase 적용 완료.
+- \`20260918081900_v5_private_download.sql\` 실제 PASSMATE Supabase 적용 완료.
 - private bucket \`passmate-artifacts\` 생성 확인: \`public=false\`, PDF only, 50 MiB.
 - \`download-url\` Edge Function v1 배포 및 ACTIVE 확인. JWT required.
 - \`resolve_download_artifact()\` 권한 검증: anon/authenticated 실행 불가, service_role만 실행 가능.
@@ -414,11 +414,11 @@
 ## 2026-09-18 — V7 Admin Live Foundation
 
 **한 일**
-- \`0010_v7_admin_ops.sql\`을 PASSMATE Supabase에 실제 적용.
+- \`20260918082635_v7_admin_ops.sql\`을 PASSMATE Supabase에 실제 적용.
 - \`admin-data\`, \`admin-action\` Edge Function v1 배포 및 둘 다 ACTIVE/JWT required 확인.
 - Admin RPC 권한 검사: anon/authenticated 실행 불가, service_role만 실행 가능.
 - \`admin_action_events\` 고객 직접 SELECT 차단 확인.
-- Supabase Performance Advisor가 지적한 \`admin_action_events.actor_user_id\`, \`download_events.issuance_job_id\` FK covering index를 \`0011_v7_admin_indexes.sql\`로 보완.
+- Supabase Performance Advisor가 지적한 \`admin_action_events.actor_user_id\`, \`download_events.issuance_job_id\` FK covering index를 \`20260918082801_v7_admin_indexes.sql\`로 보완.
 - V7 runtime verification 통과:
   - 임의/non-admin actor가 Admin RPC 사용 시 DB에서 거절.
   - 과거 G1 dead-letter + 최신 G2 queued일 때 order fulfillment가 queued로 정상 복귀.
@@ -461,7 +461,7 @@
 ## 2026-09-18 — V4 Worker Runtime Live Verification
 
 **한 일**
-- `0012_v4_worker_runtime.sql`을 PASSMATE Supabase에 실제 적용.
+- `20260918084407_v4_worker_runtime.sql`을 PASSMATE Supabase에 실제 적용.
 - `report_worker_node()` runtime verification 통과: production worker heartbeat row 생성/검증/cleanup.
 - 권한 검사 결과 `report_worker_node()`는 anon/authenticated 실행 불가, service_role만 실행 가능.
 - `worker_nodes` 테이블도 anon/authenticated 직접 SELECT 불가.
@@ -503,7 +503,7 @@
 ## 2026-09-18 — V6 Internal Issuance Registry Live Verification
 
 **한 일**
-- `0013_v6_issuance_registry.sql`을 PASSMATE Supabase에 실제 적용.
+- `20260918085648_v6_issuance_registry.sql`을 PASSMATE Supabase에 실제 적용.
 - `admin-data`, `admin-action` Edge Function을 V6 기능 포함 v2로 갱신 배포, 둘 다 ACTIVE/JWT required 확인.
 - 첫 runtime verification에서 test fixture가 order fulfillment를 `queued`로 직접 시작해 기존 state machine의 `queued → ready` 금지 규칙과 충돌하는 테스트 설계 오류를 발견.
 - fixture를 실제 Worker 처리 중 상태인 `issuing`으로 맞춰 재실행 후 검증 통과.
@@ -511,7 +511,7 @@
 - non-admin actor의 Registry Admin RPC 거절 확인.
 - Admin Registry/Integrity RPC 권한: anon/authenticated 실행 불가, service_role only 확인.
 - `issuance_artifacts`, `issuance_artifact_events` 고객 직접 조회 차단 확인.
-- Performance Advisor가 지적한 order_item/product_version FK covering index를 `0014_v6_registry_indexes.sql`로 보완.
+- Performance Advisor가 지적한 order_item/product_version FK covering index를 `20260918085838_v6_registry_indexes.sql`로 보완.
 - 적용 후 Supabase Security Advisor **0 findings**.
 - runtime test 종료 후 artifact/event/product fixture가 모두 0개로 cleanup된 것 확인.
 
@@ -693,7 +693,7 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - live Supabase에서 PM-C2 published/active, PM-SS3-CORE draft/inactive 상태 확인.
 - 결제는 pending 주문/attempt 2건, payment event 0건, active entitlement 0건으로 확인되어 sandbox paid E2E를 미완료로 확정.
 - payment Edge Functions의 live 재배포는 확인했으나 Codex의 결제 설정 작업은 main commit/paid event가 없으므로 완료로 간주하지 않음.
-- cart checkout migration `20260919100000_cart_checkout.sql`이 live migration 목록에 없음을 확인.
+- 당시 cart checkout migration이 live migration 목록에 없음을 확인.
 - 최신 Cart UI에서 LOCKED 상품 규칙과 충돌하는 합격팩 가격(base+6,000), 벼락치기 구성, 임시 PM-C2-PACK 모델을 발견.
 - ROADMAP/STATUS/README/AGENTS/Admin/PortOne 문서를 현재 상태 기준으로 정리.
 - 초기 V1 설계/셋업/2026-09-18 코드리뷰 문서를 `docs/archive/`로 이동하여 docs 루트의 현재 문서와 분리.
@@ -740,6 +740,9 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - 관리자 설정에 최근 운영 변경 이력 100건을 읽기 전용으로 표시.
 - `admin-data` v5 배포 완료, ACTIVE/JWT required 확인.
 - Admin contract와 전체 production build 통과.
+- Supabase Preview 실패 원인이 live/local migration 버전명 drift임을 확인.
+- 스키마 SQL이나 live DB를 바꾸지 않고 로컬 migration 파일명을 live 이력에 맞춰 정리.
+- historical verification/no-op 이력을 보존해 live/local migration version과 name을 35/35 일치시킴.
 
 **막힌 것**
 - 브라우저 자동화의 admin-enforced policy 확인 실패로 실제 Kakao 관리자 화면 E2E는 미진행.

@@ -9,7 +9,7 @@ const options = read("../components/product-purchase-options.tsx");
 const cartClient = read("../components/cart-client.tsx");
 const checkout = read("../components/checkout-client.tsx");
 const paymentStart = read("../supabase/functions/payment-start/index.ts");
-const migration = read("../supabase/migrations/20260919100000_cart_checkout.sql");
+const migration = read("../supabase/migrations/20260919063638_cart_checkout.sql");
 
 if (
   cart.includes("PACKAGE_PRICES") ||

@@ -6,10 +6,10 @@ const read = (path) =>
 const adminClient = read("../components/admin-client.tsx");
 const adminAction = read("../supabase/functions/admin-action/index.ts");
 const adminMigration = read(
-  "../supabase/migrations/20260919042000_admin_product_data_management.sql"
+  "../supabase/migrations/20260919024757_admin_product_data_management.sql"
 );
 const cartMigration = read(
-  "../supabase/migrations/20260919100000_cart_checkout.sql"
+  "../supabase/migrations/20260919063638_cart_checkout.sql"
 );
 const paymentStart = read("../supabase/functions/payment-start/index.ts");
 const checkout = read("../components/checkout-client.tsx");

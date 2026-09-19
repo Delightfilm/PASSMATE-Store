@@ -53,8 +53,8 @@ Required fix before public sales:
 
 Files:
 - `supabase/migrations/0001_v1_core.sql`
-- `supabase/migrations/0007_v3_payment_contract.sql`
-- `supabase/migrations/0008_v3_direct_checkout.sql`
+- `supabase/migrations/20260918073544_v3_payment_contract.sql`
+- `supabase/migrations/20260918080428_v3_direct_checkout.sql`
 
 `entitlements` currently has `unique(user_id, product_id)`.
 

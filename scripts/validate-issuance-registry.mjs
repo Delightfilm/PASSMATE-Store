@@ -32,7 +32,7 @@ for (const status of ["unchecked", "verified", "mismatch", "unavailable"]) {
 }
 
 for (const path of [
-  "../supabase/migrations/0013_v6_issuance_registry.sql",
+  "../supabase/migrations/20260918085648_v6_issuance_registry.sql",
   "../supabase/functions/admin-data/index.ts",
   "../supabase/functions/admin-action/index.ts",
   "../components/admin-client.tsx",
