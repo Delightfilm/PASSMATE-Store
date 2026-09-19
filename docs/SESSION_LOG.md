@@ -659,3 +659,27 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - Vercel build 완료 확인.
 - `jhpodong@naver.com` 카카오 로그인으로 `/admin/` 진입 및 PC/모바일 화면 확인.
 - 대시보드에서 PM-SS3-CORE 미리보기 승인 후 테스트 PDF 연결 → 구매 → Library → 다운로드 E2E.
+
+
+## 2026-09-19 — Admin Workspace V2
+
+**한 일**
+- 상품 미리보기 404 원인을 static export와 동적 route 조합으로 확인.
+- 동적 admin preview route를 제거하고 `/admin/products/preview/?code=...` 단일 정적 경로로 교체.
+- 관리자 UI를 좌측 메뉴 중심의 SmartStore형 Workspace로 전면 재구성.
+- 상품/데이터를 최우선 메뉴로 두고 검색, 공개상태 필터, 수정 패널, 신규 상품 추가 기능 구현.
+- 상품명, 한줄설명, 상세설명, 연도, 배지, 구성품, 가격, 판매상태를 관리자에서 수정 가능하게 연결.
+- 신규 상품은 코드/slug/초기 버전을 입력하면 항상 비공개 + draft로 생성되도록 안전장치 적용.
+- published 버전이 없는 상품은 판매중으로 바꿀 수 없도록 DB에서 차단.
+- 콘텐츠·버전, 주문, 발행·다운로드, 테스트센터, 관리자설정을 좌측 메뉴로 분리.
+- product create/update RPC를 service_role only로 추가하고 지정 Kakao admin actor 검증 유지.
+- admin-action Edge Function v5 배포 완료.
+- CI에 정적 preview route 및 create/update action 계약 검증 추가.
+
+**막힌 것**
+- 최신 Vercel 배포 상태가 아직 pending이라 실제 브라우저 Production E2E는 배포 완료 후 확인 필요.
+
+**다음 할 일**
+- 최신 Vercel build 상태 확인.
+- 카카오 관리자 계정으로 새 좌측 메뉴 Workspace 접속.
+- PM-SS3-CORE 수정/미리보기 흐름 확인 후 테스트 PDF 연결과 Library 다운로드 E2E 진행.
