@@ -10,13 +10,14 @@
     "check:orders": "node scripts/validate-order-state.mjs",
     "check:jobs": "node scripts/validate-issuance-job-contract.mjs",
     "check:auth": "node scripts/validate-auth-config.mjs",
-    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs && npm run check:auth && npm run check:server-keys && npm run check:payments && npm run check:checkout && npm run check:downloads && npm run check:issuance && npm run check:admin",
+    "check": "npm run check:catalog && npm run check:orders && npm run check:jobs && npm run check:auth && npm run check:server-keys && npm run check:payments && npm run check:checkout && npm run check:cart && npm run check:downloads && npm run check:issuance && npm run check:admin",
     "check:payments": "node scripts/validate-payment-contract.mjs",
     "check:checkout": "node scripts/validate-checkout-shell.mjs",
     "check:downloads": "node scripts/validate-download-contract.mjs",
     "check:admin": "node scripts/validate-admin-contract.mjs",
     "check:issuance": "node scripts/validate-issuance-registry.mjs",
-    "check:server-keys": "node scripts/validate-server-key-migration.mjs"
+    "check:server-keys": "node scripts/validate-server-key-migration.mjs",
+    "check:cart": "node scripts/validate-cart-contract.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",

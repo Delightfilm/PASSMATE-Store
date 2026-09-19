@@ -5,6 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { getFamilySlug } from "@/lib/cart";
+
+type PaymentItem = {
+  slug: string;
+  code: string;
+  title: string;
+  version: string;
+  amountKrw: number;
+};
 
 type PaymentStart = {
   orderId: string;
@@ -16,6 +25,7 @@ type PaymentStart = {
   productCode: string;
   productVersion: string;
   orderName: string;
+  items: PaymentItem[];
   amountKrw: number;
   currency: "KRW";
   payMethod: "CARD";
@@ -47,16 +57,37 @@ declare global {
   }
 }
 
-const DEFAULT_PRODUCT = "computer-literacy-2";
-
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+function isPaymentItem(value: unknown): value is PaymentItem {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+
+  const item = value as Record<string, unknown>;
+  return (
+    isNonEmptyString(item.slug) &&
+    isNonEmptyString(item.code) &&
+    isNonEmptyString(item.title) &&
+    isNonEmptyString(item.version) &&
+    typeof item.amountKrw === "number" &&
+    Number.isInteger(item.amountKrw) &&
+    item.amountKrw >= 0
+  );
+}
+
 function isPaymentStart(value: unknown): value is PaymentStart {
-  if (!value || typeof value !== "object") return false;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 
   const payment = value as Record<string, unknown>;
+  if (!Array.isArray(payment.items) || payment.items.length === 0) return false;
+  if (!payment.items.every(isPaymentItem)) return false;
+
+  const itemTotal = payment.items.reduce(
+    (sum, item) => sum + item.amountKrw,
+    0
+  );
+
   return (
     isNonEmptyString(payment.orderId) &&
     isNonEmptyString(payment.paymentAttemptId) &&
@@ -69,7 +100,7 @@ function isPaymentStart(value: unknown): value is PaymentStart {
     isNonEmptyString(payment.orderName) &&
     typeof payment.amountKrw === "number" &&
     Number.isInteger(payment.amountKrw) &&
-    payment.amountKrw >= 0 &&
+    payment.amountKrw === itemTotal &&
     payment.currency === "KRW" &&
     payment.payMethod === "CARD"
   );
@@ -79,11 +110,16 @@ function formatKrw(amountKrw: number) {
   return amountKrw.toLocaleString("ko-KR") + "원";
 }
 
+function checkoutQuery(productSlugs: string[]) {
+  return productSlugs.length === 1
+    ? "?product=" + encodeURIComponent(productSlugs[0])
+    : "?products=" + encodeURIComponent(productSlugs.join(","));
+}
+
 export function CheckoutClient() {
   const router = useRouter();
   const checkoutIdempotencyKey = useRef<string | null>(null);
-  const [productSlug, setProductSlug] = useState(DEFAULT_PRODUCT);
-  const [productSlugs, setProductSlugs] = useState<string[]>([DEFAULT_PRODUCT]);
+  const [productSlugs, setProductSlugs] = useState<string[]>([]);
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [phase, setPhase] = useState<"idle" | "preparing" | "paying">("idle");
@@ -97,8 +133,25 @@ export function CheckoutClient() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setProductSlug(params.get("product") || DEFAULT_PRODUCT);
-    setProductSlugs((params.get("products") || params.get("product") || DEFAULT_PRODUCT).split(",").filter(Boolean));
+    const rawProducts = params.get("products");
+    const singleProduct = params.get("product");
+    const nextSlugs = (
+      rawProducts
+        ? rawProducts.split(",")
+        : singleProduct
+          ? [singleProduct]
+          : []
+    )
+      .map((slug) => slug.trim())
+      .filter(Boolean);
+
+    setProductSlugs(nextSlugs);
+    if (nextSlugs.length === 0) {
+      setStatusKind("error");
+      setStatusText(
+        "결제할 상품이 없습니다. 장바구니에서 상품을 선택해주세요."
+      );
+    }
 
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getUser().then(({ data }) => {
@@ -107,18 +160,22 @@ export function CheckoutClient() {
     });
   }, []);
 
+  function loginNext() {
+    return "/checkout/" + checkoutQuery(productSlugs);
+  }
+
   function goToResult(paymentId: string) {
-    const next =
-      "/checkout/complete/?paymentId=" +
-      encodeURIComponent(paymentId);
-    router.replace(next);
+    router.replace(
+      "/checkout/complete/?paymentId=" + encodeURIComponent(paymentId)
+    );
   }
 
   async function preparePayment() {
+    if (productSlugs.length === 0) return;
+
     if (!email) {
       router.replace(
-        "/account/login/?next=" +
-          encodeURIComponent("/checkout/?product=" + productSlug)
+        "/account/login/?next=" + encodeURIComponent(loginNext())
       );
       return;
     }
@@ -127,7 +184,9 @@ export function CheckoutClient() {
     setPayment(null);
     setConfirmed(false);
     setStatusKind("info");
-    setStatusText("서버에서 최신 상품과 결제 금액을 확인하고 있습니다.");
+    setStatusText(
+      "서버에서 최신 상품과 결제 금액을 확인하고 있습니다."
+    );
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -136,15 +195,11 @@ export function CheckoutClient() {
 
       if (!token) {
         router.replace(
-          "/account/login/?next=" +
-            encodeURIComponent("/checkout/?product=" + productSlug)
+          "/account/login/?next=" + encodeURIComponent(loginNext())
         );
         return;
       }
 
-      // Keep one logical checkout key for retries while this checkout page is
-      // mounted. Network retry/re-click therefore resolves to the same order,
-      // attempt and PortOne paymentId instead of creating a second pending order.
       checkoutIdempotencyKey.current ??= crypto.randomUUID();
 
       const { url, key } = getPublicSupabaseConfig();
@@ -156,7 +211,6 @@ export function CheckoutClient() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          productSlug: productSlugs[0],
           productSlugs,
           idempotencyKey: checkoutIdempotencyKey.current,
         }),
@@ -174,7 +228,15 @@ export function CheckoutClient() {
         if (response.status === 409) {
           setStatusKind("info");
           setStatusText(
-            "아직 판매 준비가 완료되지 않은 상품입니다."
+            "선택한 상품 중 아직 판매 준비가 완료되지 않은 상품이 있습니다."
+          );
+          return;
+        }
+
+        if (response.status === 400) {
+          setStatusKind("error");
+          setStatusText(
+            "장바구니 구성을 확인해주세요. 같은 자격증의 패키지는 한 종류만 선택할 수 있습니다."
           );
           return;
         }
@@ -231,7 +293,6 @@ export function CheckoutClient() {
         redirectUrl: window.location.origin + "/checkout/complete/",
       });
 
-      // Mobile may redirect instead of resolving this Promise.
       if (!result) return;
 
       if (result.code) {
@@ -242,8 +303,6 @@ export function CheckoutClient() {
         return;
       }
 
-      // Browser response is not authoritative. The completion page only
-      // observes the own-order state changed by server verification.
       goToResult(result.paymentId || payment.paymentId);
     } catch (error) {
       console.error("[PASSMATE] payment start failed", error);
@@ -255,6 +314,13 @@ export function CheckoutClient() {
       setPhase("idle");
     }
   }
+
+  const backHref =
+    productSlugs.length === 1
+      ? "/products/" +
+        encodeURIComponent(getFamilySlug(productSlugs[0])) +
+        "/"
+      : "/cart/";
 
   return (
     <div className="container checkout-grid">
@@ -284,13 +350,35 @@ export function CheckoutClient() {
         {payment ? (
           <>
             <span>{payment.orderName}</span>
-            <small>
-              상품 코드 {payment.productCode} · 버전 {payment.productVersion}
-            </small>
-            <strong>{formatKrw(payment.amountKrw)}</strong>
+            {payment.items.length === 1 ? (
+              <small>
+                상품 코드 {payment.productCode} · 버전 {payment.productVersion}
+              </small>
+            ) : (
+              <small>{payment.items.length}개 상품 묶음 결제</small>
+            )}
+
+            <div className="checkout-item-list">
+              {payment.items.map((item) => (
+                <div className="checkout-item-row" key={item.slug}>
+                  <span>
+                    {item.title}
+                    <small>{item.code} · {item.version}</small>
+                  </span>
+                  <b>{formatKrw(item.amountKrw)}</b>
+                </div>
+              ))}
+            </div>
+
+            <div className="checkout-total-row">
+              <span>총 결제금액</span>
+              <strong>{formatKrw(payment.amountKrw)}</strong>
+            </div>
+
             <p className="checkout-account-note">
               결제 직전 서버에서 확정한 상품과 금액입니다.
             </p>
+
             <label>
               <input
                 type="checkbox"
@@ -300,6 +388,7 @@ export function CheckoutClient() {
               />{" "}
               위 상품과 {formatKrw(payment.amountKrw)} 결제에 동의합니다.
             </label>
+
             <button
               type="button"
               onClick={confirmPayment}
@@ -318,13 +407,14 @@ export function CheckoutClient() {
             <p className="checkout-account-note">
               최신 상품명, 버전, 결제 금액을 서버에서 확인한 뒤 결제를 진행합니다.
             </p>
+
             {!ready ? (
               <button disabled>계정 확인 중</button>
             ) : (
               <button
                 type="button"
                 onClick={preparePayment}
-                disabled={busy}
+                disabled={busy || productSlugs.length === 0}
                 className="checkout-pay-button"
               >
                 {phase === "preparing"
@@ -343,8 +433,10 @@ export function CheckoutClient() {
             : "구매하려면 먼저 로그인해주세요."}
         </p>
 
-        <Link href={"/products/" + encodeURIComponent(productSlug)}>
-          ← 상품으로 돌아가기
+        <Link href={backHref}>
+          ← {productSlugs.length > 1
+            ? "장바구니로 돌아가기"
+            : "상품으로 돌아가기"}
         </Link>
       </aside>
     </div>

@@ -102,8 +102,6 @@ export async function getProducts(): Promise<Product[]> {
   }
 
   if (rows.length === 0) {
-    // Zero active DB products is an intentional kill switch, not an error.
-    // Never resurrect local products unless the explicit fallback flag is on.
     if (allowLocalCatalogFallback) {
       console.warn(
         "[PASSMATE] Supabase catalog has zero active products; explicit local fallback enabled"
@@ -115,8 +113,13 @@ export async function getProducts(): Promise<Product[]> {
     return [];
   }
 
-  console.info(`[PASSMATE] catalog source=supabase products=${rows.length}`);
-  return rows.map(mapRow);
+  const visibleRows = rows.filter(
+    (row) => !row.slug.endsWith("-pass-pack")
+  );
+  console.info(
+    `[PASSMATE] catalog source=supabase products=${visibleRows.length}`
+  );
+  return visibleRows.map(mapRow);
 }
 
 export async function getStaticProductSlugs() {
