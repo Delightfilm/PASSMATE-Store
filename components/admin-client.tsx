@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
@@ -478,6 +479,12 @@ export function AdminClient() {
                 {product.latest_version_status ?? "-"} · 총{" "}
                 {product.version_count}개 버전
               </small>
+              <Link
+                className="admin-preview-link"
+                href={`/admin/products/${encodeURIComponent(product.code)}/preview/`}
+              >
+                상품 미리보기 →
+              </Link>
             </article>
           ))}
         </div>
