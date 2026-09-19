@@ -309,6 +309,24 @@ Live Supabase 확인:
 - [ ] 최신 Vercel build 완료 확인
 - [ ] 지정 Kakao 계정 브라우저에서 /admin/ E2E 확인
 
+## Admin Workspace V2 — 2026-09-19
+
+- [x] 상품 미리보기 404 원인 확인: `output: "export"` 환경에서 동적 admin preview route 사용
+- [x] 동적 `/admin/products/[code]/preview/` 제거
+- [x] 정적 export 호환 `/admin/products/preview/?code=...` 경로로 교체
+- [x] 관리자 화면을 네이버 스마트스토어 스타일 좌측 메뉴 Workspace로 재구성
+- [x] 기본 진입을 상품 데이터 관리 중심으로 변경
+- [x] 상품 검색 / 판매상태 필터 / 상품 수정 UI 추가
+- [x] 상품명 / 설명 / 연도 / 배지 / 구성품 / 가격 / 판매상태 수정 기능 추가
+- [x] 신규 상품 생성 기능 추가: 항상 비공개 + draft 버전으로 안전 생성
+- [x] 판매중 활성화는 published 버전이 있을 때만 DB에서 허용
+- [x] 콘텐츠·버전 / 주문 / 발행·다운로드 / 테스트센터 / 관리자설정 메뉴 분리
+- [x] Admin product create/update RPC는 service_role only, 지정 Kakao admin actor 필수
+- [x] `admin-action` Edge Function v5 ACTIVE
+- [x] CI Admin contract에 static preview / create / update action guard 추가
+- [ ] 최신 Vercel build 완료 확인
+- [ ] 브라우저에서 새 관리자 Workspace 및 미리보기 E2E 확인
+
 ## Next Priorities
 
 1. Vercel에 `PASSMATE-Store` 프로젝트를 다시 Import/연결하고 production env 구성
