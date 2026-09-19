@@ -615,3 +615,24 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - Vercel PASSMATE 프로젝트 Import/연결.
 - PortOne + Auth sandbox E2E.
 - NAS PASSMATE URL + modern secret 교체 후 MASTER verify → production --once.
+
+
+## 2026-09-19 — Stage Sound Test Product Preview
+
+**한 일**
+- 무대음향 3급 핵심요약 패키지를 실제 Supabase catalog에 테스트 상품으로 등록.
+- `PM-SS3-CORE` / 5,900원 / `2026-v0.1-test` draft로 생성하고 `is_active=false`로 공개 차단.
+- Admin 상품 카드에 비공개 상품 Preview 링크 추가.
+- 관리자 로그인 + admin role + RLS를 통과한 경우에만 비활성 상품 상세/버전을 직접 조회하는 Preview 화면 추가.
+- 무대음향 핵심요약 Light Theme 표지를 CSS 기반 Preview로 추가.
+- 공개 상품 카드/상세도 추후 활성화 시 무대음향 CORE 표지를 동적으로 렌더링할 수 있도록 준비.
+- 기존 상품목록의 CORE/CRAM/SHEET 문구를 현재 고정 상품 구조에 맞게 수정.
+
+**막힌 것**
+- 최신 Vercel commit status가 현재 pending이라 브라우저 Preview E2E는 build 완료 후 확인 필요.
+- Vercel connector의 프로젝트 목록에는 여전히 passmate-store가 직접 노출되지 않아 배포 상세 조회에 제약이 있음.
+
+**다음 할 일**
+- Vercel build 완료 확인.
+- 관리자 계정으로 `/admin/products/PM-SS3-CORE/preview/` 실제 접근 및 PC/모바일 확인.
+- Preview 승인 후 테스트 PDF를 연결하고 구매 → entitlement → Library → download E2E 진행.
