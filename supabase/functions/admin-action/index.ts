@@ -54,6 +54,9 @@ Deno.serve(async (req: Request) => {
     features?: unknown;
     priceKrw?: number;
     isActive?: boolean;
+    code?: string;
+    slug?: string;
+    initialVersion?: string;
   };
 
   try {
@@ -63,6 +66,47 @@ Deno.serve(async (req: Request) => {
   }
 
   const admin = ctx.supabaseAdmin;
+
+  if (body.action === "create_product") {
+    if (
+      typeof body.code !== "string" ||
+      typeof body.slug !== "string" ||
+      typeof body.title !== "string" ||
+      typeof body.displayYear !== "number" ||
+      typeof body.priceKrw !== "number" ||
+      typeof body.initialVersion !== "string" ||
+      !Array.isArray(body.features) ||
+      !body.features.every((item) => typeof item === "string")
+    ) {
+      return json(400, { error: "invalid_product_payload" });
+    }
+
+    const { data, error } = await admin.rpc("admin_create_product", {
+      p_admin_user_id: ctx.userClaims.id,
+      p_code: body.code.trim(),
+      p_slug: body.slug.trim(),
+      p_title: body.title,
+      p_subtitle: body.subtitle ?? "",
+      p_description: body.description ?? "",
+      p_display_year: Math.trunc(body.displayYear),
+      p_badge: body.badge ?? "",
+      p_features: body.features,
+      p_price_krw: Math.trunc(body.priceKrw),
+      p_initial_version: body.initialVersion.trim(),
+    });
+
+    if (error) {
+      console.error("admin product create failed", error.code);
+      return json(409, {
+        error:
+          error.code === "23505"
+            ? "product_already_exists"
+            : "admin_product_create_rejected",
+      });
+    }
+
+    return json(200, { result: data });
+  }
 
   if (body.action === "update_product") {
     if (!body.productId || !/^[0-9a-fA-F-]{36}$/.test(body.productId)) {
