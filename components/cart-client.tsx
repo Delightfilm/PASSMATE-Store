@@ -1,33 +1,82 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CartItem,
-  getPackagePrice,
   PACKAGE_LABELS,
   readCart,
   writeCart,
 } from "@/lib/cart";
+import {
+  fetchLiveProductPrices,
+  LiveProductPriceMap,
+} from "@/lib/live-product-prices";
 
 export function CartClient() {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [prices, setPrices] = useState<LiveProductPriceMap>({});
+  const [priceLoading, setPriceLoading] = useState(true);
+
+  async function refresh(nextItems = readCart()) {
+    setItems(nextItems);
+
+    if (nextItems.length === 0) {
+      setPrices({});
+      setPriceLoading(false);
+      return;
+    }
+
+    setPriceLoading(true);
+    try {
+      setPrices(
+        await fetchLiveProductPrices(nextItems.map((item) => item.slug))
+      );
+    } catch (error) {
+      console.error("[PASSMATE] cart live price lookup failed", error);
+      setPrices({});
+    } finally {
+      setPriceLoading(false);
+    }
+  }
 
   useEffect(() => {
-    setItems(readCart());
+    const handleRefresh = () => {
+      void refresh();
+    };
+
+    void refresh();
+    window.addEventListener("focus", handleRefresh);
+    window.addEventListener("storage", handleRefresh);
+    window.addEventListener("passmate-cart-change", handleRefresh);
+
+    return () => {
+      window.removeEventListener("focus", handleRefresh);
+      window.removeEventListener("storage", handleRefresh);
+      window.removeEventListener("passmate-cart-change", handleRefresh);
+    };
   }, []);
 
-  const total = items.reduce(
-    (sum, item) => sum + getPackagePrice(item.packageType),
-    0
+  const checkoutReady =
+    items.length > 0 &&
+    !priceLoading &&
+    items.every((item) => prices[item.slug] !== undefined);
+
+  const total = useMemo(
+    () =>
+      items.reduce(
+        (sum, item) => sum + (prices[item.slug] ?? 0),
+        0
+      ),
+    [items, prices]
   );
 
   function update(next: CartItem[]) {
-    setItems(next);
     writeCart(next);
+    void refresh(next);
   }
 
-  const checkoutHref = items.length
+  const checkoutHref = checkoutReady
     ? "/checkout/?products=" +
       encodeURIComponent(items.map((item) => item.slug).join(","))
     : "/products/";
@@ -48,7 +97,11 @@ export function CartClient() {
                 </small>
               </div>
               <strong>
-                {getPackagePrice(item.packageType).toLocaleString("ko-KR")}원
+                {priceLoading
+                  ? "가격 확인 중"
+                  : prices[item.slug] === undefined
+                    ? "판매 준비 중"
+                    : prices[item.slug].toLocaleString("ko-KR") + "원"}
               </strong>
               <button
                 type="button"
@@ -78,13 +131,25 @@ export function CartClient() {
         <span>선택 상품</span>
         <b>{items.length}개</b>
         <span>장바구니 합계</span>
-        <strong>{total.toLocaleString("ko-KR")}원</strong>
+        <strong>
+          {priceLoading
+            ? "가격 확인 중"
+            : checkoutReady
+              ? total.toLocaleString("ko-KR") + "원"
+              : "확인 필요"}
+        </strong>
         <p className="checkout-account-note">
-          실제 결제 금액은 결제 직전 서버에서 다시 확인합니다.
+          현재 판매가를 표시하며, 실제 결제 금액은 결제 직전 서버가 다시 확정합니다.
         </p>
-        <Link className="button button-primary button-wide" href={checkoutHref}>
-          {items.length ? "결제하기" : "상품 선택하기"}
-        </Link>
+        {checkoutReady ? (
+          <Link className="button button-primary button-wide" href={checkoutHref}>
+            결제하기
+          </Link>
+        ) : (
+          <Link className="button button-primary button-wide" href="/products/">
+            {items.length ? "상품 상태 확인" : "상품 선택하기"}
+          </Link>
+        )}
       </aside>
     </div>
   );

@@ -13,11 +13,6 @@ export type CartSelection = {
   packageType: PackageType;
 };
 
-export const PACKAGE_PRICES: Record<PackageType, number> = {
-  core: 5900,
-  pass: 9900,
-};
-
 export const PACKAGE_LABELS: Record<PackageType, string> = {
   core: "핵심요약 패키지",
   pass: "합격팩",
@@ -34,10 +29,6 @@ export function getFamilySlug(slug: string) {
   return slug.endsWith(PASS_PACK_SUFFIX)
     ? slug.slice(0, -PASS_PACK_SUFFIX.length)
     : slug;
-}
-
-export function getPackagePrice(packageType: PackageType) {
-  return PACKAGE_PRICES[packageType];
 }
 
 function normalizeCartItem(value: unknown): CartItem | null {
@@ -85,11 +76,8 @@ export function readCart(): CartItem[] {
       const existingIndex = normalized.findIndex(
         (entry) => entry.familySlug === item.familySlug
       );
-      if (existingIndex >= 0) {
-        normalized[existingIndex] = item;
-      } else {
-        normalized.push(item);
-      }
+      if (existingIndex >= 0) normalized[existingIndex] = item;
+      else normalized.push(item);
     }
     return normalized;
   } catch {
@@ -116,7 +104,6 @@ export function addToCart(
 
   const cart = readCart();
   const existing = cart.find((entry) => entry.familySlug === familySlug);
-
   if (existing?.packageType === item.packageType) return "unchanged";
 
   const next = existing

@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   addToCart,
-  getPackagePrice,
   getPackageSlug,
   PACKAGE_LABELS,
   PackageType,
 } from "@/lib/cart";
+import {
+  fetchLiveProductPrices,
+  LiveProductPriceMap,
+} from "@/lib/live-product-prices";
 
 const packageRows = [
   ["PASS PACK 상세 합격교재", false, true],
@@ -24,6 +27,12 @@ function toFamilyTitle(title: string) {
     .trim();
 }
 
+function priceText(price: number | undefined, loading: boolean) {
+  if (loading) return "가격 확인 중";
+  if (price === undefined) return "판매 준비 중";
+  return price.toLocaleString("ko-KR") + "원";
+}
+
 export function ProductPurchaseOptions({
   slug,
   title,
@@ -33,11 +42,45 @@ export function ProductPurchaseOptions({
 }) {
   const [kind, setKind] = useState<PackageType>("core");
   const [notice, setNotice] = useState("");
+  const [prices, setPrices] = useState<LiveProductPriceMap>({});
+  const [priceLoading, setPriceLoading] = useState(true);
   const familyTitle = useMemo(() => toFamilyTitle(title), [title]);
-  const selectedPrice = getPackagePrice(kind);
+  const coreSlug = getPackageSlug(slug, "core");
+  const passSlug = getPackageSlug(slug, "pass");
   const selectedSlug = getPackageSlug(slug, kind);
+  const selectedPrice = prices[selectedSlug];
+
+  useEffect(() => {
+    let active = true;
+
+    async function refreshPrices() {
+      setPriceLoading(true);
+      try {
+        const next = await fetchLiveProductPrices([coreSlug, passSlug]);
+        if (active) setPrices(next);
+      } catch (error) {
+        console.error("[PASSMATE] live package price lookup failed", error);
+        if (active) setPrices({});
+      } finally {
+        if (active) setPriceLoading(false);
+      }
+    }
+
+    void refreshPrices();
+    window.addEventListener("focus", refreshPrices);
+
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshPrices);
+    };
+  }, [coreSlug, passSlug]);
 
   function add() {
+    if (selectedPrice === undefined) {
+      setNotice("현재 판매 가능한 가격을 확인한 뒤 다시 시도해주세요.");
+      return;
+    }
+
     const result = addToCart({
       familySlug: slug,
       title: familyTitle,
@@ -64,7 +107,7 @@ export function ProductPurchaseOptions({
           aria-selected={kind === "core"}
         >
           핵심요약 패키지
-          <small>{getPackagePrice("core").toLocaleString("ko-KR")}원</small>
+          <small>{priceText(prices[coreSlug], priceLoading)}</small>
         </button>
         <button
           type="button"
@@ -74,7 +117,7 @@ export function ProductPurchaseOptions({
           aria-selected={kind === "pass"}
         >
           합격팩
-          <small>{getPackagePrice("pass").toLocaleString("ko-KR")}원</small>
+          <small>{priceText(prices[passSlug], priceLoading)}</small>
         </button>
       </div>
 
@@ -96,15 +139,26 @@ export function ProductPurchaseOptions({
       </p>
 
       <div className="package-actions">
-        <button type="button" className="button button-primary" onClick={add}>
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={add}
+          disabled={selectedPrice === undefined || priceLoading}
+        >
           장바구니 담기
         </button>
-        <Link
-          className="button button-ghost"
-          href={"/checkout/?product=" + encodeURIComponent(selectedSlug)}
-        >
-          {selectedPrice.toLocaleString("ko-KR")}원 바로 구매
-        </Link>
+        {selectedPrice === undefined || priceLoading ? (
+          <button type="button" className="button button-ghost" disabled>
+            가격 확인 후 구매
+          </button>
+        ) : (
+          <Link
+            className="button button-ghost"
+            href={"/checkout/?product=" + encodeURIComponent(selectedSlug)}
+          >
+            {selectedPrice.toLocaleString("ko-KR")}원 바로 구매
+          </Link>
+        )}
       </div>
 
       {notice ? <p className="package-cart-notice" role="status">{notice}</p> : null}

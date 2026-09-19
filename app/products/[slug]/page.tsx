@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { ProductCover } from "@/components/product-cover";
 import { getProduct, getStaticProductSlugs } from "@/lib/products";
 import { ProductPurchaseOptions } from "@/components/product-purchase-options";
-import { getPackagePrice } from "@/lib/cart";
 
 export async function generateStaticParams() {
   return await getStaticProductSlugs();
@@ -54,10 +53,8 @@ export default async function ProductPage({
             ))}
           </ul>
           <div className="price-row">
-            <strong>
-              {getPackagePrice("core").toLocaleString("ko-KR")}원부터
-            </strong>
-            <span>디지털 PDF</span>
+            <strong>패키지 선택</strong>
+            <span>현재 판매가는 아래 옵션에서 확인 · 디지털 PDF</span>
           </div>
           <ProductPurchaseOptions slug={product.slug} title={product.title} />
         </div>
