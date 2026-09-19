@@ -7,6 +7,10 @@ for (const path of [
   "../supabase/functions/admin-action/index.ts",
   "../supabase/migrations/0010_v7_admin_ops.sql",
   "../supabase/migrations/20260918143000_admin_p1_dml_hard_delete.sql",
+  "../supabase/migrations/20260919042000_admin_product_data_management.sql",
+  "../supabase/migrations/20260919043500_admin_create_product.sql",
+  "../app/admin/products/preview/page.tsx",
+  "../components/admin-product-preview-query.tsx",
 ]) {
   if (!fs.existsSync(new URL(path, import.meta.url))) {
     throw new Error("Missing V7 admin file: " + path);
@@ -45,8 +49,19 @@ if (!actionFunction.includes('profile?.role !== "admin"')) {
   throw new Error("admin-action must verify the admin role.");
 }
 
-if (!actionFunction.includes('"retry_issuance"')) {
-  throw new Error("V7 admin action allowlist is missing retry_issuance.");
+for (const action of [
+  '"retry_issuance"',
+  '"verify_artifact"',
+  '"update_product"',
+  '"create_product"',
+]) {
+  if (!actionFunction.includes(action)) {
+    throw new Error("Admin action allowlist is missing " + action);
+  }
+}
+
+if (!client.includes("/admin/products/preview/?code=")) {
+  throw new Error("Admin preview must use the static-export-safe query route.");
 }
 
 if (/SUPABASE_SERVICE_ROLE_KEY/.test(client)) {
