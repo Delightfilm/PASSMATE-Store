@@ -1,348 +1,169 @@
 # PASSMATE Current Status
 
-Last updated: 2026-09-18
+> Last updated: **2026-09-19**
+>
+> This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
-## Current Version
+## Current Focus
 
-**V6 — 내부 발행 Registry/무결성 관리 구현 중 (실Artifact Exit Gate 보류)**
+**V3 Payment E2E → V4 NAS real integration → V5 download E2E → V8 Stage Sound launch**
 
-## Completed
+새 기능 추가보다 실제 결제부터 다운로드까지 한 번 끝까지 통과시키는 것이 우선이다.
 
-### V0 ✅
-- PASSMATE 브랜드명 확정
-- Concept B 로고 방향 확정
-- GitHub `Delightfilm/PASSMATE-Store` 연결
-- Vercel `passmate-store` 연결
-- 반응형 Storefront 구현
-- 고객 화면에서 내부 보안/발행 기술 표현 제거
-- Next.js 빌드 검증
-- Vercel Production 배포 성공
+## Verified Live State
 
-## V1 Progress
+### GitHub / Vercel
 
-- [x] V1 데이터 모델 확정
-- [x] Supabase core migration 작성
-- [x] RLS/권한 하드닝 반영
-- [x] PM-C2 초기 catalog seed SQL 준비
-- [x] V1 schema/RLS smoke test SQL 준비
-- [x] Storefront catalog JSON 단일 소스화
-- [x] Catalog CI validation 추가
-- [x] Supabase catalog adapter 구현 (env 미설정 시 local fallback)
-- [x] Home / 상품목록 / 상품상세를 catalog adapter에 연결
-- [x] Supabase Setup Runbook 작성
-- [x] PASSMATE 전용 Supabase organization 생성
-- [x] PASSMATE 전용 Supabase 프로젝트 접근 확인 (`fmecqeadghrdisirucqm`)
-- [x] V1/V1.5 migrations 0001~0004 적용 상태 확인
-- [x] PM-C2 seed 실제 적용 확인
-- [x] V1 schema/RLS smoke test 통과
-- [x] Order + issuance runtime contract verification 통과
-- [x] Supabase security advisor 0 findings
-- [x] Worker RPC service-role only 권한 검증
-- [x] 고객 role self-escalation 차단 검증
-- [ ] 테스트 Auth 사용자 기준 own-row 조회 검증
-- [x] Storefront Supabase public config 연결 (publishable key only)
-- [ ] Production deployment에서 Supabase catalog source 확인
+- Repository: `Delightfilm/PASSMATE-Store`
+- 2026-09-19 Work 변경: 장바구니 + 패키지 선택 UI가 main에 반영됨
+- 해당 main commit의 Vercel status는 **success**
+- 관리자 Workspace V2, static-export-safe 상품 Preview, 상품 create/edit 코드 반영
+- 불필요한 Vercel 반복 배포는 중단하고 변경을 묶어서 진행
 
-## V1.5 Order State Machine Progress
+### Product / Supabase Catalog
 
-- [x] 주문/결제 상태와 자료 발행 상태 분리
-- [x] Order transition contract 작성
-- [x] Fulfillment transition contract 작성
-- [x] TypeScript 상태/라벨 helper 작성
-- [x] state_version optimistic concurrency 규칙 추가
-- [x] order_state_events audit trail 설계
-- [x] DB transition enforcement migration 작성
-- [x] SQL state-machine smoke test 작성
-- [x] CI contract validation 추가
-- [x] NAS issuance job contract 작성
-- [x] Atomic claim / lease / heartbeat / retry / dead-letter RPC migration 작성
-- [x] Job audit trail / refund cancellation 설계
-- [x] Multi-item order aggregation 규칙 반영
-- [x] NAS queue SQL smoke test 작성
-- [x] NAS job contract CI validation 추가
-- [x] NAS Worker reference implementation
-- [x] Supabase RPC client
-- [x] lease heartbeat thread
-- [x] guarded reference processor (default disabled)
-- [x] Dockerfile / docker-compose scaffold
-- [x] Python unit tests + Worker CI
-- [x] NAS deployment runbook
-- [x] PASSMATE Supabase에서 migrations 0003~0004 실제 적용 확인
-- [x] DB illegal transition / retry / stale completion 실제 검증
-- [x] NAS Queue RPC 권한 및 runtime contract 검증
-- [ ] NAS Worker를 실제 Supabase service-role credential로 `--once` integration test
+Live DB:
 
-## V2 Customer Account Progress
+| Code | Product | Price | Active | Version |
+|---|---|---:|---|---|
+| PM-C2 | 컴퓨터활용능력 2급 | 6,900원 | true | `2027-v1.0` published |
+| PM-SS3-CORE | 무대음향 3급 핵심요약 패키지 | 5,900원 | false | `2026-v0.1-test` draft |
 
-- [x] Supabase browser Auth client
-- [x] 이메일/비밀번호 로그인
-- [x] 회원가입 + display_name profile 연동
-- [x] 이메일 확인 redirect 처리 기반
-- [x] 비밀번호 재설정 요청/변경 화면
-- [x] 로그인 상태 Header UI
-- [x] 내 계정 profile 조회/이름 수정/로그아웃
-- [x] 내 자료 entitlement 조회 UI
-- [x] 구매 후 비활성 상품도 본인이 metadata를 볼 수 있는 RLS migration
-- [x] Auth public-config CI guard
-- [x] Supabase migration 0006 실제 적용
-- [x] migration 0006 적용 후 Security Advisor 0 findings
-- [ ] Supabase Auth Redirect URL production 설정 확인
-- [ ] 실제 테스트 회원 가입/로그인
-- [ ] 실제 사용자 own-row RLS 검증
-- [ ] Production Vercel에서 Auth flow 검증
+현재 출시 타깃은 **PM-SS3-CORE**다. PM-C2는 기존 개발/운영 fixture 성격이 남아 있으며 최신 2-SKU 구조와 별도로 정리 대상이다.
 
-## V3 Payment Progress
+### Locked Product Structure
 
-- [x] PG 독립 Payment Provider contract
-- [x] payment_attempts / payment_events DB schema
-- [x] provider + idempotency key 중복 방지
-- [x] provider event 중복 처리 방지
-- [x] 결제 금액/통화 서버 검증
-- [x] pending → paid/failed/cancelled DB transition 연결
-- [x] paid → refunded DB transition 연결
-- [x] paid 시 entitlement grant + issuance enqueue 경계
-- [x] direct order는 로그인 사용자 필수 규칙
-- [x] raw webhook payload 비저장, SHA-256 fingerprint만 보관
-- [x] Payment RPC service-role only
-- [x] Payment contract CI validator
-- [x] Supabase migration 0007 실제 적용
-- [x] V3 provider-neutral runtime verification 통과
-- [x] Payment RPC anon/authenticated 차단 + service_role only 검증
-- [x] migration 0007 적용 후 Security Advisor 0 findings
-- [x] 실제 PG 선정: PortOne V2 + NHN KCP
-- [x] PortOne payment-start / payment-sync / signed webhook adapter 구현
-- [ ] PG sandbox 결제 승인/실패/취소/환불 E2E
-- [x] PortOne Standard Webhooks signature 검증 코드 + Edge Function v3 배포
-- [ ] 실제 webhook secret 설정 후 signed sandbox webhook E2E
+- 핵심요약 패키지 5,900원 = CORE + SHEET + CHECK
+- 합격팩 9,900원 = PASS PACK + CORE + SHEET + CHECK
+- 별도 CRAM/벼락치기 상품 없음
 
-## V3.1 PortOne + KCP Progress
+### Admin
 
-- [x] Provider 결정: PortOne V2 + NHN KCP
-- [x] direct checkout DB RPC 설계
-- [x] authenticated payment-start Edge Function
-- [x] PortOne payment re-fetch 기반 webhook Edge Function
-- [x] provider secret 미설정 시 fail-closed
-- [x] KCP Store ID / Channel Key / API Secret 환경변수 경계 정의
-- [x] migration 0008 실제 적용
-- [x] payment-start Edge Function ACTIVE (JWT required)
-- [x] payment-webhook Edge Function ACTIVE (PortOne API re-fetch 검증)
-- [x] create_direct_checkout RPC service_role only 검증
-- [x] Edge Function 배포 후 Security Advisor 0 findings
-- [ ] PortOne Store ID 입력
-- [ ] KCP Channel Key 입력
-- [ ] PortOne V2 API Secret 입력
-- [x] Checkout UI shell + PortOne V2 browser SDK 연결
-- [x] 모바일 redirect/PC Promise 공통 완료 화면 shell
-- [x] 완료 화면은 server-verified own-order 상태만 신뢰
-- [x] Checkout CI guard
-- [x] P1-1: provider+idempotency key replay가 기존 order/attempt/paymentId를 반환하도록 DB/Edge/browser hardening
-- [x] P1-1 live migration + replay/cross-user regression verification 통과
-- [x] P1-2: authenticated `payment-sync` Edge Function 추가, browser completion에서 PortOne authoritative re-fetch
-- [x] P1-2 sync/webhook race가 `already_applied`로 수렴하는 DB verification 통과
-- [x] P1-3: Standard Webhooks HMAC signature + Store ID + KRW + authoritative amount 검증
-- [x] `payment-start` v4 / `payment-sync` v2 / `payment-webhook` v4 ACTIVE
-- [x] Payment P1 적용 후 Supabase Security Advisor 0 findings
-- [ ] `PORTONE_STORE_ID` / KCP Channel Key / API Secret / Webhook Secret 실제 값 최종 확인
-- [ ] PortOne webhook URL 등록 + signed sandbox webhook 수신 확인
-- [ ] sandbox 결제 E2E
+완료:
 
-## V4 NAS Production Worker Progress
+- 지정 Kakao 관리자 계정 기반 권한
+- DB actor + Edge + UI 다중 검증
+- SmartStore형 좌측 메뉴
+- 상품 조회/검색/필터
+- 상품 create/edit
+- draft 상품 Preview
+- 주문/발행/Artifact 조회
+- 재시도 및 무결성 확인 기반
 
-- [x] ProductionPdfProcessor 실제 Worker wiring
-- [x] SupabaseArtifactStore production wiring
-- [x] pypdf 기반 production PDF rewrite transformer
-- [x] MASTER manifest SHA-256 / product / version / year 검증
-- [x] output PDF parse + page-count 검증
-- [x] encrypted/invalid MASTER fail-closed
-- [x] buyer-specific identifier 없는 V4 baseline transform
-- [x] processor mode disabled/reference/production 분리
-- [x] production에서 reference-copy 동시활성 차단
-- [x] MASTER init/verify CLI
-- [x] Worker runtime heartbeat schema/RPC
-- [x] Docker non-root/read-only/cap-drop/no-new-privileges hardening
-- [x] pypdf pinned dependency + Worker CI install
-- [x] production wiring/unit tests 작성
-- [x] migration 0012 live 적용
-- [x] Worker runtime DB verification 통과
-- [x] report_worker_node RPC anon/authenticated 차단 + service_role only 검증
-- [x] worker_nodes client read 차단 검증
-- [x] V4 적용 후 Security Advisor 0 findings
-- [ ] 실제 NAS --check-config
-- [ ] 실제 PM-C2 MASTER manifest verify
-- [ ] 실제 Supabase service-role로 --once
-- [ ] 실제 artifact upload → job succeeded → ready E2E
-- [ ] real NAS lease-loss/reclaim + soak test
+남음:
 
-## V5 Private Storage & Download Progress
+- 실제 브라우저 운영 E2E 최종 확인
+- PG 실제 환불 Admin action은 V3 실결제 검증 후
 
-- [x] private artifact bucket contract
-- [x] 60초 signed URL contract
-- [x] active entitlement + paid/ready order + succeeded job download gate
-- [x] download event audit schema
-- [x] download-url Edge Function
-- [x] 내 자료 Download button UI
-- [x] permanent public URL 비저장 규칙
-- [x] NAS SupabaseArtifactStore adapter
-- [x] immutable key + retry hash verification
-- [x] V5 CI contract validator
-- [x] migration 0009 live 적용
-- [x] private bucket 생성/검증 (public=false, PDF only, 50 MiB)
-- [x] download-url Edge Function ACTIVE (JWT required)
-- [x] resolve_download_artifact RPC service_role only 검증
-- [x] download_events client read 차단 검증
-- [x] Storage objects client policy 없음 확인
-- [x] V5 적용 후 Security Advisor 0 findings
-- [ ] 실제 NAS PDF upload → signed download E2E
-- [ ] 환불 후 download 재발급 차단 E2E
+### Payment
 
-## V6 Internal Issuance Management Progress
+구현 완료:
 
-- [x] issuance_artifacts internal registry schema
-- [x] 고객 PII 없는 internal_ref / job/order/product/version linkage
-- [x] succeeded job → artifact 자동 등록 trigger
-- [x] 새 generation 성공 → 이전 artifact superseded
-- [x] refund → order artifact revoked
-- [x] SHA-256 / size 무결성 기준 저장
-- [x] issuance_artifact_events audit
-- [x] Admin artifact list RPC
-- [x] Admin private object integrity verify action
-- [x] verified/mismatch/unavailable 결과 audit
-- [x] customer UI Registry 비노출 CI guard
-- [x] V6 contract validator
-- [x] migration 0013 live 적용
-- [x] V6 runtime registry verification 통과
-- [x] succeeded → active / new generation → superseded / refund → revoked 검증
-- [x] admin-data / admin-action Edge Functions v3 ACTIVE (modern Supabase server context)
-- [x] V6 Admin RPC anon/authenticated 차단 + service_role only 검증
-- [x] Registry/Event table client read 차단 검증
-- [x] Performance Advisor FK covering indexes 보완 (0014)
-- [x] V6 적용 후 Security Advisor 0 findings
-- [x] runtime fixture cleanup 확인
-- [ ] 실제 Storage artifact 무결성 verify E2E
+- PortOne V2 + NHN KCP
+- `payment-start`
+- `payment-sync`
+- signed `payment-webhook`
+- 서버 기준 가격/금액 검증
+- idempotency
+- entitlement + issuance enqueue transaction boundary
+- Edge Functions ACTIVE
 
-## V7 Admin Console Progress
+외부 진행:
 
-- [x] admin role 3중 검증: UI / Edge / DB actor
-- [x] 운영 Summary RPC
-- [x] 최근 주문 Admin 조회
-- [x] 발행 Job Admin 조회
-- [x] 상품/버전 현황 Admin 조회
-- [x] retry_wait 즉시 재시도
-- [x] dead_letter 새 generation 재발행
-- [x] latest-generation 기준 fulfillment aggregate
-- [x] archived 구매버전 admin reissue 허용
-- [x] admin action audit schema
-- [x] /admin UI shell
-- [x] admin-data / admin-action Edge Function
-- [x] V7 CI contract validator
-- [x] migration 0010 live 적용
-- [x] admin-data Edge Function v3 ACTIVE (JWT required, modern Supabase server context)
-- [x] admin-action Edge Function v3 ACTIVE (JWT required, modern Supabase server context)
-- [x] Admin RPC anon/authenticated 차단 + service_role only 검증
-- [x] admin_action_events client read 차단 검증
-- [x] non-admin DB actor rejection runtime verification
-- [x] latest-generation fulfillment aggregate runtime verification
-- [x] archived purchased version generation>1 reissue runtime verification
-- [x] Performance Advisor FK covering indexes 보완
-- [x] V7 적용 후 Security Advisor 0 findings
-- [ ] 실제 admin 계정 접근 E2E
-- [ ] 실제 dead-letter retry E2E
-- [ ] PG 실제 환불 Admin action
-- [ ] 상품/버전 mutation Admin action
+- PortOne NHN KCP **테스트 채널 생성 완료**
+- Codex 작업에서 live Edge Functions가 재배포된 흔적은 확인됨
+- 그러나 GitHub main에는 결제 설정 관련 새 commit이 아직 없음
 
-## Full Code Review — 2026-09-18
+Live DB 현재:
 
-Repository + live Supabase 전면 검토 완료. 상세: `docs/CODE_REVIEW_2026-09-18.md`.
+- `payment_pending / not_started` 주문: **2건**
+- PortOne payment attempt `pending`: **2건**
+- payment event: **0건**
+- active entitlement: **0건**
+- issuance job: **0건**
 
-출시 차단(P0):
-- [x] stale Worker는 lease 상실 또는 완료 거절 뒤 결정적 shared Storage key를 삭제하지 않음. production `discard()`도 no-op이며 회귀 테스트 통과
-- [x] entitlement를 사용자+원본 주문+상품+버전 단위 grant로 전환. duplicate paid/refund, 재구매, 최신 주문 환불 뒤 과거 정상 권리 보존 회귀 테스트 통과
-- [x] Checkout 하드코딩 상품명/가격 제거. `payment-start`가 반환한 서버 기준 상품/버전/제목/금액을 표시하고 명시 확인 뒤에만 PortOne 호출
+따라서 **sandbox paid E2E는 아직 완료되지 않았다.**
 
-Live Supabase 확인:
-- [x] `20260918103548 preserve_entitlements_per_order`
-- [x] `20260918103825 fix_entitlement_grant_null_type`
-- [x] `20260918103840 verify_p0_entitlement_order_grants`
-- [x] duplicate/repurchase/refund runtime verification 통과 및 fixture cleanup 0건
-- [x] entitlement unique constraint와 `apply_payment_event()` 권한(`postgres`, `service_role` only) 확인
-- [x] `payment-start` v2 ACTIVE, `verify_jwt=true`, 비인증 요청 401 확인
-- [x] 적용 후 Supabase Security Advisor 0 findings
+### Cart / Package Selection
 
-우선(P1):
-- [x] end-to-end payment idempotency — replay는 기존 order/attempt/paymentId 반환, concurrent create advisory lock 적용
-- [x] browser completion → server payment reconciliation — authenticated `payment-sync`가 PortOne 재조회 후 DB event 적용
-- [x] PortOne webhook signature + currency/store 검증 — Standard Webhooks 검증 + authoritative re-fetch + Store/KRW/amount gate
-- [x] authenticated admin direct DML 제거 및 hard-delete 차단 — live migration/verification 통과
-- [x] Supabase Edge/Worker code를 modern publishable/secret key 모델로 전환 — Edge 6개 live 재배포, Worker production은 legacy key 거부
-- [x] production catalog fallback fail-closed — DB 0 active/error 시 local catalog 자동 부활 금지
-- [x] MASTER version immutable registration — 기존 product/version의 master.pdf/manifest overwrite 거부
-- [ ] NAS 실제 환경의 legacy service_role 값을 PASSMATE `SUPABASE_SECRET_KEY`로 교체
+main에 UI/DB migration 코드가 추가되었지만 Release-ready가 아니다.
 
-결론: 코드리뷰 P0 3건은 코드·회귀 테스트·live Supabase 검증까지 닫혔다. 판매 오픈 전 실제 NAS/PortOne/Auth E2E와 결제/관리 P1을 이어서 닫는다.
+현재 확인된 정합성 문제:
 
-## Test Product Preview — 2026-09-19
+1. 합격팩 가격을 base + 6,000원으로 계산 → LOCKED 9,900원과 불일치
+2. 합격팩 설명에 폐기된 `벼락치기`가 포함됨
+3. 임시 PM-C2-PACK 모델이 현재 2-SKU 규칙과 불일치
+4. `20260919100000_cart_checkout.sql`은 live migration 목록에 없음
 
-- [x] 무대음향 3급 핵심요약 패키지 테스트 상품 DB 등록
-- [x] 상품 코드 `PM-SS3-CORE`, 가격 5,900원, `2026-v0.1-test` draft 버전 생성
-- [x] 테스트 상품은 `is_active=false`로 공개 차단
-- [x] Admin 상품 카드에서 비공개 상품 미리보기 진입 경로 추가
-- [x] 관리자 JWT + admin role + RLS를 통과한 경우에만 비활성 상품 상세 데이터 조회
-- [x] 무대음향 핵심요약 Light Theme 표지 Preview 추가
-- [x] 공개 상품 카드/상세가 무대음향 CORE를 활성화할 때 동적 표지를 사용할 수 있도록 준비
-- [ ] Vercel 최신 build 결과 확인
-- [ ] 관리자 계정으로 `/admin/products/PM-SS3-CORE/preview/` 브라우저 E2E 확인
-- [ ] Preview 승인 후 테스트 PDF 연결 및 구매→Library→download E2E
+**결제 E2E 진행 중인 Codex 작업과 충돌하지 않도록 지금은 코드 수정하지 않고 다음 통합 정리에서 수정한다.**
 
-## Owner Admin Dashboard — 2026-09-19
+### NAS / Worker
 
-- [x] 관리자 계정을 카카오 `jhpodong@naver.com` 단일 계정으로 고정
-- [x] 해당 Kakao Auth user를 `profiles.role=admin`으로 승격
-- [x] 다른 계정이 admin role을 획득하지 못하도록 DB trigger + admin actor 검증 강화
-- [x] `private.is_admin()`과 Admin RPC actor 검증 모두 지정 Kakao 계정 조건 반영
-- [x] 헤더 로그인 영역에 관리자 계정만 `관리자` 버튼 노출
-- [x] 내 계정 화면에 관리자 계정만 `관리자 대시보드` 버튼 노출
-- [x] `/admin/`을 비개발자용 운영 대시보드로 재구성
-- [x] 상품/판매중/주문/결제완료/자료완료/오늘 다운로드 요약 카드 추가
-- [x] 무대음향 테스트 상품 미리보기, 상품/주문/발행/Library/스토어 빠른 작업 추가
-- [x] 상품 카드에서 비공개 테스트 상품 직접 미리보기
-- [x] 최근 주문/발행 작업/고급 무결성 정보 분리
-- [ ] 최신 Vercel build 완료 확인
-- [ ] 지정 Kakao 계정 브라우저에서 /admin/ E2E 확인
+코드 기반은 완료:
 
-## Admin Workspace V2 — 2026-09-19
+- Queue claim / lease / heartbeat / retry
+- Production PDF processor
+- MASTER manifest 검증
+- private Storage upload
+- immutable MASTER version rule
+- modern Supabase secret 지원
+- Docker hardening
 
-- [x] 상품 미리보기 404 원인 확인: `output: "export"` 환경에서 동적 admin preview route 사용
-- [x] 동적 `/admin/products/[code]/preview/` 제거
-- [x] 정적 export 호환 `/admin/products/preview/?code=...` 경로로 교체
-- [x] 관리자 화면을 네이버 스마트스토어 스타일 좌측 메뉴 Workspace로 재구성
-- [x] 기본 진입을 상품 데이터 관리 중심으로 변경
-- [x] 상품 검색 / 판매상태 필터 / 상품 수정 UI 추가
-- [x] 상품명 / 설명 / 연도 / 배지 / 구성품 / 가격 / 판매상태 수정 기능 추가
-- [x] 신규 상품 생성 기능 추가: 항상 비공개 + draft 버전으로 안전 생성
-- [x] 판매중 활성화는 published 버전이 있을 때만 DB에서 허용
-- [x] 콘텐츠·버전 / 주문 / 발행·다운로드 / 테스트센터 / 관리자설정 메뉴 분리
-- [x] Admin product create/update RPC는 service_role only, 지정 Kakao admin actor 필수
-- [x] `admin-action` Edge Function v5 ACTIVE
-- [x] CI Admin contract에 static preview / create / update action guard 추가
-- [ ] 최신 Vercel build 완료 확인
-- [ ] 브라우저에서 새 관리자 Workspace 및 미리보기 E2E 확인
+실환경:
 
-## Next Priorities
+- UGREEN NAS PASSMATE 공유폴더 구조 생성됨
+- SSH 활성화/22번 포트 설정 화면 확인
+- Mac → NAS `192.168.0.48:22` 접속은 timeout
+- NAS 작업은 집에서 재개하기로 함
+- `--check-config` 미실행
+- 실제 MASTER 미등록
+- 실제 `--once` 미실행
 
-1. Vercel에 `PASSMATE-Store` 프로젝트를 다시 Import/연결하고 production env 구성
-2. PortOne 실제 환경변수/웹훅 시크릿 확인 → webhook URL 등록 → sandbox 결제/취소/환불 + 실제 Auth 계정 E2E
-3. NAS `worker/.env`를 PASSMATE ref `fmecqeadghrdisirucqm` + modern `SUPABASE_SECRET_KEY`로 교체
-4. MASTER PDF 등록/verify → production `--once` → Storage/Registry/download/integrity E2E
-5. P2 dependency lock/CSP/least-privilege 후 public sale gate 재검토
+### Download / Issuance
 
+구현 완료:
 
-## Blocker
+- private `passmate-artifacts` bucket
+- signed URL
+- entitlement/order/job gate
+- Registry lifecycle
+- SHA-256/size integrity tracking
 
-Supabase 프로젝트는 project ref로 직접 접근 가능해져 DB 작업 blocker는 해소됨.
+실제 PDF가 아직 없으므로 real artifact → Library → download E2E는 미완료.
 
-현재 남은 외부 연동 blocker:
-- 현재 연결된 Vercel 계정/팀을 직접 조회하면 프로젝트 목록에는 `led-stage-editor`만 있고 `passmate-store`/PASSMATE 프로젝트가 없음. 따라서 PASSMATE production deployment/env 자동 설정은 아직 불가
-- PortOne sandbox E2E는 Store ID / KCP Channel Key / API Secret / Webhook Secret 실제 설정과 PortOne webhook URL 등록이 필요
-- NAS 실제 integration test는 MASTER PDF가 필요하며, 다음 실행 전 `worker/.env`의 Supabase URL을 PASSMATE project ref `fmecqeadghrdisirucqm`로 맞추고 같은 프로젝트의 modern `SUPABASE_SECRET_KEY`를 사용해야 함. production mode는 legacy service_role key를 코드에서 거부함
+### Stage Sound Content
 
-참고: 현재 PASSMATE Supabase 프로젝트 region은 **ap-northeast-1 (Tokyo)** 이다. 기존 계획의 Seoul(ap-northeast-2)과 다르므로 region 변경이 필요하면 별도 프로젝트 migration으로 처리해야 한다.
+현재:
+
+- 2016–2024 기출 corpus 기반 분석/원고 존재
+- PM-SS3-CORE 테스트 상품 등록
+- CORE 디자인 방향/Light Theme 확정
+
+Release Blocker:
+
+- 2025·2026 공식 기출/확정답안 편입
+- 최신 자료/법규 검증
+- 최종 QA
+- 최종 PDF
+- NAS MASTER 등록
+
+## Current Blockers
+
+1. **PortOne sandbox paid E2E**
+2. **Cart/package model을 LOCKED 2-SKU 구조와 정합화**
+3. **NAS SSH/Worker 실환경 연결**
+4. **실제 Stage Sound Release PDF / MASTER**
+5. 결제 → 발행 → 다운로드 전체 E2E
+
+## Next Actions
+
+1. Codex의 PortOne 작업 결과가 main/live에 무엇을 남겼는지 확인하고 sandbox paid를 완료
+2. 결제 작업과 충돌이 끝난 뒤 Cart/Pass Pack 가격·구성·DB 모델 정리
+3. 집에서 NAS SSH 정상화 → `--check-config`
+4. 테스트 MASTER 1개 등록 → paid order → Worker `--once`
+5. Library download/환불 차단까지 통과
+6. Stage Sound 콘텐츠 최신 공식자료 QA 후 V8 판매 오픈 검토
+
+## Security Note
+
+Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외에 현재 확인된 DB/RLS 핵심 권한 문제는 별도 신규 blocker로 확인되지 않았다. 관리자 계정은 Kakao OAuth 지정 계정으로 제한한다.

@@ -683,3 +683,29 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - 최신 Vercel build 상태 확인.
 - 카카오 관리자 계정으로 새 좌측 메뉴 Workspace 접속.
 - PM-SS3-CORE 수정/미리보기 흐름 확인 후 테스트 PDF 연결과 Library 다운로드 E2E 진행.
+
+
+## 2026-09-19 — Roadmap / Work / Codex Reconciliation
+
+**한 일**
+- GitHub main, live Supabase, Vercel 상태와 최근 Work/Codex 작업 흔적을 다시 대조.
+- 최신 Work 변경인 장바구니/패키지 선택 commit과 Vercel 성공을 확인.
+- live Supabase에서 PM-C2 published/active, PM-SS3-CORE draft/inactive 상태 확인.
+- 결제는 pending 주문/attempt 2건, payment event 0건, active entitlement 0건으로 확인되어 sandbox paid E2E를 미완료로 확정.
+- payment Edge Functions의 live 재배포는 확인했으나 Codex의 결제 설정 작업은 main commit/paid event가 없으므로 완료로 간주하지 않음.
+- cart checkout migration `20260919100000_cart_checkout.sql`이 live migration 목록에 없음을 확인.
+- 최신 Cart UI에서 LOCKED 상품 규칙과 충돌하는 합격팩 가격(base+6,000), 벼락치기 구성, 임시 PM-C2-PACK 모델을 발견.
+- ROADMAP/STATUS/README/AGENTS/Admin/PortOne 문서를 현재 상태 기준으로 정리.
+- 초기 V1 설계/셋업/2026-09-18 코드리뷰 문서를 `docs/archive/`로 이동하여 docs 루트의 현재 문서와 분리.
+
+**막힌 것**
+- Codex 결제 작업이 별도 흐름에서 진행 중이므로 결제/Cart 코드는 이번 정리 커밋에서 수정하지 않음.
+- PortOne sandbox paid event는 아직 없음.
+- NAS SSH는 로컬 22번 포트 timeout으로 실 Worker 연결 미진행.
+- Stage Sound 최종 Release PDF/MASTER 없음.
+
+**다음 할 일**
+- Codex PortOne 작업 종료 후 main/live 결과 재검증 → sandbox paid 완료.
+- Cart/Pass Pack 모델을 5,900/9,900 고정 2-SKU 구조로 한 번에 수정.
+- 집에서 NAS SSH 정상화 → Worker --check-config → 실제 MASTER/--once.
+- 결제 → 발행 → Storage → Library → download → refund/revoke E2E 후 V8 오픈 검토.

@@ -1,100 +1,103 @@
 # PASSMATE PortOne V2 + NHN KCP Integration
 
-## Current decision
-
-1차 결제 경로:
+## Decision
 
 ```text
 PASSMATE → PortOne V2 → NHN KCP
 ```
 
-## Required configuration
+테스트 채널 이름:
 
-Browser-safe identifiers:
+```text
+PASSMATE KCP TEST
+```
+
+2026-09-19 기준 PortOne V2 NHN KCP 테스트 채널 생성까지 완료했다.
+
+## Runtime configuration
+
+Browser/payment identifiers:
 
 - `PORTONE_STORE_ID`
 - `PORTONE_KCP_CHANNEL_KEY`
 
-Server-only secrets:
+Server-only:
 
 - `PORTONE_API_SECRET`
 - `PORTONE_WEBHOOK_SECRET`
 
-Server-only values must never be exposed to browser code or committed to Git.
+Secret은 Chat/GitHub/client bundle에 노출하지 않는다.
 
-## payment-start Edge Function
+## payment-start
 
-JWT-required endpoint. The browser sends only product slug + logical idempotency key.
+JWT-required.
 
 ```text
-JWT verify
-→ provider config check
+authenticated user
+→ server provider config
 → create_direct_checkout()
-→ server catalog price/version
-→ order + order_item + payment_attempt
-→ persisted merchant paymentId returned
+→ server catalog/version/price
+→ order + item + payment attempt
+→ paymentId/storeId/channelKey 반환
 ```
 
-The DB serializes provider + idempotency key. HTTP/browser retry of the same logical checkout returns the original order, payment attempt, and paymentId.
+클라이언트가 보낸 가격/상품명을 결제 금액의 Source of Truth로 사용하지 않는다.
 
-## payment-sync Edge Function
+## payment-sync
 
-JWT-required purchaser reconciliation endpoint.
-
-```text
-authenticated purchaser
-→ paymentId ownership check
-→ PortOne GET /payments/{paymentId}
-→ paymentId / Store ID / KRW / amount verification
-→ apply_payment_event()
-→ own order state polling
-```
-
-Browser/redirect success is never sufficient to mark an order paid. This endpoint is the synchronous recovery path when webhook delivery is delayed.
-
-## payment-webhook Edge Function
-
-The PortOne webhook endpoint does not use Supabase JWT. It authenticates the provider request with PortOne Standard Webhooks signature verification.
+JWT-required purchaser reconciliation.
 
 ```text
-raw body + webhook headers
-→ Standard Webhooks HMAC verify
-→ expected Store ID gate
-→ paymentId extract
-→ PortOne GET /payments/{paymentId}
-→ authoritative paymentId / Store ID / KRW / amount
+paymentId ownership
+→ PortOne API re-fetch
+→ Store ID / KRW / exact amount
 → apply_payment_event()
 ```
 
-The raw webhook body is not stored. The DB stores only a SHA-256 fingerprint and normalized payment event metadata.
+브라우저에서 "결제 성공"이 반환된 것만으로 paid 처리하지 않는다.
 
-Partial cancellation is not auto-applied in the current launch contract; it is surfaced as manual review. V3 supports full refund only.
+## payment-webhook
 
-## Multi-source convergence
+Supabase JWT 대신 PortOne Standard Webhooks 서명을 검증한다.
 
-Browser reconciliation and webhook delivery may race. `apply_payment_event()` serializes the payment attempt/order and treats a separately identified verified event for an already-applied identical state as `already_applied`. Entitlement grant and issuance enqueue therefore remain single-effect.
+```text
+raw body + headers
+→ webhook HMAC verification
+→ Store ID gate
+→ PortOne authoritative re-fetch
+→ payment identity/currency/amount
+→ apply_payment_event()
+```
 
-## Live deployment state
+raw webhook body는 저장하지 않고 fingerprint/정규화 event만 기록한다.
 
-As of 2026-09-18:
+## Current verified live state — 2026-09-19
 
-- `payment-start` v3 — ACTIVE, JWT required
-- `payment-sync` v1 — ACTIVE, JWT required
-- `payment-webhook` v3 — ACTIVE, gateway JWT disabled; custom PortOne signature verification required
-- Payment idempotency and reconciliation migrations applied
-- replay and sync/webhook convergence verification migrations passed
-- Supabase Security Advisor: 0 findings
+- payment Edge Functions는 ACTIVE
+- PortOne/KCP 테스트 채널 생성 완료
+- live DB에 pending payment attempt 2건 존재
+- payment event 0건
+- active entitlement 0건
+- issuance job 0건
 
-## Launch blocker
+따라서 **실제 sandbox paid event는 아직 확인되지 않았다.**
 
-Before sandbox/public payment validation:
+Edge Function 버전 숫자는 재배포 시 증가할 수 있으므로 이 문서에서는 특정 버전 숫자를 계약 기준으로 사용하지 않는다. 코드/해시/동작을 기준으로 검증한다.
 
-1. Confirm PortOne Store ID
-2. Confirm NHN KCP Channel Key
-3. Confirm PortOne V2 API Secret
-4. Configure PortOne Webhook Secret in the Edge Function environment
-5. Register the PASSMATE webhook URL in PortOne
-6. Run success/failure/cancel/full-refund sandbox E2E
-7. Confirm browser redirect + signed webhook races converge to one final DB state
+## Remaining Gate
 
-Do not enable public sales until this external E2E passes.
+1. Store ID / Channel Key 서버 설정 확인
+2. V2 API Secret 서버 설정 확인
+3. Webhook Secret 서버 설정 확인
+4. PortOne 테스트 Webhook URL 등록
+5. sandbox 카드 결제 성공 → paid
+6. 실패/취소/full-refund
+7. payment-sync와 signed webhook race 수렴
+8. entitlement 1회 grant
+9. issuance queue 1회 enqueue
+
+NAS가 아직 연결되지 않았으면 paid 후 issuance job이 queued에서 대기하는 것은 정상이다.
+
+## Public Sale Rule
+
+위 sandbox Gate를 통과하기 전에는 공개 판매를 활성화하지 않는다.
