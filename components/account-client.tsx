@@ -74,6 +74,9 @@ export function AccountClient() {
       </form>
       {message && <p className="auth-note">{message}</p>}
       <div className="account-actions">
+        {profile?.role === "admin" && (
+          <Link className="button button-primary" href="/admin/">관리자 대시보드</Link>
+        )}
         <Link className="button button-ghost" href="/library/">내 자료 보기</Link>
         <Link className="button button-ghost" href="/account/forgot-password/">비밀번호 변경</Link>
         <button className="button button-ghost auth-submit" type="button" onClick={signOut}>로그아웃</button>
