@@ -730,3 +730,21 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - branch 최종 검증 후 main merge 시점 결정.
 - live Supabase cart migration + payment-start Edge를 한 번에 반영.
 - 관리자에서 테스트 가격 변경 → 신규 checkout 서버 금액 확인 → PortOne sandbox 결제로 실제 E2E.
+
+
+## 2026-09-19 — Admin audit log visibility
+
+**한 일**
+- live Supabase에서 CORE/PASS 2-SKU와 `cart_checkout` 적용 상태를 재확인.
+- 기존 `admin_action_events`를 조회하는 관리자 전용 `events` view를 `admin-data`에 추가.
+- 관리자 설정에 최근 운영 변경 이력 100건을 읽기 전용으로 표시.
+- `admin-data` v5 배포 완료, ACTIVE/JWT required 확인.
+- Admin contract와 전체 production build 통과.
+
+**막힌 것**
+- 브라우저 자동화의 admin-enforced policy 확인 실패로 실제 Kakao 관리자 화면 E2E는 미진행.
+- UI 변경의 Vercel production 반영과 실제 브라우저 검증은 미완료.
+
+**다음 할 일**
+- main 기준 Vercel 배포 성공 확인.
+- 관리자 작업 1건 수행 후 운영 변경 이력 표시 확인.

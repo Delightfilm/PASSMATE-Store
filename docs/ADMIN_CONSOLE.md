@@ -24,6 +24,11 @@ SmartStore형 좌측 메뉴 Workspace:
 - 판매 공개 상태 변경
 - 비공개 상품 Preview
 
+관리자 설정에서 현재 가능한 작업:
+
+- 최근 `admin_action_events` 100건 조회
+- 상품 생성/수정, 발행 재시도/재생성, artifact 무결성 확인 이력 추적
+
 신규 상품은 항상 **비공개 + draft**로 생성한다.
 published 버전이 없는 상품은 DB에서 active 전환을 거부한다.
 
@@ -52,6 +57,7 @@ User JWT
 ```
 
 상품 create/update RPC는 anon/authenticated 직접 execute를 허용하지 않고 service role 경로에서만 실행한다.
+운영 변경 이력도 브라우저가 테이블을 직접 읽지 않고, 관리자 role을 확인한 `admin-data` Edge Function을 통해서만 조회한다.
 
 ## Issuance operations
 
@@ -80,6 +86,7 @@ User JWT
 - 지정 Kakao 계정 실제 브라우저 운영 확인
 - non-admin 접근 차단 확인
 - 상품 create/edit/preview 실제 흐름 확인
+- 실제 관리자 작업 후 운영 변경 이력 표시 확인
 - real dead-letter retry
 - 실결제 이후 주문/발행 상태 확인
 - 실제 Storage artifact 무결성 verify

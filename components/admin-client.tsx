@@ -114,6 +114,16 @@ type VersionRow = {
   created_at: string;
 };
 
+type AdminActionEventRow = {
+  id: number;
+  actor_user_id: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  detail: unknown;
+  created_at: string;
+};
+
 type ProductForm = {
   code: string;
   slug: string;
@@ -170,6 +180,17 @@ async function callAdmin<T>(
 
 function shortId(value: string): string {
   return value.slice(0, 8);
+}
+
+function actionLabel(value: string): string {
+  const labels: Record<string, string> = {
+    create_product: "상품 생성",
+    update_product: "상품 수정",
+    expedite_retry_wait: "발행 재시도",
+    reissue_dead_letter: "발행 재생성",
+    verify_issuance_artifact: "무결성 확인",
+  };
+  return labels[value] ?? value;
 }
 
 function featureStrings(value: unknown): string[] {
@@ -232,6 +253,7 @@ export function AdminClient() {
   const [catalog, setCatalog] = useState<CatalogRow[]>([]);
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [versions, setVersions] = useState<VersionRow[]>([]);
+  const [events, setEvents] = useState<AdminActionEventRow[]>([]);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -289,6 +311,7 @@ export function AdminClient() {
       jobResult,
       artifactResult,
       catalogResult,
+      eventResult,
       productResult,
       versionResult,
     ] = await Promise.all([
@@ -307,6 +330,10 @@ export function AdminClient() {
       }),
       callAdmin<{ data: CatalogRow[] }>("admin-data", accessToken, {
         view: "catalog",
+      }),
+      callAdmin<{ data: AdminActionEventRow[] }>("admin-data", accessToken, {
+        view: "events",
+        limit: 100,
       }),
       supabase
         .from("products")
@@ -328,6 +355,7 @@ export function AdminClient() {
     setJobs(jobResult.data ?? []);
     setArtifacts(artifactResult.data ?? []);
     setCatalog(catalogResult.data ?? []);
+    setEvents(eventResult.data ?? []);
     setProducts((productResult.data ?? []) as ProductRow[]);
     setVersions((versionResult.data ?? []) as VersionRow[]);
   }
@@ -1032,6 +1060,41 @@ export function AdminClient() {
                 관리자 권한은 화면의 이메일 비교가 아니라 Supabase Auth 사용자, profile role,
                 DB allowlist를 모두 통과해야 합니다.
               </p>
+            </section>
+
+            <section className="admin-panel">
+              <div className="admin-panel-head">
+                <div>
+                  <span className="eyebrow">AUDIT LOG</span>
+                  <h2>운영 변경 이력</h2>
+                </div>
+                <span>최근 {events.length}건</span>
+              </div>
+              <div className="admin-data-table-wrap">
+                <table className="admin-data-table">
+                  <thead>
+                    <tr>
+                      <th>작업</th>
+                      <th>대상</th>
+                      <th>상세</th>
+                      <th>관리자</th>
+                      <th>일시</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((event) => (
+                      <tr key={event.id}>
+                        <td><strong>{actionLabel(event.action)}</strong><small>{event.action}</small></td>
+                        <td>{event.target_type}{event.target_id ? ` · ${shortId(event.target_id)}` : ""}</td>
+                        <td><code>{JSON.stringify(event.detail) ?? "-"}</code></td>
+                        <td>{event.actor_user_id ? shortId(event.actor_user_id) : "-"}</td>
+                        <td>{new Date(event.created_at).toLocaleString("ko-KR")}</td>
+                      </tr>
+                    ))}
+                    {events.length === 0 && <tr><td colSpan={5}>아직 운영 변경 이력이 없습니다.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
             </section>
           </section>
         )}

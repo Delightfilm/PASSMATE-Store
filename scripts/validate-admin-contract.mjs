@@ -45,6 +45,15 @@ if (!dataFunction.includes('profile?.role !== "admin"')) {
   throw new Error("admin-data must verify the admin role.");
 }
 
+if (
+  !dataFunction.includes('body.view === "events"') ||
+  !dataFunction.includes('.from("admin_action_events")') ||
+  !client.includes('view: "events"') ||
+  !client.includes("운영 변경 이력")
+) {
+  throw new Error("Admin audit log must be available through the protected admin UI.");
+}
+
 if (!actionFunction.includes('profile?.role !== "admin"')) {
   throw new Error("admin-action must verify the admin role.");
 }

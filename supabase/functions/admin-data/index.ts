@@ -69,6 +69,12 @@ Deno.serve(async (req: Request) => {
       p_admin_user_id: userId,
       p_limit: Math.min(Math.max(body.limit ?? 100, 1), 300),
     });
+  } else if (body.view === "events") {
+    result = await admin
+      .from("admin_action_events")
+      .select("id,actor_user_id,action,target_type,target_id,detail,created_at")
+      .order("created_at", { ascending: false })
+      .limit(Math.min(Math.max(body.limit ?? 100, 1), 300));
   } else {
     return json(400, { error: "invalid_view" });
   }

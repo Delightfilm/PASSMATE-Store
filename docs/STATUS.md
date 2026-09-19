@@ -26,10 +26,12 @@ Live DB:
 
 | Code | Product | Price | Active | Version |
 |---|---|---:|---|---|
-| PM-C2 | 컴퓨터활용능력 2급 | 6,900원 | true | `2027-v1.0` published |
+| PM-C2 | 컴퓨터활용능력 2급 | 5,900원 | true | `2027-v1.0` published |
+| PM-C2-PASS | 컴퓨터활용능력 2급 합격팩 | 9,900원 | true | `2027-v1.0` published |
 | PM-SS3-CORE | 무대음향 3급 핵심요약 패키지 | 5,900원 | false | `2026-v0.1-test` draft |
+| PM-SS3-PASS | 무대음향 3급 합격팩 | 9,900원 | false | `2026-v0.1-test` draft |
 
-현재 출시 타깃은 **PM-SS3-CORE**다. PM-C2는 기존 개발/운영 fixture 성격이 남아 있으며 최신 2-SKU 구조와 별도로 정리 대상이다.
+현재 출시 타깃은 무대음향 3급이며, CORE/PASS 모두 QA 전까지 비공개 draft를 유지한다. PM-C2도 동일한 2-SKU 구조로 정리되어 있다.
 
 ### Locked Product Structure
 
@@ -51,10 +53,12 @@ Live DB:
 - draft 상품 Preview
 - 주문/발행/Artifact 조회
 - 재시도 및 무결성 확인 기반
+- `admin-data` v5 감사 로그 조회 경로 ACTIVE/JWT required
 
 남음:
 
 - 실제 브라우저 운영 E2E 최종 확인
+- 관리자 설정의 운영 변경 이력 UI를 Vercel에 반영하고 실제 action 표시 확인
 - PG 실제 환불 Admin action은 V3 실결제 검증 후
 
 ### Payment
@@ -88,7 +92,7 @@ Live DB 현재:
 
 ### Cart / Package Selection
 
-`feature/cart-v1-locked-skus`에서 코드 정리 완료, live 반영 대기.
+GitHub main과 live Supabase에 반영 완료.
 
 - CORE/PASS를 실제 독립 SKU로 처리
 - 합격팩 구성: PASS PACK + CORE + SHEET + CHECK
@@ -98,7 +102,7 @@ Live DB 현재:
 - 상품 카드/상세/장바구니 가격은 runtime에 Supabase active SKU에서 조회
 - 관리자 가격 수정은 `products.price_krw`를 변경하고 신규 checkout 총액에 직접 반영
 - checkout은 DB 가격을 `order_items.unit_price_krw`에 pin하고 서버 합계를 PortOne `totalAmount`로 전달
-- `20260919100000_cart_checkout.sql`은 아직 live migration 목록에 없음
+- live migration 목록에서 `cart_checkout` 적용 이력 2건 확인
 - branch `payment-start`도 아직 live Edge에 미배포
 
 ### NAS / Worker
