@@ -709,3 +709,24 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - Cart/Pass Pack 모델을 5,900/9,900 고정 2-SKU 구조로 한 번에 수정.
 - 집에서 NAS SSH 정상화 → Worker --check-config → 실제 MASTER/--once.
 - 결제 → 발행 → Storage → Library → download → refund/revoke E2E 후 V8 오픈 검토.
+
+
+## 2026-09-19 — Admin-controlled product pricing
+
+**한 일**
+- 장바구니/상품상세의 고정 가격 의존 제거.
+- 상품 카드, 상품 상세, 장바구니가 Supabase active SKU의 현재 `price_krw`를 runtime 조회하도록 변경.
+- 관리자 상품 편집 가격이 실제 신규 주문 결제금액까지 이어지는 경로 재검증.
+- 가격 흐름: Admin UI → admin-action → admin_update_product → products.price_krw → create_direct_checkout → order_items/unit price → order total → payment-start amountKrw → PortOne totalAmount.
+- 위 연결을 자동 검증하는 `validate-admin-price-flow.mjs` 추가.
+- 기본 출시가는 5,900/9,900으로 유지하되 운영 중 관리자가 SKU별로 변경 가능하도록 기준 문서 수정.
+
+**막힌 것**
+- branch cart migration은 live Supabase에 아직 적용하지 않음.
+- branch payment-start도 live Edge에 아직 배포하지 않음.
+- 실제 PortOne sandbox 승인 E2E는 live 통합 반영 후 진행.
+
+**다음 할 일**
+- branch 최종 검증 후 main merge 시점 결정.
+- live Supabase cart migration + payment-start Edge를 한 번에 반영.
+- 관리자에서 테스트 가격 변경 → 신규 checkout 서버 금액 확인 → PortOne sandbox 결제로 실제 E2E.

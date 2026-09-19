@@ -33,8 +33,10 @@ Live DB:
 
 ### Locked Product Structure
 
-- 핵심요약 패키지 5,900원 = CORE + SHEET + CHECK
-- 합격팩 9,900원 = PASS PACK + CORE + SHEET + CHECK
+- 핵심요약 패키지 = CORE + SHEET + CHECK
+- 합격팩 = PASS PACK + CORE + SHEET + CHECK
+- 기본 출시가는 5,900원 / 9,900원이며 실제 운영 가격은 관리자 페이지에서 SKU별 변경
+- 결제 가격 Source of Truth는 `products.price_krw`
 - 별도 CRAM/벼락치기 상품 없음
 
 ### Admin
@@ -86,16 +88,18 @@ Live DB 현재:
 
 ### Cart / Package Selection
 
-main에 UI/DB migration 코드가 추가되었지만 Release-ready가 아니다.
+`feature/cart-v1-locked-skus`에서 코드 정리 완료, live 반영 대기.
 
-현재 확인된 정합성 문제:
-
-1. 합격팩 가격을 base + 6,000원으로 계산 → LOCKED 9,900원과 불일치
-2. 합격팩 설명에 폐기된 `벼락치기`가 포함됨
-3. 임시 PM-C2-PACK 모델이 현재 2-SKU 규칙과 불일치
-4. `20260919100000_cart_checkout.sql`은 live migration 목록에 없음
-
-**결제 E2E 진행 중인 Codex 작업과 충돌하지 않도록 지금은 코드 수정하지 않고 다음 통합 정리에서 수정한다.**
+- CORE/PASS를 실제 독립 SKU로 처리
+- 합격팩 구성: PASS PACK + CORE + SHEET + CHECK
+- 폐기된 별도 벼락치기 문구 제거
+- 디지털 상품 수량 중복 제거
+- 같은 자격증 패키지 선택은 교체
+- 상품 카드/상세/장바구니 가격은 runtime에 Supabase active SKU에서 조회
+- 관리자 가격 수정은 `products.price_krw`를 변경하고 신규 checkout 총액에 직접 반영
+- checkout은 DB 가격을 `order_items.unit_price_krw`에 pin하고 서버 합계를 PortOne `totalAmount`로 전달
+- `20260919100000_cart_checkout.sql`은 아직 live migration 목록에 없음
+- branch `payment-start`도 아직 live Edge에 미배포
 
 ### NAS / Worker
 
