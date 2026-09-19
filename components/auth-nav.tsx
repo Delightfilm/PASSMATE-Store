@@ -69,6 +69,7 @@ export function AuthNav() {
   if (!user) {
     return (
       <div className="auth-nav">
+        <Link className="auth-nav-link" href="/account/login/?next=%2Fcart%2F">장바구니</Link>
         <Link className="auth-nav-link" href="/account/login/">로그인</Link>
       </div>
     );
@@ -80,6 +81,7 @@ export function AuthNav() {
       {isAdmin && (
         <Link className="auth-nav-link" href="/admin/">관리자</Link>
       )}
+      <Link className="auth-nav-link" href="/cart/">장바구니</Link>
       <Link className="auth-nav-link" href="/account/">내 계정</Link>
     </div>
   );
