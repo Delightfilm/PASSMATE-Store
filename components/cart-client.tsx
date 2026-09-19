@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CartItem,
@@ -80,14 +80,7 @@ export function CartClient() {
     !priceLoading &&
     items.every((item) => prices[item.slug] !== undefined);
 
-  const total = useMemo(
-    () =>
-      items.reduce(
-        (sum, item) => sum + (prices[item.slug] ?? 0),
-        0
-      ),
-    [items, prices]
-  );
+  const total = items.reduce((sum, item) => sum + (prices[item.slug] ?? 0), 0);
 
   function update(next: CartItem[]) {
     writeCart(next);
