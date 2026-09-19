@@ -636,3 +636,26 @@ The remaining launch gate is real NAS + authenticated account + PortOne sandbox 
 - Vercel build 완료 확인.
 - 관리자 계정으로 `/admin/products/PM-SS3-CORE/preview/` 실제 접근 및 PC/모바일 확인.
 - Preview 승인 후 테스트 PDF를 연결하고 구매 → entitlement → Library → download E2E 진행.
+
+
+## 2026-09-19 — Owner Admin Dashboard
+
+**한 일**
+- 카카오 `jhpodong@naver.com` 계정을 PASSMATE 유일 관리자 계정으로 지정.
+- live Supabase에서 해당 Kakao user의 profile role을 admin으로 승격하고 다른 계정은 customer 유지.
+- DB의 `private.is_admin()`, `private.assert_admin_actor()`를 지정 Kakao 계정 검증과 결합.
+- 다른 계정이 admin role을 얻는 것을 막는 profiles trigger 추가.
+- 헤더와 내 계정에 관리자 전용 대시보드 진입 버튼 추가.
+- 기존 운영자용 표/로그 중심 `/admin/`을 상품·주문·발행 중심의 쉬운 대시보드로 재설계.
+- 무대음향 3급 테스트 상품 Preview를 첫 번째 빠른 작업으로 배치.
+- 상품/주문/발행/Library/스토어 바로가기와 요약 KPI 카드 추가.
+- 고급 발행/무결성 정보는 별도 펼침 영역으로 내려 초보 운영 화면을 단순화.
+
+**막힌 것**
+- 최신 Vercel status가 현재 pending이라 Production 브라우저 E2E는 build 완료 후 확인 필요.
+- Supabase Security Advisor는 DB/RLS 취약점 대신 계정 전체 설정의 Leaked Password Protection 비활성 WARN 1건을 표시. 현재 지정 관리자는 Kakao OAuth 계정이지만 이메일/비밀번호 사용자 보호 강화를 위해 후속 설정 가능.
+
+**다음 할 일**
+- Vercel build 완료 확인.
+- `jhpodong@naver.com` 카카오 로그인으로 `/admin/` 진입 및 PC/모바일 화면 확인.
+- 대시보드에서 PM-SS3-CORE 미리보기 승인 후 테스트 PDF 연결 → 구매 → Library → 다운로드 E2E.
