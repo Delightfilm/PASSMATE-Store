@@ -45,6 +45,15 @@ Deno.serve(async (req: Request) => {
     action?: string;
     jobId?: string;
     artifactId?: string;
+    productId?: string;
+    title?: string;
+    subtitle?: string;
+    description?: string;
+    displayYear?: number;
+    badge?: string;
+    features?: unknown;
+    priceKrw?: number;
+    isActive?: boolean;
   };
 
   try {
@@ -54,6 +63,48 @@ Deno.serve(async (req: Request) => {
   }
 
   const admin = ctx.supabaseAdmin;
+
+  if (body.action === "update_product") {
+    if (!body.productId || !/^[0-9a-fA-F-]{36}$/.test(body.productId)) {
+      return json(400, { error: "invalid_product_id" });
+    }
+
+    if (
+      typeof body.title !== "string" ||
+      typeof body.displayYear !== "number" ||
+      typeof body.priceKrw !== "number" ||
+      typeof body.isActive !== "boolean" ||
+      !Array.isArray(body.features) ||
+      !body.features.every((item) => typeof item === "string")
+    ) {
+      return json(400, { error: "invalid_product_payload" });
+    }
+
+    const { data, error } = await admin.rpc("admin_update_product", {
+      p_admin_user_id: ctx.userClaims.id,
+      p_product_id: body.productId,
+      p_title: body.title,
+      p_subtitle: body.subtitle ?? "",
+      p_description: body.description ?? "",
+      p_display_year: Math.trunc(body.displayYear),
+      p_badge: body.badge ?? "",
+      p_features: body.features,
+      p_price_krw: Math.trunc(body.priceKrw),
+      p_is_active: body.isActive,
+    });
+
+    if (error) {
+      console.error("admin product update failed", error.code);
+      return json(409, {
+        error:
+          error.message?.includes("published version")
+            ? "published_version_required"
+            : "admin_product_update_rejected",
+      });
+    }
+
+    return json(200, { result: data });
+  }
 
   if (body.action === "retry_issuance") {
     if (!body.jobId || !/^[0-9a-fA-F-]{36}$/.test(body.jobId)) {
