@@ -1139,6 +1139,7 @@ function ProductEditor({
         <label>
           <span>가격(원)</span>
           <input inputMode="numeric" value={form.priceKrw} onChange={(event) => set("priceKrw", event.target.value)} />
+          <small>저장한 가격은 이후 생성되는 신규 주문의 서버 기준 결제금액으로 사용됩니다.</small>
         </label>
       </div>
 

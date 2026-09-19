@@ -22,8 +22,8 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 
 | SKU | Price | Composition |
 |---|---:|---|
-| 핵심요약 패키지 | 5,900원 | CORE + SHEET + CHECK |
-| 합격팩 | 9,900원 | PASS PACK + CORE + SHEET + CHECK |
+| 핵심요약 패키지 | 기본 출시가 5,900원 | CORE + SHEET + CHECK |
+| 합격팩 | 기본 출시가 9,900원 | PASS PACK + CORE + SHEET + CHECK |
 
 - 별도 CRAM/벼락치기 PDF는 만들지 않는다.
 - D-1/시험직전 암기는 CORE 마지막에 포함한다.
@@ -64,18 +64,19 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 
 **paid 결제가 실제 DB에 기록되기 전에는 V3 완료로 표시하지 않는다.**
 
-### B. Cart / Package Selection — Work 구현분 정합성 수정 필요
+### B. Cart / Package Selection — GitHub branch 정리 완료
 
-2026-09-19 main에 장바구니/패키지 선택 UI가 들어갔다. 현재는 **프로토타입**으로 취급한다.
+`feature/cart-v1-locked-skus`에서 다음 기준으로 정리했다.
 
-Release 전 수정 필수:
-
-- 합격팩 가격을 `핵심요약 가격 + 6,000원`으로 계산하지 말고 **9,900원 고정 SKU**로 관리
-- 합격팩 구성에서 폐기된 `벼락치기` 표현 제거
-- 합격팩 구성은 **PASS PACK + CORE + SHEET + CHECK**
-- checkout은 클라이언트 가격이 아니라 서버의 실제 상품 SKU/가격만 신뢰
-- repo의 `20260919100000_cart_checkout.sql`은 **live Supabase에 아직 적용되지 않음**
-- PM-C2-PACK 같은 임시 파생 SKU는 고정 상품모델에 맞춘 뒤 적용 여부를 결정
+- 고객 선택지는 CORE / PASS 2-SKU 구조 유지
+- 기본 출시가는 CORE 5,900원 / PASS 9,900원이지만 운영 가격은 관리자 페이지에서 SKU별 변경 가능
+- 상품 카드/상세/장바구니는 현재 active SKU 가격을 runtime 조회
+- checkout은 브라우저 가격을 신뢰하지 않고 DB `price_krw`로 order item과 총액을 생성
+- 같은 자격증의 CORE/PASS는 장바구니에서 수량 증가가 아니라 선택 교체
+- 서로 다른 자격증은 multi-item checkout 가능
+- idempotency replay는 동일 cart SKU set일 때만 허용
+- `20260919100000_cart_checkout.sql`과 branch `payment-start`는 아직 live Supabase에 적용하지 않음
+- main merge / Supabase 반영 / Vercel Production은 최종 검증 후 한 번에 진행
 
 ### C. NAS
 

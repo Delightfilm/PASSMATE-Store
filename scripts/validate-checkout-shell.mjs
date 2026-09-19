@@ -107,7 +107,7 @@ if (
 for (const mapping of [
   "productCode: row.product_code",
   "productVersion: row.product_version",
-  "orderName: row.product_title",
+  "orderName: row.order_name",
   "amountKrw: row.amount_krw",
 ]) {
   if (!paymentStart.includes(mapping)) {

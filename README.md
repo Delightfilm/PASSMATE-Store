@@ -42,8 +42,10 @@ PASSMATE는 자격증 학습용 디지털 PDF를 판매하고, 결제부터 구�
 
 판매 선택지는 2개만 운영합니다.
 
-- **핵심요약 패키지 — 5,900원**: CORE + SHEET + CHECK
-- **합격팩 — 9,900원**: PASS PACK + CORE + SHEET + CHECK
+- **핵심요약 패키지 — 기본 출시가 5,900원**: CORE + SHEET + CHECK
+- **합격팩 — 기본 출시가 9,900원**: PASS PACK + CORE + SHEET + CHECK
+
+운영 가격은 관리자 페이지에서 SKU별로 변경하며, 실제 신규 주문 결제금액은 Supabase `products.price_krw`에서 결정됩니다.
 
 별도 CRAM/벼락치기 상품은 만들지 않습니다.
 

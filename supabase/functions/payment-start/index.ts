@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 const allowedRequestFields = new Set(["productSlug", "productSlugs", "idempotencyKey"]);
+const PASS_PACK_SUFFIX = "-pass-pack";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
@@ -15,13 +16,94 @@ function json(status: number, body: unknown) {
   });
 }
 
+function familySlug(slug: string) {
+  return slug.endsWith(PASS_PACK_SUFFIX)
+    ? slug.slice(0, -PASS_PACK_SUFFIX.length)
+    : slug;
+}
+
+function parseProductSlugs(body: Record<string, unknown>) {
+  let productSlugs: string[];
+
+  if (Array.isArray(body.productSlugs)) {
+    if (
+      body.productSlugs.length === 0 ||
+      body.productSlugs.length > 20 ||
+      body.productSlugs.some(
+        (value) =>
+          typeof value !== "string" ||
+          value.length < 1 ||
+          value.length > 160
+      )
+    ) {
+      return { error: "invalid_product_slugs" as const };
+    }
+    productSlugs = body.productSlugs as string[];
+  } else if (
+    typeof body.productSlug === "string" &&
+    body.productSlug.length >= 1 &&
+    body.productSlug.length <= 160
+  ) {
+    productSlugs = [body.productSlug];
+  } else {
+    return { error: "product_slug_required" as const };
+  }
+
+  if (
+    typeof body.productSlug === "string" &&
+    body.productSlug !== productSlugs[0]
+  ) {
+    return { error: "product_slug_mismatch" as const };
+  }
+
+  if (new Set(productSlugs).size !== productSlugs.length) {
+    return { error: "duplicate_product_slug" as const };
+  }
+
+  const families = productSlugs.map(familySlug);
+  if (new Set(families).size !== families.length) {
+    return { error: "conflicting_package_selection" as const };
+  }
+
+  return { productSlugs };
+}
+
+type PaymentItem = {
+  slug: string;
+  code: string;
+  title: string;
+  version: string;
+  amountKrw: number;
+};
+
+function isPaymentItem(value: unknown): value is PaymentItem {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.slug === "string" &&
+    item.slug.length > 0 &&
+    typeof item.code === "string" &&
+    item.code.length > 0 &&
+    typeof item.title === "string" &&
+    item.title.length > 0 &&
+    typeof item.version === "string" &&
+    item.version.length > 0 &&
+    typeof item.amountKrw === "number" &&
+    Number.isInteger(item.amountKrw) &&
+    item.amountKrw >= 0
+  );
+}
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+  if (req.method !== "POST") {
+    return json(405, { error: "method_not_allowed" });
+  }
 
   const storeId = Deno.env.get("PORTONE_STORE_ID");
   const channelKey = Deno.env.get("PORTONE_KCP_CHANNEL_KEY");
-
   if (!storeId || !channelKey) {
     return json(503, { error: "payment_provider_not_configured" });
   }
@@ -48,12 +130,11 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "unexpected_checkout_field" });
   }
 
-  const productSlugs = Array.isArray(body.productSlugs)
-    ? body.productSlugs.filter((value): value is string => typeof value === "string" && value.length > 0)
-    : typeof body.productSlug === "string" && body.productSlug.length > 0 ? [body.productSlug] : [];
-  if (productSlugs.length === 0 || productSlugs.length > 20) {
-    return json(400, { error: "product_slug_required" });
+  const parsedSlugs = parseProductSlugs(body);
+  if ("error" in parsedSlugs) {
+    return json(400, { error: parsedSlugs.error });
   }
+  const productSlugs = parsedSlugs.productSlugs;
 
   const idempotencyKey =
     typeof body.idempotencyKey === "string" && body.idempotencyKey.length > 0
@@ -82,8 +163,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const row = Array.isArray(data) ? data[0] : null;
-  if (!row) return json(500, { error: "checkout_result_missing" });
+  if (!row) {
+    return json(500, { error: "checkout_result_missing" });
+  }
 
+  const items: unknown = row.items;
   if (
     typeof row.order_id !== "string" ||
     typeof row.payment_attempt_id !== "string" ||
@@ -91,11 +175,13 @@ Deno.serve(async (req: Request) => {
     !Number.isInteger(row.amount_krw) ||
     row.amount_krw < 0 ||
     typeof row.product_code !== "string" ||
-    row.product_code.length === 0 ||
     typeof row.product_title !== "string" ||
-    row.product_title.length === 0 ||
     typeof row.product_version !== "string" ||
-    row.product_version.length === 0
+    typeof row.order_name !== "string" ||
+    !Array.isArray(items) ||
+    items.length === 0 ||
+    !items.every(isPaymentItem) ||
+    items.reduce((sum, item) => sum + item.amountKrw, 0) !== row.amount_krw
   ) {
     return json(500, { error: "checkout_result_invalid" });
   }
@@ -113,7 +199,6 @@ Deno.serve(async (req: Request) => {
     typeof attempt.merchant_order_id !== "string" ||
     attempt.merchant_order_id.length === 0
   ) {
-    console.error("payment attempt identity lookup failed");
     return json(500, { error: "checkout_payment_identity_missing" });
   }
 
@@ -126,7 +211,8 @@ Deno.serve(async (req: Request) => {
     channelKey,
     productCode: row.product_code,
     productVersion: row.product_version,
-    orderName: row.product_title,
+    orderName: row.order_name,
+    items,
     amountKrw: row.amount_krw,
     currency: "KRW",
     payMethod: "CARD",
