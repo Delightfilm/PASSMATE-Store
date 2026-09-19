@@ -293,6 +293,22 @@ Live Supabase 확인:
 - [ ] 관리자 계정으로 `/admin/products/PM-SS3-CORE/preview/` 브라우저 E2E 확인
 - [ ] Preview 승인 후 테스트 PDF 연결 및 구매→Library→download E2E
 
+## Owner Admin Dashboard — 2026-09-19
+
+- [x] 관리자 계정을 카카오 `jhpodong@naver.com` 단일 계정으로 고정
+- [x] 해당 Kakao Auth user를 `profiles.role=admin`으로 승격
+- [x] 다른 계정이 admin role을 획득하지 못하도록 DB trigger + admin actor 검증 강화
+- [x] `private.is_admin()`과 Admin RPC actor 검증 모두 지정 Kakao 계정 조건 반영
+- [x] 헤더 로그인 영역에 관리자 계정만 `관리자` 버튼 노출
+- [x] 내 계정 화면에 관리자 계정만 `관리자 대시보드` 버튼 노출
+- [x] `/admin/`을 비개발자용 운영 대시보드로 재구성
+- [x] 상품/판매중/주문/결제완료/자료완료/오늘 다운로드 요약 카드 추가
+- [x] 무대음향 테스트 상품 미리보기, 상품/주문/발행/Library/스토어 빠른 작업 추가
+- [x] 상품 카드에서 비공개 테스트 상품 직접 미리보기
+- [x] 최근 주문/발행 작업/고급 무결성 정보 분리
+- [ ] 최신 Vercel build 완료 확인
+- [ ] 지정 Kakao 계정 브라우저에서 /admin/ E2E 확인
+
 ## Next Priorities
 
 1. Vercel에 `PASSMATE-Store` 프로젝트를 다시 Import/연결하고 production env 구성
