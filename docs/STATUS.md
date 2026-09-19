@@ -280,6 +280,19 @@ Live Supabase 확인:
 
 결론: 코드리뷰 P0 3건은 코드·회귀 테스트·live Supabase 검증까지 닫혔다. 판매 오픈 전 실제 NAS/PortOne/Auth E2E와 결제/관리 P1을 이어서 닫는다.
 
+## Test Product Preview — 2026-09-19
+
+- [x] 무대음향 3급 핵심요약 패키지 테스트 상품 DB 등록
+- [x] 상품 코드 `PM-SS3-CORE`, 가격 5,900원, `2026-v0.1-test` draft 버전 생성
+- [x] 테스트 상품은 `is_active=false`로 공개 차단
+- [x] Admin 상품 카드에서 비공개 상품 미리보기 진입 경로 추가
+- [x] 관리자 JWT + admin role + RLS를 통과한 경우에만 비활성 상품 상세 데이터 조회
+- [x] 무대음향 핵심요약 Light Theme 표지 Preview 추가
+- [x] 공개 상품 카드/상세가 무대음향 CORE를 활성화할 때 동적 표지를 사용할 수 있도록 준비
+- [ ] Vercel 최신 build 결과 확인
+- [ ] 관리자 계정으로 `/admin/products/PM-SS3-CORE/preview/` 브라우저 E2E 확인
+- [ ] Preview 승인 후 테스트 PDF 연결 및 구매→Library→download E2E
+
 ## Next Priorities
 
 1. Vercel에 `PASSMATE-Store` 프로젝트를 다시 Import/연결하고 production env 구성
