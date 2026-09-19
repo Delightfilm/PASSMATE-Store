@@ -78,7 +78,7 @@ export function AuthNav() {
     <div className="auth-nav">
       <span className="auth-nav-user">{user.email}</span>
       {isAdmin && (
-        <Link className="auth-nav-link" href="/admin/">관리</Link>
+        <Link className="auth-nav-link" href="/admin/">관리자</Link>
       )}
       <Link className="auth-nav-link" href="/account/">내 계정</Link>
     </div>
