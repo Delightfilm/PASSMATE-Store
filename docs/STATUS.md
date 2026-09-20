@@ -1,6 +1,6 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-09-19**
+> Last updated: **2026-09-20**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
@@ -15,10 +15,10 @@
 ### GitHub / Vercel
 
 - Repository: `Delightfilm/PASSMATE-Store`
-- 2026-09-19 Work 변경: 장바구니 + 패키지 선택 UI가 main에 반영됨
-- 해당 main commit의 Vercel status는 **success**
+- 장바구니 + 패키지 선택 UI와 관리자 감사 로그 UI가 main에 반영됨
+- 최신 확인 commit `0553df3`의 GitHub Build, Vercel, Supabase Preview는 모두 **success**
 - 관리자 Workspace V2, static-export-safe 상품 Preview, 상품 create/edit 코드 반영
-- Supabase Preview용 local/live migration history 35/35 정합화
+- Supabase Preview용 local/live migration history 정합화
 - 불필요한 Vercel 반복 배포는 중단하고 변경을 묶어서 진행
 
 ### Product / Supabase Catalog
@@ -55,11 +55,12 @@ Live DB:
 - 주문/발행/Artifact 조회
 - 재시도 및 무결성 확인 기반
 - `admin-data` v5 감사 로그 조회 경로 ACTIVE/JWT required
+- 관리자 설정의 운영 변경 이력 UI production 반영
 
 남음:
 
 - 실제 브라우저 운영 E2E 최종 확인
-- 관리자 설정의 운영 변경 이력 UI를 Vercel에 반영하고 실제 action 표시 확인
+- 관리자 action 1건 수행 후 운영 변경 이력 표시 확인
 - PG 실제 환불 Admin action은 V3 실결제 검증 후
 
 ### Payment
@@ -104,7 +105,7 @@ GitHub main과 live Supabase에 반영 완료.
 - 관리자 가격 수정은 `products.price_krw`를 변경하고 신규 checkout 총액에 직접 반영
 - checkout은 DB 가격을 `order_items.unit_price_krw`에 pin하고 서버 합계를 PortOne `totalAmount`로 전달
 - live migration 목록에서 `cart_checkout` 적용 이력 2건 확인
-- branch `payment-start`도 아직 live Edge에 미배포
+- `payment-start`는 live Edge에서 ACTIVE이며 실제 결제 E2E는 Payment 항목에서 별도 검증
 
 ### NAS / Worker
 
@@ -159,19 +160,17 @@ Release Blocker:
 ## Current Blockers
 
 1. **PortOne sandbox paid E2E**
-2. **Cart/package model을 LOCKED 2-SKU 구조와 정합화**
-3. **NAS SSH/Worker 실환경 연결**
-4. **실제 Stage Sound Release PDF / MASTER**
-5. 결제 → 발행 → 다운로드 전체 E2E
+2. **NAS SSH/Worker 실환경 연결**
+3. **실제 Stage Sound Release PDF / MASTER**
+4. 결제 → 발행 → 다운로드 전체 E2E
 
 ## Next Actions
 
 1. Codex의 PortOne 작업 결과가 main/live에 무엇을 남겼는지 확인하고 sandbox paid를 완료
-2. 결제 작업과 충돌이 끝난 뒤 Cart/Pass Pack 가격·구성·DB 모델 정리
-3. 집에서 NAS SSH 정상화 → `--check-config`
-4. 테스트 MASTER 1개 등록 → paid order → Worker `--once`
-5. Library download/환불 차단까지 통과
-6. Stage Sound 콘텐츠 최신 공식자료 QA 후 V8 판매 오픈 검토
+2. 집에서 NAS SSH 정상화 → `--check-config`
+3. 테스트 MASTER 1개 등록 → paid order → Worker `--once`
+4. Library download/환불 차단까지 통과
+5. Stage Sound 콘텐츠 최신 공식자료 QA 후 V8 판매 오픈 검토
 
 ## Security Note
 
