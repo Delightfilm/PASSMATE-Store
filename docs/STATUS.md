@@ -149,7 +149,7 @@ GitHub main과 live Supabase에 반영 완료.
 - 2025·2026 공식 게시 이력과 법령 기준은 [공식자료 점검 문서](./STAGE_SOUND_SOURCE_AUDIT_2026-09-20.md)에 분리 정리
 - 관리자 Preview 로컬 코드에 무대음향 Light/Dark 표지 비교 적용
 - 상품 카피 1차 QA 완료: 근거 없는 기출 기반/출제이력 표현 제거, CORE/SHEET/CHECK 구조 통일
-- 카피 정리용 Supabase migration 작성 완료, live 적용은 연결 timeout으로 대기
+- 카피 정리용 Supabase migration `20260920011743` live 적용 및 CORE/PASS `inactive + draft` 검증 완료
 - PM-SS3-CORE 테스트 상품 등록
 - Light Theme는 고객 노출 기본안, Dark Theme는 비교안으로 유지
 
@@ -158,6 +158,7 @@ Release Blocker:
 - 2025·2026 공식 문제지/확정답안 실파일 확보 및 이용 범위 확인
 - 2025·2026 출제기준표·표준교재 정오표 실파일 확보
 - 시험일 시행 법령과 현행 법령의 조문별 검증
+- 관리자 로그인 상태에서 Light/Dark 표지 PC·모바일 실제 QA
 - 최종 QA
 - 최종 PDF
 - NAS MASTER 등록
