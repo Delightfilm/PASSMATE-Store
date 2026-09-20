@@ -147,8 +147,11 @@ GitHub main과 live Supabase에 반영 완료.
 
 - 2016–2024 기출 corpus/원고는 기존 문서상 기록만 있고 현재 로컬 실파일은 미확인
 - 2025·2026 공식 게시 이력과 법령 기준은 [공식자료 점검 문서](./STAGE_SOUND_SOURCE_AUDIT_2026-09-20.md)에 분리 정리
+- 관리자 Preview 로컬 코드에 무대음향 Light/Dark 표지 비교 적용
+- 상품 카피 1차 QA 완료: 근거 없는 기출 기반/출제이력 표현 제거, CORE/SHEET/CHECK 구조 통일
+- 카피 정리용 Supabase migration 작성 완료, live 적용은 연결 timeout으로 대기
 - PM-SS3-CORE 테스트 상품 등록
-- CORE 디자인 방향/Light Theme 확정
+- Light Theme는 고객 노출 기본안, Dark Theme는 비교안으로 유지
 
 Release Blocker:
 

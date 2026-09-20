@@ -39,6 +39,7 @@ export function AdminProductPreview({ code }: { code: string }) {
   const [product, setProduct] = useState<PreviewProduct | null>(null);
   const [versions, setVersions] = useState<PreviewVersion[]>([]);
   const [error, setError] = useState("");
+  const [coverTheme, setCoverTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     let active = true;
@@ -167,23 +168,44 @@ export function AdminProductPreview({ code }: { code: string }) {
       </div>
 
       <section className="admin-product-preview-grid">
-        <div className="product-cover-wrap">
-          <ProductCover
-            theme={isStageSoundCore ? "light" : "dark"}
-            year={product.display_year ?? 2026}
-            titleLines={
-              isStageSoundCore
-                ? ["무대음향", "3급"]
-                : [product.title]
-            }
-            label={isStageSoundCore ? "핵심요약 NOTE" : product.badge ?? "PASSMATE"}
-            subtitle={
-              isStageSoundCore
-                ? "기출 기반 핵심 개념 · 공식 · 숫자 · 함정"
-                : product.subtitle ?? ""
-            }
-            series={isStageSoundCore ? "STAGE SOUND" : product.code}
-          />
+        <div className="admin-cover-review">
+          {isStageSoundCore ? (
+            <div className="cover-theme-switch" role="group" aria-label="표지 디자인 선택">
+              {(["light", "dark"] as const).map((theme) => (
+                <button
+                  key={theme}
+                  type="button"
+                  className={
+                    coverTheme === theme
+                      ? "cover-theme-option cover-theme-option--active"
+                      : "cover-theme-option"
+                  }
+                  aria-pressed={coverTheme === theme}
+                  onClick={() => setCoverTheme(theme)}
+                >
+                  {theme === "light" ? "Light" : "Dark"}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="product-cover-wrap">
+            <ProductCover
+              theme={isStageSoundCore ? coverTheme : "dark"}
+              year={product.display_year ?? 2026}
+              titleLines={
+                isStageSoundCore
+                  ? ["무대음향", "3급"]
+                  : [product.title]
+              }
+              label={isStageSoundCore ? "핵심요약 NOTE" : product.badge ?? "PASSMATE"}
+              subtitle={
+                isStageSoundCore
+                  ? "핵심 개념 · 공식 · 숫자 · 체크리스트"
+                  : product.subtitle ?? ""
+              }
+              series={isStageSoundCore ? "STAGE SOUND" : product.code}
+            />
+          </div>
         </div>
 
         <div className="product-info">

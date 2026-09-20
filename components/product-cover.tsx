@@ -14,7 +14,7 @@ export function ProductCover({
   year = 2027,
   titleLines = ["컴퓨터활용능력", "2급"],
   label = "핵심요약 NOTE",
-  subtitle = "필기 + 실기 + 벼락치기",
+  subtitle = "CORE + SHEET + CHECK",
   series = "CORE 01",
 }: ProductCoverProps) {
   const title = titleLines.join(" ");
@@ -22,6 +22,7 @@ export function ProductCover({
   return (
     <div
       className={`product-cover ${small ? "product-cover--small" : ""} ${theme === "light" ? "product-cover--light" : ""}`}
+      role="img"
       aria-label={`${year} ${title} PASSMATE 표지 샘플`}
     >
       <div className="cover-top"><span>PASSMATE</span><span>{series}</span></div>

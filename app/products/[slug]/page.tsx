@@ -36,7 +36,7 @@ export default async function ProductPage({
             label="핵심요약 NOTE"
             subtitle={
               isStageSoundCore
-                ? "기출 기반 핵심 개념 · 공식 · 숫자 · 함정"
+                ? "핵심 개념 · 공식 · 숫자 · 체크리스트"
                 : "CORE + SHEET + CHECK"
             }
             series={isStageSoundCore ? "STAGE SOUND" : "CORE 01"}
