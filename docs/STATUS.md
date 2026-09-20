@@ -27,20 +27,22 @@ Live DB:
 
 | Code | Product | Price | Active | Version |
 |---|---|---:|---|---|
-| PM-C2 | 컴퓨터활용능력 2급 | 5,900원 | true | `2027-v1.0` published |
-| PM-C2-PASS | 컴퓨터활용능력 2급 합격팩 | 9,900원 | true | `2027-v1.0` published |
-| PM-SS3-CORE | 무대음향 3급 핵심요약 패키지 | 5,900원 | false | `2026-v0.1-test` draft |
-| PM-SS3-PASS | 무대음향 3급 합격팩 | 9,900원 | false | `2026-v0.1-test` draft |
+| PM-C2 | 컴퓨터활용능력 2급 (UI: 핵심노트) | 5,900원 | true | `2027-v1.0` published |
+| PM-C2-PASS | 컴퓨터활용능력 2급 합격팩 (UI: 시험대비 완성패키지) | 9,900원 | true | `2027-v1.0` published |
+| PM-SS3-CORE | 무대음향 3급 핵심요약 패키지 (UI: 핵심노트) | 5,900원 | false | `2026-v0.1-test` draft |
+| PM-SS3-PASS | 무대음향 3급 합격팩 (UI: 시험대비 완성패키지) | 9,900원 | false | `2026-v0.1-test` draft |
 
 현재 출시 타깃은 무대음향 3급이며, CORE/PASS 모두 QA 전까지 비공개 draft를 유지한다. PM-C2도 동일한 2-SKU 구조로 정리되어 있다.
 
 ### Locked Product Structure
 
-- 핵심요약 패키지 = CORE + SHEET + CHECK
-- 합격팩 = PASS PACK + CORE + SHEET + CHECK
+- 핵심노트 = 핵심개념 요약노트 + 공식·수치 한눈표 + 시험 직전 체크리스트
+- 시험대비 완성패키지 = 핵심노트 전체 + 상세 개념해설서 + 단원별 확인문제·해설
+- 내부 SKU/파일 코드는 CORE/PASS/PASS PACK/SHEET/CHECK 유지
 - 기본 출시가는 5,900원 / 9,900원이며 실제 운영 가격은 관리자 페이지에서 SKU별 변경
 - 결제 가격 Source of Truth는 `products.price_krw`
 - 별도 CRAM/벼락치기 상품 없음
+- 고객 UI 명칭과 내부 속지 3장 미리보기 구현 중이며, live DB 상품명은 UI 승인 후 별도 변경
 
 ### Admin
 
@@ -97,7 +99,7 @@ Live DB 현재:
 GitHub main과 live Supabase에 반영 완료.
 
 - CORE/PASS를 실제 독립 SKU로 처리
-- 합격팩 구성: PASS PACK + CORE + SHEET + CHECK
+- 시험대비 완성패키지 구성: PASS PACK + CORE + SHEET + CHECK
 - 폐기된 별도 벼락치기 문구 제거
 - 디지털 상품 수량 중복 제거
 - 같은 자격증 패키지 선택은 교체

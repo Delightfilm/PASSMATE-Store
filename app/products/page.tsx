@@ -10,7 +10,7 @@ export default async function ProductsPage() {
         <div className="section-heading">
           <span className="eyebrow">PASSMATE LIBRARY</span>
           <h1 className="page-title">요약노트</h1>
-          <p className="page-lead">자격증별 핵심요약 · 치트시트 · 시험직전 체크리스트 패키지를 순차 발행합니다.</p>
+          <p className="page-lead">자격증별 핵심개념 요약노트 · 공식·수치 한눈표 · 시험 직전 체크리스트를 순차 발행합니다.</p>
         </div>
         {products.length > 0 ? (
           <div className="product-list">{products.map((p) => <ProductCard key={p.slug} product={p} />)}</div>

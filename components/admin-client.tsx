@@ -1217,7 +1217,7 @@ function ProductEditor({
           rows={6}
           value={form.featuresText}
           onChange={(event) => set("featuresText", event.target.value)}
-          placeholder={"한 줄에 하나씩 입력\nCORE 핵심요약\nSHEET 공식·숫자 치트시트\nCHECK 시험직전 체크리스트"}
+          placeholder={"한 줄에 하나씩 입력\n핵심개념 요약노트\n공식·수치 한눈표\n시험 직전 체크리스트"}
         />
       </label>
 

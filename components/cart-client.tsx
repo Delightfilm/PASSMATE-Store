@@ -103,8 +103,8 @@ export function CartClient() {
                 <span>{PACKAGE_LABELS[item.packageType]}</span>
                 <small>
                   {item.packageType === "pass"
-                    ? "PASS PACK + CORE + SHEET + CHECK"
-                    : "CORE + SHEET + CHECK"}
+                    ? "핵심노트 3종 + 상세 개념해설서 + 확인문제·해설"
+                    : "핵심개념 요약노트 + 공식·수치 한눈표 + 시험 직전 체크리스트"}
                 </small>
               </div>
               <strong>

@@ -34,10 +34,11 @@ for (const required of [
 }
 
 for (const required of [
-  "PASS PACK 상세 합격교재",
-  "CORE 핵심요약",
-  "SHEET 공식·숫자 치트시트",
-  "CHECK 시험직전 체크리스트",
+  "핵심개념 요약노트",
+  "공식·수치 한눈표",
+  "시험 직전 체크리스트",
+  "상세 개념해설서",
+  "단원별 확인문제·해설",
 ]) {
   if (!options.includes(required)) {
     throw new Error("Package table missing " + required);

@@ -197,10 +197,10 @@ export function AdminProductPreview({ code }: { code: string }) {
                   ? ["무대음향", "3급"]
                   : [product.title]
               }
-              label={isStageSoundCore ? "핵심요약 NOTE" : product.badge ?? "PASSMATE"}
+              label={isStageSoundCore ? "핵심노트" : product.badge ?? "PASSMATE"}
               subtitle={
                 isStageSoundCore
-                  ? "핵심 개념 · 공식 · 숫자 · 체크리스트"
+                  ? "핵심개념 · 공식·수치 · 시험 직전 체크"
                   : product.subtitle ?? ""
               }
               series={isStageSoundCore ? "STAGE SOUND" : product.code}

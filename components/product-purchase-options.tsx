@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   addToCart,
   getPackageSlug,
@@ -12,20 +12,15 @@ import {
   fetchLiveProductPrices,
   LiveProductPriceMap,
 } from "@/lib/live-product-prices";
+import { getProductFamilyTitle } from "@/lib/product-display";
 
 const packageRows = [
-  ["PASS PACK 상세 합격교재", false, true],
-  ["CORE 핵심요약", true, true],
-  ["SHEET 공식·숫자 치트시트", true, true],
-  ["CHECK 시험직전 체크리스트", true, true],
+  ["핵심개념 요약노트", true, true],
+  ["공식·수치 한눈표", true, true],
+  ["시험 직전 체크리스트", true, true],
+  ["상세 개념해설서", false, true],
+  ["단원별 확인문제·해설", false, true],
 ] as const;
-
-function toFamilyTitle(title: string) {
-  return title
-    .replace(/\s*핵심요약\s*패키지\s*$/, "")
-    .replace(/\s*합격팩\s*$/, "")
-    .trim();
-}
 
 function priceText(price: number | undefined, loading: boolean) {
   if (loading) return "가격 확인 중";
@@ -44,7 +39,7 @@ export function ProductPurchaseOptions({
   const [notice, setNotice] = useState("");
   const [prices, setPrices] = useState<LiveProductPriceMap>({});
   const [priceLoading, setPriceLoading] = useState(true);
-  const familyTitle = useMemo(() => toFamilyTitle(title), [title]);
+  const familyTitle = getProductFamilyTitle(title);
   const coreSlug = getPackageSlug(slug, "core");
   const passSlug = getPackageSlug(slug, "pass");
   const selectedSlug = getPackageSlug(slug, kind);
@@ -106,7 +101,7 @@ export function ProductPurchaseOptions({
           role="tab"
           aria-selected={kind === "core"}
         >
-          핵심요약 패키지
+          핵심노트
           <small>{priceText(prices[coreSlug], priceLoading)}</small>
         </button>
         <button
@@ -116,14 +111,14 @@ export function ProductPurchaseOptions({
           role="tab"
           aria-selected={kind === "pass"}
         >
-          합격팩
+          시험대비 완성패키지
           <small>{priceText(prices[passSlug], priceLoading)}</small>
         </button>
       </div>
 
       <div className="package-compare" aria-label="상품 구성 비교">
         <div className="package-compare-row package-compare-head">
-          <b>구성품</b><b>핵심요약</b><b>합격팩</b>
+          <b>구성품</b><b>핵심노트</b><b>완성패키지</b>
         </div>
         {packageRows.map(([label, core, pass]) => (
           <div className="package-compare-row" key={label}>
@@ -135,7 +130,7 @@ export function ProductPurchaseOptions({
       </div>
 
       <p className="package-help">
-        합격팩은 핵심요약 패키지 전체에 PASS PACK 상세 합격교재가 추가됩니다.
+        완성패키지는 핵심노트 3종에 상세 개념해설서와 단원별 확인문제·해설이 추가됩니다.
       </p>
 
       <div className="package-actions">

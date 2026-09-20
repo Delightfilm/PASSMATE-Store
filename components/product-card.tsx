@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Product } from "@/lib/products";
 import { fetchLiveProductPrices } from "@/lib/live-product-prices";
+import { getCoreProductTitle, getCustomerCopy } from "@/lib/product-display";
 import { ProductCover } from "./product-cover";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -48,19 +49,15 @@ export function ProductCard({ product }: { product: Product }) {
               ? ["무대음향", "3급"]
               : ["컴퓨터활용능력", "2급"]
           }
-          label="핵심요약 NOTE"
-          subtitle={
-            isStageSoundCore
-              ? "핵심 개념 · 공식 · 숫자 · 체크리스트"
-              : "CORE + SHEET + CHECK"
-          }
-          series={isStageSoundCore ? "STAGE SOUND" : "CORE 01"}
+          label="핵심노트"
+          subtitle="핵심개념 · 공식·수치 · 시험 직전 체크"
+          series={isStageSoundCore ? "STAGE SOUND" : "PASSMATE"}
         />
       </div>
       <div className="product-card-body">
         <span className="eyebrow">{product.badge}</span>
-        <h3>{product.year} {product.title}</h3>
-        <p>{product.subtitle}</p>
+        <h3>{product.year} {getCoreProductTitle(product.title)}</h3>
+        <p>{getCustomerCopy(product.subtitle)}</p>
         <div className="product-card-footer">
           <strong>
             {priceLoading

@@ -14,8 +14,8 @@ export type CartSelection = {
 };
 
 export const PACKAGE_LABELS: Record<PackageType, string> = {
-  core: "핵심요약 패키지",
-  pass: "합격팩",
+  core: "핵심노트",
+  pass: "시험대비 완성패키지",
 };
 
 const PASS_PACK_SUFFIX = "-pass-pack";
