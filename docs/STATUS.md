@@ -145,14 +145,16 @@ GitHub main과 live Supabase에 반영 완료.
 
 현재:
 
-- 2016–2024 기출 corpus 기반 분석/원고 존재
+- 2016–2024 기출 corpus/원고는 기존 문서상 기록만 있고 현재 로컬 실파일은 미확인
+- 2025·2026 공식 게시 이력과 법령 기준은 [공식자료 점검 문서](./STAGE_SOUND_SOURCE_AUDIT_2026-09-20.md)에 분리 정리
 - PM-SS3-CORE 테스트 상품 등록
 - CORE 디자인 방향/Light Theme 확정
 
 Release Blocker:
 
-- 2025·2026 공식 기출/확정답안 편입
-- 최신 자료/법규 검증
+- 2025·2026 공식 문제지/확정답안 실파일 확보 및 이용 범위 확인
+- 2025·2026 출제기준표·표준교재 정오표 실파일 확보
+- 시험일 시행 법령과 현행 법령의 조문별 검증
 - 최종 QA
 - 최종 PDF
 - NAS MASTER 등록
@@ -170,7 +172,7 @@ Release Blocker:
 2. 집에서 NAS SSH 정상화 → `--check-config`
 3. 테스트 MASTER 1개 등록 → paid order → Worker `--once`
 4. Library download/환불 차단까지 통과
-5. Stage Sound 콘텐츠 최신 공식자료 QA 후 V8 판매 오픈 검토
+5. Stage Sound 공식 원본 확보 → 법령 기준 분리 검증 → 콘텐츠 QA 후 V8 판매 오픈 검토
 
 ## Security Note
 
