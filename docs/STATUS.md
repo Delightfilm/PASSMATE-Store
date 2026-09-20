@@ -42,7 +42,8 @@ Live DB:
 - 기본 출시가는 5,900원 / 9,900원이며 실제 운영 가격은 관리자 페이지에서 SKU별 변경
 - 결제 가격 Source of Truth는 `products.price_krw`
 - 별도 CRAM/벼락치기 상품 없음
-- 고객 UI 명칭과 내부 속지 3장 미리보기 구현 중이며, live DB 상품명은 UI 승인 후 별도 변경
+- 고객 UI 명칭과 내부 속지 3장 미리보기 운영 반영 및 PC·모바일 검수 완료
+- live DB 상품명은 UI 승인 후 별도 변경
 
 ### Admin
 
