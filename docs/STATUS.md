@@ -1,22 +1,22 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-09-20**
+> Last updated: **2026-09-28**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
 
-**V3 Payment E2E → V4 NAS real integration → V5 download E2E → V8 Stage Sound launch**
+**Content Factory 재확보/검증 → Stage Sound 실제 원고·속지 → V3 Payment E2E → V4 NAS → V5 download E2E → V8 launch**
 
-새 기능 추가보다 실제 결제부터 다운로드까지 한 번 끝까지 통과시키는 것이 우선이다.
+사용자 결정에 따라 결제 실검증과 NAS는 이후로 두고, 현재는 콘텐츠 원본과 문제지→Markdown 파서를 먼저 정리한다.
 
 ## Verified Live State
 
 ### GitHub / Vercel
 
 - Repository: `Delightfilm/PASSMATE-Store`
-- 장바구니 + 패키지 선택 UI와 관리자 감사 로그 UI가 main에 반영됨
-- 최신 확인 commit `0553df3`의 GitHub Build, Vercel, Supabase Preview는 모두 **success**
+- 장바구니 + 패키지 선택 UI, 관리자 감사 로그 UI, 상품 이미지 갤러리가 main에 반영됨
+- 최신 애플리케이션 commit `10f4453`의 상품 갤러리 UI가 Vercel production에 반영되고 PC·모바일 검수 완료
 - 관리자 Workspace V2, static-export-safe 상품 Preview, 상품 create/edit 코드 반영
 - Supabase Preview용 local/live migration history 정합화
 - 불필요한 Vercel 반복 배포는 중단하고 변경을 묶어서 진행
@@ -42,7 +42,7 @@ Live DB:
 - 기본 출시가는 5,900원 / 9,900원이며 실제 운영 가격은 관리자 페이지에서 SKU별 변경
 - 결제 가격 Source of Truth는 `products.price_krw`
 - 별도 CRAM/벼락치기 상품 없음
-- 고객 UI 명칭과 내부 속지 3장 미리보기 운영 반영 및 PC·모바일 검수 완료
+- 고객 UI 명칭과 표지 + 빈 속지 3장 상품 갤러리 운영 반영 및 PC·모바일 검수 완료
 - live DB 상품명은 UI 승인 후 별도 변경
 
 ### Admin
@@ -157,6 +157,24 @@ GitHub main과 live Supabase에 반영 완료.
 - PM-SS3-CORE 테스트 상품 등록
 - Light Theme는 고객 노출 기본안, Dark Theme는 비교안으로 유지
 
+### Content Factory / 문제지 파서
+
+별도 ChatGPT 작업 `PDF 대본 제작`의 최종 기록:
+
+- `PASSMATE Content Factory v0.5.1`
+- 금속도장기능사 교사용 PDF 17개에서 1,020문항 / 보기 4,080개 / 정답표 1,020건 교차검증 보고
+- 프로그램 ZIP 재해제 기준 자동 테스트 58/58 통과 보고
+- 요약본 제작용 Markdown과 문제은행용 JSON/SQLite를 한 번에 생성
+- 이미지 문항 33개는 `pending_human_review`
+- 해설 1,020건은 모두 `explanation_status=missing`
+
+현재 프로젝트에서 확인된 실제 상태:
+
+- 파서 프로그램 ZIP·소스·테스트가 현재 GitHub 저장소와 로컬 작업공간에 없음
+- 위 수치는 별도 작업의 완료 보고이며, 이 저장소에서 독립 재실행한 결과는 아님
+- 무대음향 3급 문제지로 실행한 검증 결과와 생성 Markdown은 현재 작업공간에 없음
+- 다음 단계는 최종 프로그램 ZIP/소스 재확보 → 테스트 재현 → 무대음향 원본 E2E 실행
+
 Release Blocker:
 
 - 2025·2026 공식 문제지/확정답안 실파일 확보 및 이용 범위 확인
@@ -168,18 +186,19 @@ Release Blocker:
 
 ## Current Blockers
 
-1. **PortOne sandbox paid E2E**
-2. **NAS SSH/Worker 실환경 연결**
-3. **실제 Stage Sound Release PDF / MASTER**
-4. 결제 → 발행 → 다운로드 전체 E2E
+1. **Content Factory v0.5.1 프로그램 ZIP/소스 재확보 및 현재 저장소에서 재검증**
+2. **무대음향 공식 문제지/확정답안 실파일과 실제 Stage Sound Release PDF / MASTER**
+3. **PortOne sandbox paid E2E** — 사용자 요청으로 이후 진행
+4. **NAS SSH/Worker 실환경 연결** — 사용자 요청으로 이후 진행
+5. 결제 → 발행 → 다운로드 전체 E2E
 
 ## Next Actions
 
-1. Codex의 PortOne 작업 결과가 main/live에 무엇을 남겼는지 확인하고 sandbox paid를 완료
-2. 집에서 NAS SSH 정상화 → `--check-config`
-3. 테스트 MASTER 1개 등록 → paid order → Worker `--once`
-4. Library download/환불 차단까지 통과
-5. Stage Sound 공식 원본 확보 → 법령 기준 분리 검증 → 콘텐츠 QA 후 V8 판매 오픈 검토
+1. `PASSMATE Content Factory v0.5.1` 최종 프로그램 ZIP 또는 소스 폴더를 현재 작업공간에 다시 확보
+2. 포함 테스트 58개 재실행 및 샘플 PDF E2E로 보고 수치 재현
+3. Stage Sound 공식 원본 확보 → 파서 실행 → MASTER/Markdown 원고 생성
+4. 이미지 문항·정답·법령·해설 QA 후 실제 속지로 상품 갤러리 교체
+5. 이후 PortOne sandbox paid → NAS `--check-config`/`--once` → Library download/환불 차단 검증
 
 ## Security Note
 

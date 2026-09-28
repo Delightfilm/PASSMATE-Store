@@ -1,6 +1,6 @@
 # PASSMATE Roadmap
 
-> Last reviewed: **2026-09-20**
+> Last reviewed: **2026-09-28**
 >
 > 목표: 자격증 디지털 학습자료를 자사몰에서 판매하고, 결제 → 권한 → NAS 발행 → 비공개 다운로드까지 안정적으로 자동화한다.
 
@@ -43,7 +43,7 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 | V5 🚧 | 자동 다운로드 | Private Storage/signed URL 코드 완료. 실 artifact E2E 대기 | 구매 → Library → download |
 | V6 🚧 | 내부 발행/무결성 | Registry/무결성/재발행 기반 구현 | 실제 Storage artifact verify |
 | V7 🚧 | 관리자 Workspace | SmartStore형 좌측메뉴, 상품 create/edit, Preview 구현 | 관리자 브라우저 E2E |
-| **V8** | **무대음향 3급 1호 판매 오픈** | PM-SS3-CORE 비공개 Draft 테스트 중 | 아래 Release Gate 전체 통과 |
+| **V8** | **무대음향 3급 1호 판매 오픈** | 상품 UI 완료, PM-SS3 CORE/PASS 비공개 Draft·실제 원고/속지 미완료 | 아래 Release Gate 전체 통과 |
 | V9 | 판매 최적화 | 미착수 | 상세/미리보기/SEO/후기/쿠폰 |
 | V10 | 외부 판매채널 | 미착수 | 외부 주문 통합 |
 | V11 | 자격증 시리즈 확장 | 미착수 | 신규 자격증 추가가 데이터 중심으로 가능 |
@@ -51,7 +51,9 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 
 ## Current Critical Path
 
-### A. Payment — 지금 최우선
+2026-09-28 현재 사용자의 진행 순서는 **콘텐츠/파서 정리 우선, 결제 실검증과 NAS는 이후**다. V3~V5의 Release Gate 자체는 유지한다.
+
+### A. Payment — 구현 유지, 실검증 보류
 
 현재 PortOne V2 + NHN KCP 테스트 채널은 생성되었다.
 
@@ -92,13 +94,15 @@ Work/Codex/채팅에서 "완료"라고 한 내용도 **GitHub main 또는 live S
 7. private Storage / Registry / Library / download 확인
 8. 이후에만 continuous Worker 활성화
 
-### D. Content / First Release
+### D. Content / First Release — 현재 작업
 
 현재 1호 타깃은 **무대음향 3급**이다.
 
 - `PM-SS3-CORE`: 5,900원, 비공개, Draft
 - MASTER/상품원고는 아직 v1.0 판매 확정 전
 - 2025·2026 공식 기출/확정답안 및 최신 자료 편입/검증이 Release Blocker
+- 별도 ChatGPT 작업 기록상 `PASSMATE Content Factory v0.5.1`이 교사용 PDF → Markdown 원고/문제은행 데이터 생성까지 검증됨
+- 다만 파서 프로그램 ZIP·소스·테스트는 현재 GitHub 저장소와 이 작업공간에 없으므로, 재확보 후 독립 재검증 및 무대음향 자료 E2E가 필요
 - Claude 디자인 → QA → 최종 Release PDF → NAS MASTER 등록 순서
 
 ## Release Gate — V8
