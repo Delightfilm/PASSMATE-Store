@@ -8,6 +8,7 @@ export function SiteHeader() {
       <div className="container nav-wrap">
         <Link href="/" className="logo-link"><PassmateLogo compact /></Link>
         <nav className="main-nav" aria-label="주요 메뉴">
+          <Link href="/question-bank">문제은행</Link>
           <Link href="/products">요약노트</Link>
           <Link href="/library">내 자료</Link>
         </nav>
