@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { readLocalStore } from "@/lib/question-bank";
 
 type Profile = { id: string; display_name: string | null; role: string };
 
@@ -16,6 +17,7 @@ export function AccountClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [cbtSummary, setCbtSummary] = useState({ attempts: 0, wrong: 0, bookmarks: 0 });
 
   useEffect(() => {
     let active = true;
@@ -34,10 +36,19 @@ export function AccountClient() {
       const row = (data ?? null) as Profile | null;
       setProfile(row);
       setDisplayName(row?.display_name ?? "");
+      const local = readLocalStore();
+      // ponytail: one-time best-effort migration; server rows become authoritative after the migration lands.
+      const migrationKey = `passmate.cbt-migrated.${userData.user.id}`;
+      if (!sessionStorage.getItem(migrationKey)) {
+        sessionStorage.setItem(migrationKey, "1");
+        void supabase.from("question_bank_attempts").insert(local.attempts.filter((item) => item.status === "submitted").map((item) => ({ user_id: userData.user.id, config: item.config, question_ids: item.questionIds, answers: item.answers, started_at: item.startedAt, end_at: item.endAt, submitted_at: item.submittedAt, score: item.score, status: item.status })));
+      }
       setLoading(false);
     }
 
     void load();
+    const local = readLocalStore();
+    setCbtSummary({ attempts: local.attempts.filter((item) => item.status === "submitted").length, wrong: Object.keys(local.wrongNotes).length, bookmarks: local.bookmarks.length });
     return () => { active = false; };
   }, [router]);
 
@@ -73,11 +84,17 @@ export function AccountClient() {
         <button className="button button-primary auth-submit" type="submit" disabled={saving}>{saving ? "저장 중..." : "이름 저장"}</button>
       </form>
       {message && <p className="auth-note">{message}</p>}
+      <section className="account-cbt-summary" aria-label="CBT Mate 기록">
+        <div><span>모의고사</span><strong>{cbtSummary.attempts}회</strong></div>
+        <div><span>오답노트</span><strong>{cbtSummary.wrong}개</strong></div>
+        <div><span>북마크</span><strong>{cbtSummary.bookmarks}개</strong></div>
+      </section>
       <div className="account-actions">
         {profile?.role === "admin" && (
           <Link className="button button-primary" href="/admin/">관리자 대시보드</Link>
         )}
         <Link className="button button-ghost" href="/library/">내 자료 보기</Link>
+        <Link className="button button-ghost" href="/question-bank/">CBT Mate 문제은행</Link>
         <Link className="button button-ghost" href="/account/forgot-password/">비밀번호 변경</Link>
         <button className="button button-ghost auth-submit" type="button" onClick={signOut}>로그아웃</button>
       </div>

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { QuestionBankAdmin } from "@/components/question-bank-admin";
 
 type MenuKey =
   | "overview"
@@ -639,73 +640,7 @@ export function AdminClient() {
         {error && <p className="auth-message auth-message--error">{error}</p>}
         {notice && <p className="auth-message auth-message--success">{notice}</p>}
 
-        {activeMenu === "questionBank" && (
-          <section className="store-admin-view">
-            <div className="admin-overview admin-overview--four">
-              <DashboardMetric label="등록 시험" value={0} note="데이터 연결 전" />
-              <DashboardMetric label="전체 문항" value={0} note="MASTER DB 기준" />
-              <DashboardMetric label="연결 이미지" value={0} note="원본 이미지" />
-              <DashboardMetric label="검수 대기" value={0} note="공개 전 확인" />
-            </div>
-
-            <div className="question-admin-grid">
-              <section className="admin-panel">
-                <div className="admin-panel-head">
-                  <div>
-                    <span className="eyebrow">DATA IMPORT</span>
-                    <h2>크롤링 데이터 가져오기</h2>
-                    <p>MASTER DB 또는 JSONL과 문제 이미지를 등록하는 자리입니다.</p>
-                  </div>
-                  <span className="admin-state">연결 전</span>
-                </div>
-                <div className="question-admin-dropzone" aria-disabled="true">
-                  <strong>문제 데이터 파일</strong>
-                  <span>MASTER.db · questions.jsonl</span>
-                  <button type="button" disabled>파일 선택</button>
-                </div>
-                <div className="question-admin-dropzone" aria-disabled="true">
-                  <strong>문제 이미지 폴더</strong>
-                  <span>문항 ID와 연결될 원본 이미지</span>
-                  <button type="button" disabled>폴더 선택</button>
-                </div>
-                <p className="admin-help">이번 단계에서는 화면만 구성했습니다. 파일을 읽거나 서버에 저장하지 않습니다.</p>
-              </section>
-
-              <section className="admin-panel">
-                <div className="admin-panel-head">
-                  <div>
-                    <span className="eyebrow">PUBLISH FLOW</span>
-                    <h2>등록 · 검수 · 공개</h2>
-                    <p>데이터 연결 후 아래 순서로 문제은행에 반영합니다.</p>
-                  </div>
-                </div>
-                <ol className="question-admin-steps">
-                  <li><b>1</b><div><strong>원본 등록</strong><span>시험·문항·보기·정답·이미지 불러오기</span></div></li>
-                  <li><b>2</b><div><strong>자동 검사</strong><span>누락 문항·정답·이미지 연결 확인</span></div></li>
-                  <li><b>3</b><div><strong>관리자 검수</strong><span>시험 정보와 문제 화면 미리보기</span></div></li>
-                  <li><b>4</b><div><strong>문제은행 공개</strong><span>모의테스트에서 선택 가능하도록 전환</span></div></li>
-                </ol>
-                <Link className="button button-ghost question-admin-preview" href="/question-bank/">
-                  고객 화면 미리보기
-                </Link>
-              </section>
-            </div>
-
-            <section className="admin-panel">
-              <div className="admin-panel-head">
-                <div>
-                  <span className="eyebrow">EXAM LIBRARY</span>
-                  <h2>등록된 시험</h2>
-                </div>
-                <span>0개</span>
-              </div>
-              <div className="question-admin-empty">
-                <strong>아직 등록된 시험이 없습니다.</strong>
-                <span>크롤링 데이터를 연결하면 종목·연도·회차별 시험이 여기에 표시됩니다.</span>
-              </div>
-            </section>
-          </section>
-        )}
+        {activeMenu === "questionBank" && <QuestionBankAdmin />}
 
         {activeMenu === "overview" && (
           <section className="store-admin-view">
