@@ -203,3 +203,12 @@ Release Blocker:
 ## Security Note
 
 Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외에 현재 확인된 DB/RLS 핵심 권한 문제는 별도 신규 blocker로 확인되지 않았다. 관리자 계정은 Kakao OAuth 지정 계정으로 제한한다.
+
+## CBT Mate 운영 문제은행
+
+- PASSMATE v0.7.2 bundle JSON 스키마(\`qualification\`, \`exam_sessions\`, \`subjects\`, \`questions\`)를 관리자에서 직접 가져오는 경로 구현
+- 7MB급 파일을 브라우저에서 검증한 뒤 100문항 단위로 \`question-bank-admin\` Edge Function에 전송
+- 내용 중복 제거를 폐지하고 원본 \`question_uid\` 단위로 모든 회차 문항 보존
+- 운영 DB 저장 → 검수 대기 → 공개/되돌리기 배치 흐름 구현
+- 공개 문항을 \`/question-bank/\`가 Supabase에서 페이지 단위로 읽어 회차별·단원별·사용자 조합 모의고사에 사용
+- 이미지 URL 문항 표시 및 검증 오류 보고서 다운로드 구현

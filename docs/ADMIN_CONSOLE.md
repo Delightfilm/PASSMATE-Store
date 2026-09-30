@@ -90,3 +90,13 @@ User JWT
 - real dead-letter retry
 - 실결제 이후 주문/발행 상태 확인
 - 실제 Storage artifact 무결성 verify
+
+## CBT Mate 문제은행 가져오기
+
+- 관리자 \`문제은행 관리\`에서 PASSMATE bundle JSON을 검증하고 100문항 단위로 운영 Supabase에 저장한다.
+- \`sourceHash\`는 검색·비교용 인덱스이며 고유키가 아니다. 같은 내용이 여러 회차에 출현한 경우 모든 원본 문항을 보존한다.
+- 실제 원본 출현 단위는 크롤러의 \`question_uid\`이며, \`(import_batch_id, question_uid)\`는 네트워크 재시도에 의한 같은 배치의 중복 삽입만 방지한다.
+- 저장 직후 문항 상태는 \`needs_review\`다. 관리자가 \`문제은행에 공개\`를 실행하면 해당 배치가 \`published\`가 되고 \`/question-bank/\`에서 회차별·단원별로 조회된다.
+- 같은 \`question_uid\`를 다시 가져와 공개하면 과거 행은 삭제하지 않고 \`draft\`로 보존하며 최신 행만 공개한다.
+- 이미지 문항은 bundle의 \`visual_refs\`와 \`visual_assets[].source_url\`을 함께 저장한다.
+- 검증 실패 시 관리자 화면에서 JSON 오류 보고서를 내려받을 수 있다.
