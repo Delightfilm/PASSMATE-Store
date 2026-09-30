@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { readLocalStore, type LocalAttempt } from "@/lib/question-bank";
 
-export function AuthNav() {
+export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt" }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [ready, setReady] = useState(false);
+  const [ongoing, setOngoing] = useState<LocalAttempt | null>(null);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -62,6 +64,18 @@ export function AuthNav() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (service !== "cbt") return;
+    const sync = () => setOngoing(readLocalStore().attempts.find((item) => item.status === "in_progress") ?? null);
+    sync();
+    window.addEventListener("cbt-store", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("cbt-store", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, [service]);
+
   if (!ready) {
     return <div className="auth-nav" aria-hidden="true" />;
   }
@@ -69,20 +83,27 @@ export function AuthNav() {
   if (!user) {
     return (
       <div className="auth-nav">
-        <Link className="auth-nav-link" href="/account/login/?next=%2Fcart%2F">장바구니</Link>
-        <Link className="auth-nav-link" href="/account/login/">로그인</Link>
+        {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
+        {service === "passmate" && <Link className="auth-nav-link" href="/account/login/?next=%2Fcart%2F">장바구니</Link>}
+        <Link className="auth-nav-link" href={`/account/login/?next=${encodeURIComponent(service === "cbt" ? "/cbt/" : "/")}`}>로그인</Link>
       </div>
     );
   }
 
   return (
     <div className="auth-nav">
+      {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
       <span className="auth-nav-user">{user.email}</span>
       {isAdmin && (
         <Link className="auth-nav-link" href="/admin/">관리자</Link>
       )}
-      <Link className="auth-nav-link" href="/cart/">장바구니</Link>
+      {service === "passmate" && <Link className="auth-nav-link" href="/cart/">장바구니</Link>}
       <Link className="auth-nav-link" href="/account/">내 계정</Link>
     </div>
   );
+}
+
+function ResumeLink({ attempt }: { attempt: LocalAttempt }) {
+  const cert = attempt.config.certSlug || attempt.config.certId;
+  return <Link className="auth-nav-resume" href={`/cbt/${encodeURIComponent(cert)}/exam/${attempt.id}/`}>이어서 풀기</Link>;
 }

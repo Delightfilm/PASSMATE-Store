@@ -1,6 +1,11 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { PassmateLogo } from "./logo";
 
 export function SiteFooter() {
+  const pathname = usePathname();
+  if (/^\/cbt\/[^/]+\/exam\//.test(pathname)) return null;
   return (
     <footer className="site-footer">
       <div className="container footer-grid">

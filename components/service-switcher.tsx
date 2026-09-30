@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 
 export const SERVICE_TABS = [
   { key: "passmate", label: "PASS MATE", href: "/" },
-  { key: "cbt", label: "CBT MATE", href: "/question-bank/" },
+  { key: "cbt", label: "CBT MATE", href: "/cbt/" },
 ] as const;
 
 export function ServiceSwitcher() {
   const pathname = usePathname();
-  const cbtActive = pathname.startsWith("/question-bank");
+  if (/^\/cbt\/[^/]+\/exam\//.test(pathname)) return null;
+  const cbtActive = pathname.startsWith("/cbt");
   return (
     <nav className="service-switcher" aria-label="서비스 전환">
       <div className="service-switcher__inner">

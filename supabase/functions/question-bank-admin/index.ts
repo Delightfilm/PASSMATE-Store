@@ -342,5 +342,25 @@ Deno.serve(async (req: Request) => {
     return json(200, { batches: data ?? [] });
   }
 
+  if (action === "list_reports") {
+    const { data, error } = await admin
+      .from("question_bank_issue_reports")
+      .select("id,question_id,attempt_id,kind,memo,status,created_at,question_bank_questions(no,stem)")
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) return json(500, { error: "report_list_failed" });
+    return json(200, { reports: data ?? [] });
+  }
+
+  if (action === "resolve_report") {
+    const reportId = text(body.reportId);
+    if (!reportId) return json(400, { error: "invalid_report_id" });
+    const { error } = await admin.from("question_bank_issue_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: actorId }).eq("id", reportId);
+    if (error) return json(500, { error: "report_resolve_failed" });
+    await audit(reportId, { status: "resolved" });
+    return json(200, { resolved: true });
+  }
+
   return json(400, { error: "invalid_action" });
 });

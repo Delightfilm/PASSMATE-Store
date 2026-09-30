@@ -1,5 +1,3 @@
-import { QuestionBankClient } from "@/components/question-bank-client";
+import { redirect } from "next/navigation";
 
-export default function QuestionBankPage() {
-  return <QuestionBankClient />;
-}
+export default function QuestionBankPage() { redirect("/cbt/"); }

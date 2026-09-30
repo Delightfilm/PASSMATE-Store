@@ -17,6 +17,8 @@ type RemoteBatch = {
   created_at: string;
 };
 
+type IssueReport = { id: string; question_id: string; kind: string; memo: string; created_at: string; question_bank_questions: { no: number; stem: string } | null };
+
 async function callQuestionBankAdmin<T>(body: Record<string, unknown>): Promise<T> {
   const supabase = getSupabaseBrowserClient();
   const { data } = await supabase.auth.getSession();
@@ -37,6 +39,7 @@ export function QuestionBankAdmin() {
   const [batch, setBatch] = useState<ImportBatch | null>(null);
   const [context, setContext] = useState<ImportContext | null>(null);
   const [recentBatches, setRecentBatches] = useState<RemoteBatch[]>([]);
+  const [reports, setReports] = useState<IssueReport[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [notice, setNotice] = useState("");
@@ -51,7 +54,19 @@ export function QuestionBankAdmin() {
     }
   }
 
-  useEffect(() => { void loadRecent(); }, []);
+  async function loadReports() {
+    try {
+      const result = await callQuestionBankAdmin<{ reports: IssueReport[] }>({ action: "list_reports" });
+      setReports(result.reports);
+    } catch { setReports([]); }
+  }
+
+  useEffect(() => { void loadRecent(); void loadReports(); }, []);
+
+  async function resolveReport(reportId: string) {
+    await callQuestionBankAdmin({ action: "resolve_report", reportId });
+    setReports((items) => items.filter((item) => item.id !== reportId));
+  }
 
   async function importFile(file?: File) {
     if (!file) return;
@@ -182,8 +197,12 @@ export function QuestionBankAdmin() {
       <div className="import-preview-table"><div className="import-preview-head"><span>상태</span><span>문항</span><span>보기</span><span>sourceHash</span></div>{batch.rows.slice(0, 10).map((row, index) => <div className="import-preview-row" key={`${String(row.question_uid || row.sourceHash)}-${index}`}><span className="admin-state">{String(row.status || "needs_review")}</span><strong>{String(row.stem || row.question || "-")}</strong><span>{Array.isArray(row.choices) ? row.choices.length : String(row.choices || "").split("|").filter(Boolean).length}</span><code>{String(row.sourceHash).slice(0, 12)}…</code></div>)}</div>
     </section>}
     <section className="admin-panel">
-      <div className="admin-panel-head"><div><span className="eyebrow">IMPORT HISTORY</span><h2>최근 운영 DB 배치</h2></div><Link href="/question-bank/">문제은행 열기 ↗</Link></div>
+      <div className="admin-panel-head"><div><span className="eyebrow">IMPORT HISTORY</span><h2>최근 운영 DB 배치</h2></div><Link href="/cbt/">CBT MATE 열기 ↗</Link></div>
       {recentBatches.length ? recentBatches.map((item) => <div className="record-row" key={item.id}><span>{item.file_name}<small>{item.qualification_code} · {new Date(item.created_at).toLocaleString("ko-KR")}</small></span><strong>{item.row_count}문항</strong><small>{item.status}</small>{item.status === "needs_review" && <button className="button button-primary" onClick={() => void publish(item.id)} disabled={busy}>공개</button>}</div>) : <p className="admin-empty">아직 운영 DB에 저장한 배치가 없습니다.</p>}
+    </section>
+    <section className="admin-panel">
+      <div className="admin-panel-head"><div><span className="eyebrow">ISSUE REVIEW</span><h2>문제 오류 신고</h2><p>시험·결과 화면에서 접수된 검수 대기 항목입니다.</p></div><span className="admin-state">{reports.length}건</span></div>
+      {reports.length ? reports.map((report) => <div className="record-row" key={report.id}><span>{report.question_bank_questions?.no || "-"}번 · {report.question_bank_questions?.stem || report.question_id}<small>{report.kind} · {new Date(report.created_at).toLocaleString("ko-KR")} · {report.memo || "메모 없음"}</small></span><button className="button button-ghost" onClick={() => void resolveReport(report.id)}>검수 완료</button></div>) : <p className="admin-empty">검수 대기 중인 오류 신고가 없습니다.</p>}
     </section>
   </section>;
 }

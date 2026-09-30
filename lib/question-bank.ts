@@ -12,11 +12,12 @@ export type Question = {
 };
 export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };
-export type Cert = { id: string; name: string };
+export type Cert = { id: string; name: string; category?: string; slug?: string };
 export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[] };
-export type AttemptConfig = { certId: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null };
+export type AttemptConfig = { certId: string; certSlug?: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null };
 export type LocalAttempt = { id: string; config: AttemptConfig; questionIds: string[]; answers: Record<string, number>; lockedIds: string[]; startedAt: string; endAt: string | null; submittedAt?: string; status: "in_progress" | "submitted"; score?: number };
-export type LocalStore = { attempts: LocalAttempt[]; bookmarks: string[]; wrongNotes: Record<string, { wrongCount: number; lastWrongAt: string; memo: string; mastered: boolean }>; presets: { name: string; config: AttemptConfig }[]; imports: ImportBatch[] };
+export type IssueReport = { id: string; questionId: string; attemptId?: string; kind: "wrong_answer" | "broken_image" | "missing_choice" | "other"; memo: string; createdAt: string; status: "open" | "resolved" };
+export type LocalStore = { attempts: LocalAttempt[]; bookmarks: string[]; wrongNotes: Record<string, { wrongCount: number; lastWrongAt: string; memo: string; mastered: boolean }>; presets: { name: string; config: AttemptConfig }[]; imports: ImportBatch[]; issueReports: IssueReport[] };
 export type ImportRow = { id?: string; question_uid?: string; source_uid?: string; exam_id?: string; question_no?: number; subject_id?: string; stem?: string; question?: string; choices?: unknown; answer?: unknown; answer_no?: unknown; images?: unknown; visual_refs?: unknown; visual_assets?: unknown; exam?: string; subject?: string; cert?: string; sourceHash?: string; status?: QuestionStatus; [key: string]: unknown };
 export type ImportError = { row: number; message: string };
 export type ImportContext = {
@@ -45,11 +46,36 @@ export const DEMO_DATASET: Dataset = {
   ],
 };
 
-export const EMPTY_STORE: LocalStore = { attempts: [], bookmarks: [], wrongNotes: {}, presets: [], imports: [] };
+export const EMPTY_STORE: LocalStore = { attempts: [], bookmarks: [], wrongNotes: {}, presets: [], imports: [], issueReports: [] };
 export const STORE_KEY = "passmate.cbt-mate.v1";
 export function readLocalStore(): LocalStore { if (typeof window === "undefined") return EMPTY_STORE; try { return { ...EMPTY_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; } catch { return EMPTY_STORE; } }
-export function writeLocalStore(store: LocalStore) { if (typeof window !== "undefined") localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+export function writeLocalStore(store: LocalStore) { if (typeof window !== "undefined") { localStorage.setItem(STORE_KEY, JSON.stringify(store)); window.dispatchEvent(new Event("cbt-store")); } }
 export function makeId(prefix: string) { return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
+export function certCategory(name: string) { return ["산업기사", "기능사", "기능장", "기사", "공무원"].find((item) => name.includes(item)) || "기타"; }
+export function certSlug(cert: Cert) { return cert.slug || cert.name.trim().replace(/\s+/g, "-"); }
+export function findCert(dataset: Dataset, value: string) { const decoded = decodeURIComponent(value); return dataset.certs.find((cert) => cert.id === decoded || certSlug(cert) === decoded); }
+export function hangulInitials(value: string) { const initials = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"; return Array.from(value).map((char) => { const code = char.charCodeAt(0) - 0xac00; return code >= 0 && code <= 11171 ? initials[Math.floor(code / 588)] : char; }).join(""); }
+export async function submitIssueReport(report: IssueReport) { const supabase = getSupabaseBrowserClient(); await supabase.from("question_bank_issue_reports").insert({ id: report.id, question_id: report.questionId, attempt_id: report.attemptId || null, kind: report.kind, memo: report.memo, status: report.status }); }
+export async function syncAccountStore(store: LocalStore) {
+  const supabase = getSupabaseBrowserClient(); const { data } = await supabase.auth.getSession(); const userId = data.session?.user.id; if (!userId) return;
+  if (store.attempts.length) await supabase.from("question_bank_attempts").upsert(store.attempts.map((attempt) => ({ user_id: userId, client_id: attempt.id, config: { ...attempt.config, lockedIds: attempt.lockedIds }, question_ids: attempt.questionIds, answers: attempt.answers, started_at: attempt.startedAt, end_at: attempt.endAt, submitted_at: attempt.submittedAt || null, score: attempt.score ?? null, status: attempt.status })), { onConflict: "user_id,client_id" });
+  await supabase.from("question_bank_bookmarks").delete().eq("user_id", userId);
+  if (store.bookmarks.length) await supabase.from("question_bank_bookmarks").insert(store.bookmarks.map((questionId) => ({ user_id: userId, question_id: questionId })));
+  const notes = Object.entries(store.wrongNotes).map(([questionId, note]) => ({ user_id: userId, question_id: questionId, wrong_count: note.wrongCount, last_wrong_at: note.lastWrongAt, memo: note.memo, mastered: note.mastered }));
+  if (notes.length) await supabase.from("question_bank_wrong_notes").upsert(notes, { onConflict: "user_id,question_id" });
+}
+export async function mergeAccountStore(local: LocalStore): Promise<LocalStore> {
+  const supabase = getSupabaseBrowserClient(); const { data } = await supabase.auth.getSession(); const userId = data.session?.user.id; if (!userId) return local;
+  const [attempts, bookmarks, wrongNotes] = await Promise.all([
+    supabase.from("question_bank_attempts").select("id,client_id,config,question_ids,answers,started_at,end_at,submitted_at,score,status").eq("user_id", userId),
+    supabase.from("question_bank_bookmarks").select("question_id").eq("user_id", userId),
+    supabase.from("question_bank_wrong_notes").select("question_id,wrong_count,last_wrong_at,memo,mastered").eq("user_id", userId),
+  ]);
+  const remoteAttempts: LocalAttempt[] = (attempts.data || []).map((row) => ({ id: row.client_id || row.id, config: row.config as AttemptConfig, questionIds: row.question_ids as string[], answers: row.answers as Record<string, number>, lockedIds: Array.isArray(row.config?.lockedIds) ? row.config.lockedIds : [], startedAt: row.started_at, endAt: row.end_at, submittedAt: row.submitted_at || undefined, score: row.score === null ? undefined : Number(row.score), status: row.status as LocalAttempt["status"] }));
+  const mergedAttempts = [...local.attempts]; for (const attempt of remoteAttempts) if (!mergedAttempts.some((item) => item.id === attempt.id)) mergedAttempts.push(attempt);
+  const mergedNotes = { ...local.wrongNotes }; for (const row of wrongNotes.data || []) mergedNotes[row.question_id] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at, memo: row.memo, mastered: row.mastered };
+  return { ...local, attempts: mergedAttempts, bookmarks: Array.from(new Set([...local.bookmarks, ...(bookmarks.data || []).map((row) => row.question_id)])), wrongNotes: mergedNotes };
+}
 export async function sourceHash(value: unknown) { const text = JSON.stringify(value); if (typeof crypto !== "undefined" && crypto.subtle) { const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)); return Array.from(new Uint8Array(bytes)).map((b) => b.toString(16).padStart(2, "0")).join(""); } return Array.from(text).reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0).toString(16); }
 
 function csvCells(line: string) { const cells: string[] = []; let cell = "", quoted = false; for (const char of line) { if (char === '"') quoted = !quoted; else if (char === "," && !quoted) { cells.push(cell.trim()); cell = ""; } else cell += char; } cells.push(cell.trim()); return cells; }
