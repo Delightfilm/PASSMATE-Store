@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function PassmateLogo({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`brand-logo ${compact ? "brand-logo--compact" : ""}`} role="img" aria-label="PASSMATE 패스메이트">
@@ -11,5 +13,14 @@ export function PassmateLogo({ compact = false }: { compact?: boolean }) {
         {!compact && <div className="brand-korean">패스메이트</div>}
       </div>
     </div>
+  );
+}
+
+export function CbtMateLogo({ priority = false }: { priority?: boolean }) {
+  return (
+    <span className="cbt-brand-logo">
+      <span className="cbt-brand-mark" aria-hidden="true"><Image src="/cbtmate-logo.png" width={164} height={32} alt="" priority={priority} /></span>
+      <strong>CBT MATE</strong>
+    </span>
   );
 }

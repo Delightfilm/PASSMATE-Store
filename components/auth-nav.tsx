@@ -126,11 +126,11 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
 
   return (
     <div className="auth-nav">
-      {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
       <div className="auth-menu" ref={menuRef} onKeyDown={moveMenu} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); }}>
-        <button ref={triggerRef} type="button" className="auth-nav-link auth-menu-trigger" aria-label={user ? "계정 메뉴" : "메뉴"} aria-expanded={menuOpen} aria-controls="account-menu-panel" onClick={() => setMenuOpen((open) => !open)}><span>{user ? "내 계정" : "메뉴"}</span><span className="auth-menu-icon" aria-hidden="true">☰</span></button>
+        <button ref={triggerRef} type="button" className="auth-nav-link auth-menu-trigger" aria-label={user ? "계정 메뉴" : "메뉴"} aria-haspopup="true" aria-expanded={menuOpen} aria-controls="account-menu-panel" onClick={() => setMenuOpen((open) => !open)}><svg className="auth-menu-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c0-4 3-6.5 7.5-6.5s7.5 2.5 7.5 6.5" /></svg><span className="auth-menu-label">{user ? "내 계정" : "메뉴"}</span><svg className="auth-menu-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m3 6 5 5 5-5" /></svg><span className="auth-menu-icon" aria-hidden="true">☰</span></button>
         <nav id="account-menu-panel" className="auth-menu-panel" aria-label="계정 및 서비스 메뉴" hidden={!menuOpen}>
           {user && <span className="auth-menu-email">{user.email}</span>}
+          {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
           <Link className="auth-menu-store-link" href="/products/">요약노트</Link>
           <Link className="auth-menu-store-link" href="/library/">내 자료</Link>
           {isAdmin && <Link href="/admin/">관리자</Link>}
@@ -144,5 +144,5 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
 
 function ResumeLink({ attempt }: { attempt: LocalAttempt }) {
   const cert = attempt.config.certSlug || attempt.config.certId;
-  return <Link className="auth-nav-resume" aria-label="이어서 풀기" href={`/cbt/${encodeURIComponent(cert)}/exam/${attempt.id}/`}><span>이어서 풀기</span><span className="auth-resume-icon" aria-hidden="true">▶</span></Link>;
+  return <Link className="auth-menu-resume" href={`/cbt/${encodeURIComponent(cert)}/exam/${attempt.id}/`}>이어서 풀기</Link>;
 }

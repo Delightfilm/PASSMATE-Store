@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { PassmateLogo } from "./logo";
+import { CbtMateLogo, PassmateLogo } from "./logo";
 import { AuthNav } from "./auth-nav";
 import { ServiceSwitcher } from "./service-switcher";
 
@@ -27,19 +26,18 @@ export function SiteHeader() {
     <header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}`}>
       <div className="container nav-wrap">
         <Link href={cbt ? "/cbt/" : "/"} className="logo-link" aria-label={cbt ? "CBT MATE 홈" : "PASSMATE 홈"}>
-          {cbt ? <Image src="/cbtmate-logo.png" width={164} height={32} alt="CBT MATE" priority /> : <PassmateLogo compact />}
+          {cbt ? <CbtMateLogo priority /> : <PassmateLogo compact />}
         </Link>
-        <ServiceSwitcher />
         {!admin && <nav className="main-nav" aria-label={cbt ? "CBT 주요 메뉴" : "스토어 주요 메뉴"}>
           {cbt ? cbtLinks.map((item) => (
             <Link className={item.active ? "is-active" : ""} aria-current={item.active ? "page" : undefined} href={item.href} key={item.href}>{item.label}</Link>
           )) : <>
-            <Link href="/products">요약노트</Link>
-            <Link href="/library">내 자료</Link>
+            <Link className={pathname.startsWith("/products") ? "is-active" : ""} aria-current={pathname.startsWith("/products") ? "page" : undefined} href="/products">요약노트</Link>
+            <Link className={pathname.startsWith("/library") ? "is-active" : ""} aria-current={pathname.startsWith("/library") ? "page" : undefined} href="/library">내 자료</Link>
           </>}
         </nav>}
         {admin && <span className="header-context">관리자</span>}
-        <AuthNav service={cbt ? "cbt" : "passmate"} />
+        <div className="header-actions"><ServiceSwitcher /><AuthNav service={cbt ? "cbt" : "passmate"} /></div>
       </div>
       {cbt && <nav className="mobile-cbt-nav" aria-label="CBT 모바일 주요 메뉴">
         {cbtLinks.map((item) => <Link href={item.href} aria-current={item.active ? "page" : undefined} key={item.href}>{item.label}</Link>)}
