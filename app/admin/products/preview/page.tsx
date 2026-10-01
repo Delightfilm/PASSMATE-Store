@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "상품 미리보기 | PASSMATE 관리자", description: "게시 전 상품 정보를 미리 확인하세요." };
+
 import { Suspense } from "react";
 import { AdminProductPreviewQuery } from "@/components/admin-product-preview-query";
 

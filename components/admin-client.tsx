@@ -722,7 +722,7 @@ export function AdminClient() {
               <section className="admin-panel admin-product-table-panel">
                 <div className="admin-panel-head">
                   <div>
-                    <span className="eyebrow">PRODUCT DATA</span>
+                    <span className="eyebrow">상품 정보</span>
                     <h2>상품 목록</h2>
                   </div>
                   <span>{filteredProducts.length}개</span>

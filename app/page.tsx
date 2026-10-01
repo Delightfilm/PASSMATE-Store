@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "합격까지 함께하는 요약노트 | PASSMATE", description: "자격증 시험에 필요한 핵심을 압축한 요약노트를 살펴보세요." };
+
 import Link from "next/link";
 import { ProductCard } from "@/components/product-card";
 import { PassmateLogo } from "@/components/logo";

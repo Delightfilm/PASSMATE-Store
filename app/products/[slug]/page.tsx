@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product-gallery";
 import { getProduct, getStaticProductSlugs } from "@/lib/products";
@@ -7,6 +8,14 @@ import {
   getCustomerCopy,
   getCustomerFeatureLabel,
 } from "@/lib/product-display";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  if (!product) return { title: "상품을 찾을 수 없습니다 | PASSMATE" };
+  const title = getCoreProductTitle(product.title);
+  return { title: `${title} | PASSMATE`, description: `${title} 요약노트의 구성과 구매 정보를 확인하세요.` };
+}
 
 export async function generateStaticParams() {
   return await getStaticProductSlugs();

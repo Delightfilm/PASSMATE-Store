@@ -185,7 +185,7 @@ export function CheckoutCompleteClient() {
 
   return (
     <div className="container checkout-result-wrap">
-      <span className="eyebrow">PAYMENT RESULT</span>
+      <span className="eyebrow">결제 결과</span>
       <h1 className="page-title">{title}</h1>
       <p className="page-lead">{detail}</p>
 
