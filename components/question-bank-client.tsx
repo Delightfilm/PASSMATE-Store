@@ -8,7 +8,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { timeLeftSeconds } from "@/lib/exam-time";
 import {
-  certCategory, certSlug, DEMO_DATASET, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
+  certCategory, certSlug, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
   loadPublishedDataset, makeId, mergeAccountStore, readLocalStore, submitIssueReport, syncAccountStore, writeLocalStore,
   type Cert, type Dataset, type GradeMode, type IssueReport, type LocalAttempt,
   type LocalStore, type Question, type QuestionTarget,
@@ -23,40 +23,48 @@ function scoreAttempt(attempt: LocalAttempt, questions: Question[]) { const corr
 function displayDate(value?: string) { return value ? new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date(value)) : "-"; }
 
 export function QuestionBankClient({ mode = "home", certParam = "", attemptId = "" }: { mode?: Mode; certParam?: string; attemptId?: string }) {
-  const [dataset, setDataset] = useState<Dataset>(DEMO_DATASET);
+  const [dataset, setDataset] = useState<Dataset | null>(null);
   const [store, setStore] = useState<LocalStore>(EMPTY_STORE);
   const [hydrated, setHydrated] = useState(false);
-  const [dataState, setDataState] = useState<"loading" | "live" | "demo">("loading");
+  const [dataState, setDataState] = useState<"loading" | "live" | "error">("loading");
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const syncTimer = useRef<number | null>(null);
 
+  const retryDataset = useCallback(() => {
+    setDataState("loading");
+    void loadPublishedDataset().then((live) => { setDataset(live); setDataState("live"); }).catch((error) => {
+      console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
+      setDataset(null); setDataState("error");
+    });
+  }, []);
+
   useEffect(() => {
     setStore(readLocalStore()); setHydrated(true);
-    void loadPublishedDataset().then((live) => { if (live) { setDataset(live); setDataState("live"); } else setDataState("demo"); });
+    retryDataset();
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthReady(true); });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setAuthReady(true); });
     return () => data.subscription.unsubscribe();
-  }, []);
+  }, [retryDataset]);
   useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); writeLocalStore(next); }); }, [user]);
   useEffect(() => { const refresh = (event: StorageEvent) => { if (event.key === STORE_KEY) setStore(readLocalStore()); }; window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
-  const saveStore = useCallback((next: LocalStore) => { const current = readLocalStore(); const attempts = next.attempts.map((item) => item.status === "in_progress" ? current.attempts.find((saved) => saved.id === item.id && saved.status === "submitted") || item : item); const safe = { ...next, attempts }; setStore(safe); writeLocalStore(safe); if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); } }, [user]);
-  useEffect(() => () => { if (syncTimer.current) window.clearTimeout(syncTimer.current); }, []);
+  const saveStore = useCallback((next: LocalStore) => { const current = readLocalStore(); const attempts = next.attempts.map((item) => item.status === "in_progress" ? current.attempts.find((saved) => saved.id === item.id && saved.status === "submitted") || item : item); const safe = { ...next, attempts }; const started = attempts.some((item) => item.status === "in_progress" && !current.attempts.some((saved) => saved.id === item.id)); setStore(safe); writeLocalStore(safe); if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); } }, [user]);
 
   if (!hydrated || dataState === "loading") return <CbtSkeleton />;
-  if (mode === "home") return <CbtHome dataset={dataset} dataState={dataState} />;
+  if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
+  if (mode === "home") return <CbtHome dataset={dataset} />;
   if (mode === "exam") return <ExamScreen dataset={dataset} store={store} saveStore={saveStore} certParam={certParam} attemptId={attemptId} user={user} />;
   if (mode === "wrong-notes" || mode === "bookmarks" || mode === "history") return <LearningScreen mode={mode} dataset={dataset} store={store} saveStore={saveStore} user={user} authReady={authReady} />;
   const cert = findCert(dataset, certParam);
   if (!cert) return <PageShell><EmptyState title="종목을 찾을 수 없습니다." body="종목 선택 화면에서 다시 선택해 주세요." href="/cbt/" action="종목 선택으로" /></PageShell>;
-  return <CertDetail dataset={dataset} cert={cert} store={store} saveStore={saveStore} user={user} dataState={dataState} />;
+  return <CertDetail dataset={dataset} cert={cert} store={store} saveStore={saveStore} user={user} />;
 }
 
 function PageShell({ children }: { children: React.ReactNode }) { return <section className="question-bank-page"><div className="container question-bank-container">{children}</div></section>; }
 function CbtSkeleton() { return <section className="question-bank-page"><div className="container question-bank-skeleton" aria-label="불러오는 중"><span /><strong /><i /><div><span /><span /></div></div></section>; }
 
-function CbtHome({ dataset, dataState }: { dataset: Dataset; dataState: "live" | "demo" }) {
+function CbtHome({ dataset }: { dataset: Dataset }) {
   const [query, setQuery] = useState(""); const [category, setCategory] = useState("전체"); const [builder, setBuilder] = useState(false);
   useEffect(() => { const search = new URLSearchParams(window.location.search); setCategory(search.get("cat") || "전체"); setBuilder(search.get("tab") === "builder"); }, []);
   const certs = useMemo(() => dataset.certs.map((cert) => ({ ...cert, category: cert.category || certCategory(cert.name) })), [dataset]);
@@ -65,14 +73,14 @@ function CbtHome({ dataset, dataState }: { dataset: Dataset; dataState: "live" |
   const groups = categories.filter((item) => item !== "전체").map((item) => ({ name: item, certs: filtered.filter((cert) => cert.category === item) })).filter((group) => group.certs.length);
   function chooseCategory(value: string) { setCategory(value); const url = new URL(window.location.href); if (value === "전체") url.searchParams.delete("cat"); else url.searchParams.set("cat", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
   return <PageShell>
-    <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">{dataState === "live" ? `기출 ${dataset.questions.length.toLocaleString()}문항` : "샘플 데이터"}</span></div>
+    <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">기출 {dataset.questions.length.toLocaleString()}문항</span></div>
     <label className="cbt-search"><span className="cbt-search-icon" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="종목명을 검색하세요 (예: 정보처리기사)" /></label>
     {certs.length > 1 && <div className="cbt-category-chips" aria-label="종목 카테고리">{categories.map((item) => <button className={category === item ? "is-active" : ""} onClick={() => chooseCategory(item)} key={item}>{item}</button>)}</div>}
     {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong>{cert.name}</strong><span>회차 {dataset.exams.filter((exam) => exam.certId === cert.id).length.toLocaleString()}개 · 문제 {dataset.questions.filter((question) => question.certId === cert.id).length.toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
   </PageShell>;
 }
 
-function CertDetail({ dataset, cert, store, saveStore, user, dataState }: { dataset: Dataset; cert: Cert; store: LocalStore; saveStore: (store: LocalStore) => void; user: User | null; dataState: "live" | "demo" }) {
+function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Dataset; cert: Cert; store: LocalStore; saveStore: (store: LocalStore) => void; user: User | null }) {
   const router = useRouter();
   const certExams = useMemo(() => dataset.exams.filter((exam) => exam.certId === cert.id).sort((a, b) => b.year - a.year || b.round.localeCompare(a.round)), [dataset, cert]);
   const subjects = useMemo(() => dataset.subjects.filter((subject) => subject.certId === cert.id), [dataset, cert]);
@@ -91,9 +99,9 @@ function CertDetail({ dataset, cert, store, saveStore, user, dataState }: { data
   const shownYears = yearExpanded ? years : years.slice(0, 6); const rounds = certExams.filter((exam) => exam.year === year); const selectedExam = certExams.find((exam) => exam.id === selectedExamId);
   return <PageShell>
     <nav className="cbt-breadcrumb" aria-label="현재 위치"><Link href="/cbt/">CBT MATE</Link><span>›</span><Link href={`/cbt/?cat=${encodeURIComponent(cert.category || certCategory(cert.name))}`}>{cert.category || certCategory(cert.name)}</Link><span>›</span><b>{cert.name}</b></nav>
-    <div className="question-bank-hero"><div><span className="eyebrow">시험 준비</span><h1>{cert.name}</h1><p>원하는 방식으로 문제를 풀고 학습 기록을 이어가세요.</p></div>{dataState === "demo" && <span className="question-bank-status">샘플</span>}</div>
+    <div className="question-bank-hero"><div><span className="eyebrow">시험 준비</span><h1>{cert.name}</h1><p>원하는 방식으로 문제를 풀고 학습 기록을 이어가세요.</p></div></div>
     <div className="question-bank-tabs">{([['exams','회차별 기출'],['subjects','단원별'],['builder','모의고사 만들기'],['records','내 기록']] as const).map(([value, label]) => <button className={tab === value ? "is-active" : ""} onClick={() => setTab(value)} key={value}>{label}</button>)}</div>
-    {tab === "exams" && <div className="question-bank-grid"><section className="question-library-card"><CardHead no="01" title="연도와 회차 선택" desc="시험을 시작할 회차를 골라주세요." /><h3 className="cbt-field-label">연도 선택</h3><div className="cbt-chip-list">{shownYears.map((item) => <button className={year === item ? "is-active" : ""} onClick={() => { setYear(item); setSelectedExamId(certExams.find((exam) => exam.year === item)?.id || ""); }} key={item}>{item}년</button>)}</div>{years.length > 6 && <button className="cbt-more" onClick={() => setYearExpanded(!yearExpanded)}>{yearExpanded ? "접기" : "더 보기"}</button>}<h3 className="cbt-field-label">회차 선택</h3><div className="cbt-chip-list">{rounds.map((exam) => <button className={selectedExamId === exam.id ? "is-active" : ""} onClick={() => setSelectedExamId(exam.id)} key={exam.id}>{exam.round}</button>)}</div></section><aside className="question-selection-panel"><div className="question-selection-top"><span className="eyebrow">선택한 시험</span><button className="button button-secondary cbt-recent" disabled={!certExams.length} onClick={() => setStartExamId(certExams[0]?.id || "")}>최신 회차 시작</button></div>{selectedExam ? <><h2>{cert.name} {selectedExam.year}년 {selectedExam.round}</h2><p>시작 전 문항 수와 채점 방식을 확인합니다.</p><div className="question-selection-actions"><button className="button button-primary" onClick={() => setStartExamId(selectedExam.id)}>시험 시작</button></div></> : <EmptyState title="회차를 선택해 주세요." body="왼쪽에서 연도와 회차를 차례로 선택하면 시작할 수 있습니다." />}</aside></div>}
+    {tab === "exams" && <div className="question-bank-grid"><section className="question-library-card"><CardHead no="01" title="연도와 회차 선택" desc="시험을 시작할 회차를 골라주세요." /><h3 className="cbt-field-label">연도 선택</h3><div className="cbt-chip-list">{shownYears.map((item) => <button type="button" className={year === item ? "is-active" : ""} aria-pressed={year === item} onClick={() => { setYear(item); setSelectedExamId(certExams.find((exam) => exam.year === item)?.id || ""); }} key={item}>{item}년</button>)}</div>{years.length > 6 && <button className="cbt-more" onClick={() => setYearExpanded(!yearExpanded)}>{yearExpanded ? "접기" : "더 보기"}</button>}<h3 className="cbt-field-label">회차 선택</h3><div className="cbt-chip-list">{rounds.map((exam) => <button type="button" className={selectedExamId === exam.id ? "is-active" : ""} aria-pressed={selectedExamId === exam.id} onClick={() => setSelectedExamId(exam.id)} key={exam.id}>{exam.round}</button>)}</div></section><aside className="question-selection-panel"><span className="eyebrow">선택한 시험</span>{selectedExam ? <><h2>{cert.name} {selectedExam.year}년 {selectedExam.round}</h2><p>시작 전 문항 수와 채점 방식을 확인합니다.</p><div className="question-selection-actions"><button className="button button-primary" onClick={() => setStartExamId(selectedExam.id)}>시험 시작</button></div></> : <EmptyState title="회차를 선택해 주세요." body="왼쪽에서 연도와 회차를 차례로 선택하면 시작할 수 있습니다." />}</aside></div>}
     {tab === "subjects" && <div className="question-bank-grid"><section className="question-library-card cbt-subject-card"><CardHead no="02" title="단원 선택" desc="풀고 싶은 단원을 1개 이상 선택하세요." /><div className="cbt-select-all"><button onClick={() => setSelectedSubjects(selectedSubjects.length === subjects.length ? [] : subjects.map((subject) => subject.id))}>{selectedSubjects.length === subjects.length ? "전체 해제" : "전체 선택"}</button><span>{selectedSubjects.length.toLocaleString()}개 선택</span></div><div className="cbt-subject-list">{subjects.map((subject) => { const checked = selectedSubjects.includes(subject.id); const total = dataset.questions.filter((question) => question.subjectId === subject.id).length; return <label className={`cbt-subject-row${checked ? " is-selected" : ""}`} key={subject.id}><CustomCheckbox checked={checked} onChange={() => setSelectedSubjects(checked ? selectedSubjects.filter((id) => id !== subject.id) : [...selectedSubjects, subject.id])} /><strong>{subject.name}</strong><small>{total.toLocaleString()}문항</small></label>; })}</div></section><aside className="question-selection-panel"><span className="eyebrow">단원 연습</span><h2>선택한 단원으로 연습</h2><p>여러 단원을 묶어 한 번에 풀 수 있습니다.</p><div className="question-selection-actions"><button className="button button-primary" disabled={!selectedSubjects.length} onClick={() => begin(dataset.questions.filter((question) => selectedSubjects.includes(question.subjectId)).map((question) => question.id), certExams.map((exam) => exam.id), "submit", null)}>시험 시작</button>{!selectedSubjects.length && <small className="cbt-guidance">단원을 1개 이상 선택해 주세요.</small>}</div></aside></div>}
     {tab === "builder" && <div className="question-builder-grid"><section className="builder-card"><CardHead no="03" title="출제 범위" desc="회차와 단원을 조합해 모의고사를 만드세요." /><fieldset className="cbt-builder-group"><legend>회차 (다중 선택)</legend>{certExams.map((exam) => <label className="check-row" key={exam.id}><CustomCheckbox checked={selectedExamIds.includes(exam.id)} onChange={() => setSelectedExamIds(selectedExamIds.includes(exam.id) ? selectedExamIds.filter((id) => id !== exam.id) : [...selectedExamIds, exam.id])} /><span>{exam.year}년 {exam.round}</span></label>)}</fieldset><fieldset className="cbt-builder-group"><legend>단원 (선택하지 않으면 전체)</legend>{subjects.map((subject) => <label className="check-row" key={subject.id}><CustomCheckbox checked={selectedSubjects.includes(subject.id)} onChange={() => setSelectedSubjects(selectedSubjects.includes(subject.id) ? selectedSubjects.filter((id) => id !== subject.id) : [...selectedSubjects, subject.id])} /><span>{subject.name}</span><small>{dataset.questions.filter((question) => question.subjectId === subject.id).length.toLocaleString()}문항</small></label>)}</fieldset></section><aside className="builder-summary-card"><span className="eyebrow">모의고사</span><h2>모의고사 설정</h2><div className="builder-summary-fields"><label>총 문항 수<input type="number" min="1" max={Math.max(1, pool.length)} value={Math.min(count, Math.max(1, pool.length))} onChange={(event) => setCount(Number(event.target.value))} /></label><label>문제 순서<select value={order} onChange={(event) => setOrder(event.target.value as typeof order)}><option value="ordered">순서대로</option><option value="random">랜덤</option></select></label><label>출제 대상<select value={target} onChange={(event) => setTarget(event.target.value as QuestionTarget)}><option value="all">전체</option><option value="unanswered">안 푼 문제</option><option value="wrong">틀렸던 문제</option><option value="bookmark">북마크</option></select></label><label>제한시간<select value={timeLimit === null ? "none" : timeLimit} onChange={(event) => setTimeLimit(event.target.value === "none" ? null : Number(event.target.value))}><option value="none">무제한</option><option value="30">30분</option><option value="60">60분</option><option value="90">90분</option></select></label><label>채점 방식<select value={gradeMode} onChange={(event) => setGradeMode(event.target.value as GradeMode)}><option value="submit">한번에 채점</option><option value="instant">즉시 채점</option></select></label></div><div className="builder-limit"><span>선택 범위</span><strong>{pool.length.toLocaleString()}문항</strong></div><button className="button button-primary" disabled={!selectedExamIds.length || !pool.length} onClick={() => begin(pool.map((question) => question.id), selectedExamIds, gradeMode, timeLimit)}>모의고사 시작</button>{user && <button className="button button-ghost" onClick={() => { const config = { certId: cert.id, certSlug: certSlug(cert), examIds: selectedExamIds, subjectIds: selectedSubjects, count, order, target, gradeMode, timeLimitMinutes: timeLimit }; saveStore({ ...store, presets: [...store.presets, { name: `${cert.name} 프리셋`, config }] }); setToast("프리셋으로 저장했습니다."); }}>프리셋 저장</button>}</aside></div>}
     {tab === "records" && <Records cert={cert} dataset={dataset} store={store} />}
@@ -193,14 +201,14 @@ function ResultScreen({ dataset, cert, attempt, questions, reshuffle, setReshuff
       <p>정답 {correct}문항 · 오답 {questions.length - correct - unanswered}문항 · 미응답 {unanswered}문항 · 소요시간 {spent}분</p>
       <p>{timedOut ? "시간 초과 · " : ""}{displayDate(attempt.submittedAt)} · 전체 {questions.length}문항</p>
     </div>
-    <div className="result-actions" aria-label="결과 다음 단계">
+    <div className="result-action-group" aria-label="결과 다음 단계"><div className="result-actions">
       <button className="button button-primary" disabled={!wrongIds.length} onClick={() => onRetry(wrongIds)}>오답·미응답 다시 풀기</button>
       <Link className="button button-secondary" href="/cbt/wrong-notes/">오답노트</Link>
     </div>
     <div className="result-more-actions">
       <button className="button button-ghost" onClick={() => onRetry(attempt.questionIds)}>전체 다시 풀기</button>
       <Link className="button button-ghost" href={`/cbt/${encodeURIComponent(certSlug(cert))}/`}>종목으로 돌아가기</Link>
-    </div>
+    </div></div>
     <label className="cbt-reshuffle"><CustomCheckbox checked={reshuffle} onChange={() => setReshuffle(!reshuffle)} />재도전할 때 순서 다시 섞기</label>
     <section className="cbt-subject-stats"><h2>단원별 정답률</h2>{subjectStats.map((item) => <div key={item.name}><span>{item.name}</span><i role="img" aria-label={`정답률 ${item.rate}%`}><b style={{ width: `${item.rate}%`, minWidth: item.rate ? 8 : 0 }} /></i><strong>{item.rate}%</strong></div>)}</section>
     <section className="result-review"><h2>문항별 결과</h2><p>번호를 선택하면 해당 문제와 해설을 볼 수 있습니다.</p><div className="result-legend" aria-label="문항 결과 기호"><span>O 정답</span><span>X 오답</span><span>– 미응답</span></div>

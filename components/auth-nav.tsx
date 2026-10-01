@@ -38,16 +38,17 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
 
   function moveMenu(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const visibleLinks = () => Array.from(menuRef.current?.querySelectorAll<HTMLAnchorElement>(".auth-menu-panel a") || []).filter((link) => link.getClientRects().length > 0);
     if (!menuOpen) {
       event.preventDefault();
       setMenuOpen(true);
       requestAnimationFrame(() => {
-        const links = menuRef.current?.querySelectorAll<HTMLAnchorElement>(".auth-menu-panel a");
-        links?.[event.key === "ArrowUp" || event.key === "End" ? links.length - 1 : 0]?.focus();
+        const links = visibleLinks();
+        links[event.key === "ArrowUp" || event.key === "End" ? links.length - 1 : 0]?.focus();
       });
       return;
     }
-    const links = Array.from(menuRef.current?.querySelectorAll<HTMLAnchorElement>(".auth-menu-panel a") || []);
+    const links = visibleLinks();
     if (!links.length) return;
     event.preventDefault();
     const index = links.indexOf(document.activeElement as HTMLAnchorElement);

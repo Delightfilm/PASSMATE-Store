@@ -29,23 +29,6 @@ export type ImportContext = {
 export type ParsedImport = { rows: ImportRow[]; errors: ImportError[]; context: ImportContext | null };
 export type ImportBatch = { id: string; remoteId?: string; createdAt: string; fileName: string; rows: ImportRow[]; errors: ImportError[]; status: "importing" | "needs_review" | "published" | "rolled_back" | "failed" };
 
-export const DEMO_DATASET: Dataset = {
-  certs: [{ id: "cert-computer-literacy-2", name: "컴퓨터활용능력 2급" }],
-  subjects: [
-    { id: "subject-spreadsheet", certId: "cert-computer-literacy-2", name: "스프레드시트 일반" },
-    { id: "subject-database", certId: "cert-computer-literacy-2", name: "데이터베이스 일반" },
-  ],
-  exams: [{ id: "exam-demo-2026-1", certId: "cert-computer-literacy-2", year: 2026, round: "1회", title: "2026년 1회 샘플 모의고사", durationMinutes: 40, passScore: 60, questionCount: 6 }],
-  questions: [
-    { id: "demo-q1", examId: "exam-demo-2026-1", certId: "cert-computer-literacy-2", no: 1, subjectId: "subject-spreadsheet", stem: "스프레드시트에서 수식 입력을 시작하는 기호는 무엇인가요?", images: [], choices: [{ label: "①", text: "=" }, { label: "②", text: "#" }, { label: "③", text: "@" }, { label: "④", text: "$" }], answer: 0, explanation: "수식은 등호(=)로 시작합니다.", status: "published", sourceHash: "demo-q1" },
-    { id: "demo-q2", examId: "exam-demo-2026-1", certId: "cert-computer-literacy-2", no: 2, subjectId: "subject-spreadsheet", stem: "A1 셀과 B1 셀의 값을 더하는 올바른 수식은?", images: [], choices: [{ label: "①", text: "A1+B1" }, { label: "②", text: "=A1+B1" }, { label: "③", text: "SUM A1 B1" }, { label: "④", text: "+A1+B1" }], answer: 1, explanation: "셀 참조를 더할 때 =A1+B1을 사용합니다.", status: "published", sourceHash: "demo-q2" },
-    { id: "demo-q3", examId: "exam-demo-2026-1", certId: "cert-computer-literacy-2", no: 3, subjectId: "subject-spreadsheet", stem: "필터 기능의 주된 목적은 무엇인가요?", images: [], choices: [{ label: "①", text: "조건에 맞는 데이터만 표시" }, { label: "②", text: "파일 삭제" }, { label: "③", text: "서식 초기화" }, { label: "④", text: "프로그램 종료" }], answer: 0, explanation: "필터는 조건에 맞는 행만 일시적으로 표시합니다.", status: "published", sourceHash: "demo-q3" },
-    { id: "demo-q4", examId: "exam-demo-2026-1", certId: "cert-computer-literacy-2", no: 4, subjectId: "subject-database", stem: "데이터베이스에서 행을 의미하는 용어는?", images: [], choices: [{ label: "①", text: "필드" }, { label: "②", text: "레코드" }, { label: "③", text: "테이블" }, { label: "④", text: "쿼리" }], answer: 1, explanation: "행(row)은 레코드(record)라고 합니다.", status: "published", sourceHash: "demo-q4" },
-    { id: "demo-q5", examId: "exam-demo-2026-1", certId: "cert-computer-literacy-2", no: 5, subjectId: "subject-database", stem: "조건에 맞는 레코드를 검색하는 데이터베이스 객체는?", images: [], choices: [{ label: "①", text: "쿼리" }, { label: "②", text: "폼" }, { label: "③", text: "보고서" }, { label: "④", text: "매크로" }], answer: 0, explanation: "쿼리는 조건에 따라 데이터를 검색·가공합니다.", status: "published", sourceHash: "demo-q5" },
-    { id: "demo-q6", examId: "exam-demo-2026-1", certId: "cert-computer-literacy-2", no: 6, subjectId: "subject-database", stem: "데이터를 중복 없이 식별하는 필드는 무엇인가요?", images: [], choices: [{ label: "①", text: "외래 키" }, { label: "②", text: "기본 키" }, { label: "③", text: "정렬 키" }, { label: "④", text: "검색 키" }], answer: 1, explanation: "기본 키는 레코드를 유일하게 식별합니다.", status: "published", sourceHash: "demo-q6" },
-  ],
-};
-
 export const EMPTY_STORE: LocalStore = { attempts: [], bookmarks: [], wrongNotes: {}, presets: [], imports: [], issueReports: [] };
 export const STORE_KEY = "passmate.cbt-mate.v1";
 export function readLocalStore(): LocalStore { if (typeof window === "undefined") return EMPTY_STORE; try { return { ...EMPTY_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; } catch { return EMPTY_STORE; } }
@@ -119,14 +102,17 @@ function normalizeLiveChoices(value: unknown): Choice[] {
   }).filter((item) => item.text);
 }
 
-export async function loadPublishedDataset(): Promise<Dataset | null> {
+export async function loadPublishedDataset(): Promise<Dataset> {
   const supabase = getSupabaseBrowserClient();
   const [certResult, subjectResult, examResult] = await Promise.all([
     supabase.from("question_bank_certs").select("id,name").order("name"),
     supabase.from("question_bank_subjects").select("id,cert_id,name").order("part_number"),
     supabase.from("question_bank_exams").select("id,cert_id,year,round,title,duration_minutes,pass_score,question_count").order("exam_date", { ascending: false }),
   ]);
-  if (certResult.error || subjectResult.error || examResult.error || !certResult.data?.length) return null;
+  if (certResult.error || subjectResult.error || examResult.error) {
+    throw new Error(`CBT 목록 조회 실패: ${certResult.error?.message || subjectResult.error?.message || examResult.error?.message}`);
+  }
+  if (!certResult.data?.length) throw new Error("CBT 종목이 등록되지 않았습니다.");
 
   const questionRows: Record<string, unknown>[] = [];
   for (let from = 0; ; from += 1000) {
@@ -137,12 +123,12 @@ export async function loadPublishedDataset(): Promise<Dataset | null> {
       .order("exam_id")
       .order("no")
       .range(from, from + 999);
-    if (result.error) return null;
+    if (result.error) throw new Error(`CBT 문항 조회 실패: ${result.error.message}`);
     const page = (result.data ?? []) as Record<string, unknown>[];
     questionRows.push(...page);
     if (page.length < 1000) break;
   }
-  if (!questionRows.length) return null;
+  if (!questionRows.length) throw new Error("공개된 CBT 문항이 없습니다.");
 
   return {
     certs: certResult.data.map((row) => ({ id: row.id, name: row.name })),

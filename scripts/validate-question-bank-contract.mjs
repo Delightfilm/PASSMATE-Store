@@ -32,6 +32,9 @@ if (!files.migration.includes("unique(import_batch_id, source_question_uid)")) {
 if (!files.client.includes("loadPublishedDataset") || !files.library.includes('eq("status", "published")')) {
   throw new Error("The problem bank UI must load published Supabase questions.");
 }
+if (files.library.includes("DEMO_DATASET") || files.client.includes("샘플 데이터") || !files.client.includes('setDataState("error")') || !files.client.includes("다시 시도")) {
+  throw new Error("Catalog failures must show retry UI, never sample questions.");
+}
 if (!files.admin.includes("100") || !files.edge.includes("questions.length > 100")) {
   throw new Error("Large crawler bundles must be uploaded in bounded chunks.");
 }
@@ -47,6 +50,7 @@ if (!files.switcher.includes('href: "/cbt/"') || files.header.includes('>문제�
 if (files.submitRoute.includes("function GET") || !files.submitRoute.includes("function POST") ||
     !files.submitRoute.includes('.eq("status", "in_progress")') ||
     !files.submitRoute.includes('ignoreDuplicates: true') ||
+    !files.reportsMigration.includes("question_bank_attempts_user_client_idx") ||
     !files.library.includes('store.attempts.filter((item) => item.status === "in_progress")') ||
     files.client.includes("void syncAccountStore(next)")) {
   throw new Error("CBT attempt submission must be confirmation-only and idempotent per attempt ID.");

@@ -27,7 +27,7 @@ export function SiteHeader() {
     <header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}`}>
       <div className="container nav-wrap">
         <Link href={cbt ? "/cbt/" : "/"} className="logo-link" aria-label={cbt ? "CBT MATE 홈" : "PASSMATE 홈"}>
-          {cbt ? <Image src="/cbtmate-logo.png" width={164} height={32} alt="CBT MATE" /> : <PassmateLogo compact />}
+          {cbt ? <Image src="/cbtmate-logo.png" width={164} height={32} alt="CBT MATE" priority /> : <PassmateLogo compact />}
         </Link>
         <ServiceSwitcher />
         {!admin && <nav className="main-nav" aria-label={cbt ? "CBT 주요 메뉴" : "스토어 주요 메뉴"}>
