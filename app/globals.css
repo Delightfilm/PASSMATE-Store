@@ -390,6 +390,9 @@
 .builder-total span{color:var(--muted);font-size:12px}.builder-total strong{font-size:20px}
 .builder-warning{margin:14px 0 0;padding:12px;border:1px solid #d0a15b;border-radius:var(--radius-control);background:var(--warning-soft);color:var(--warning);font-size:12px;font-weight:750}
 .builder-action-row{display:grid;gap:9px;margin-top:18px}.builder-action-row .button{width:100%}
+.mock-exam-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:22px;align-items:start}
+.mock-exam-card,.mock-exam-start{padding:30px;border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:var(--shadow)}
+.mock-exam-card{background:var(--ink);color:#fff}.mock-exam-card .eyebrow{color:#bceca9}.mock-exam-card h2,.mock-exam-start h2{margin:12px 0 8px;font-size:30px}.mock-exam-card p{color:#e5e7eb}.mock-exam-facts{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.mock-exam-facts span{display:grid;gap:2px;min-width:110px;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-control)}.mock-exam-facts strong{color:#55c935;font-size:22px}.mock-exam-facts small{color:#e5e7eb;font-size:12px}.mock-subject-list{display:grid;gap:0}.mock-subject-list div{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid rgba(255,255,255,.2);font-size:13px}.mock-subject-list strong{color:#fff}.mock-exam-note{margin:22px 0 0!important;font-size:12px}.mock-exam-start{position:sticky;top:100px;background:#fff}.mock-exam-start p{line-height:1.7}.mock-exam-start .button{width:100%;margin-top:16px}.mock-exam-start small{display:block;margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
 
 .records-grid{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:22px}
 .resume-card{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 28px}
@@ -663,6 +666,8 @@ body.cbt-exam-active main{min-height:100vh}
   .record-row .button,.record-unavailable{grid-column:1/-1;width:100%}
   .custom-builder{grid-template-columns:1fr}
   .custom-builder .builder-summary-card{position:static}
+  .mock-exam-layout{grid-template-columns:1fr}
+  .mock-exam-start{position:static}
 }
 @media(max-width:520px){
   .result-number-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
