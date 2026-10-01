@@ -372,7 +372,7 @@
 .builder-summary-card>.button+.button{margin-top:9px}
 .builder-preset-note{display:block;margin-top:12px;text-align:center;color:var(--muted)}
 
-.records-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.records-grid{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:22px}
 .resume-card{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:24px 28px}
 .resume-card>div{display:grid;gap:6px}
 .resume-card strong{font-size:19px}
