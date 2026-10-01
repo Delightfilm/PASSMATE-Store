@@ -9,6 +9,7 @@ const files = {
   reportsMigration: fs.readFileSync(new URL("../supabase/migrations/20260930150000_cbt_issue_reports.sql", import.meta.url), "utf8"),
   header: fs.readFileSync(new URL("../components/site-header.tsx", import.meta.url), "utf8"),
   switcher: fs.readFileSync(new URL("../components/service-switcher.tsx", import.meta.url), "utf8"),
+  submitRoute: fs.readFileSync(new URL("../app/api/cbt/attempts/[attemptId]/submit/route.ts", import.meta.url), "utf8"),
 };
 
 for (const action of ["start_import", "import_chunk", "finish_import", "publish_batch", "rollback_batch", "recent_batches"]) {
@@ -42,6 +43,13 @@ if (!files.reportsMigration.includes("question_bank_issue_reports") || !files.cl
 }
 if (!files.switcher.includes('href: "/cbt/"') || files.header.includes('>문제은행</Link>')) {
   throw new Error("CBT routing and PASSMATE navigation contract is broken.");
+}
+if (files.submitRoute.includes("function GET") || !files.submitRoute.includes("function POST") ||
+    !files.submitRoute.includes('.eq("status", "in_progress")') ||
+    !files.submitRoute.includes('ignoreDuplicates: true') ||
+    !files.library.includes('store.attempts.filter((item) => item.status === "in_progress")') ||
+    files.client.includes("void syncAccountStore(next)")) {
+  throw new Error("CBT attempt submission must be confirmation-only and idempotent per attempt ID.");
 }
 for (const route of ["../app/cbt/page.tsx", "../app/cbt/[certSlug]/page.tsx", "../app/cbt/[certSlug]/exam/[attemptId]/page.tsx", "../app/cbt/wrong-notes/page.tsx", "../app/cbt/bookmarks/page.tsx", "../app/cbt/history/page.tsx"]) {
   if (!fs.existsSync(new URL(route, import.meta.url))) throw new Error("CBT route missing: " + route);

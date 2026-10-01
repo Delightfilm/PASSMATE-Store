@@ -736,7 +736,7 @@ export function AdminClient() {
                         <th>가격</th>
                         <th>상태</th>
                         <th>최신 버전</th>
-                        <th></th>
+                        <th>관리</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -58,7 +58,11 @@ export function hangulInitials(value: string) { const initials = "ㄱㄲㄴㄷ�
 export async function submitIssueReport(report: IssueReport) { const supabase = getSupabaseBrowserClient(); await supabase.from("question_bank_issue_reports").insert({ id: report.id, question_id: report.questionId, attempt_id: report.attemptId || null, kind: report.kind, memo: report.memo, status: report.status }); }
 export async function syncAccountStore(store: LocalStore) {
   const supabase = getSupabaseBrowserClient(); const { data } = await supabase.auth.getSession(); const userId = data.session?.user.id; if (!userId) return;
-  if (store.attempts.length) await supabase.from("question_bank_attempts").upsert(store.attempts.map((attempt) => ({ user_id: userId, client_id: attempt.id, config: { ...attempt.config, lockedIds: attempt.lockedIds }, question_ids: attempt.questionIds, answers: attempt.answers, started_at: attempt.startedAt, end_at: attempt.endAt, submitted_at: attempt.submittedAt || null, score: attempt.score ?? null, status: attempt.status })), { onConflict: "user_id,client_id" });
+  for (const attempt of store.attempts.filter((item) => item.status === "in_progress")) {
+    const payload = { user_id: userId, client_id: attempt.id, config: { ...attempt.config, lockedIds: attempt.lockedIds }, question_ids: attempt.questionIds, answers: attempt.answers, started_at: attempt.startedAt, end_at: attempt.endAt, submitted_at: null, score: null, status: "in_progress" };
+    const { data: updated } = await supabase.from("question_bank_attempts").update(payload).eq("user_id", userId).eq("client_id", attempt.id).eq("status", "in_progress").select("id");
+    if (!updated?.length) await supabase.from("question_bank_attempts").upsert(payload, { onConflict: "user_id,client_id", ignoreDuplicates: true });
+  }
   await supabase.from("question_bank_bookmarks").delete().eq("user_id", userId);
   if (store.bookmarks.length) await supabase.from("question_bank_bookmarks").insert(store.bookmarks.map((questionId) => ({ user_id: userId, question_id: questionId })));
   const notes = Object.entries(store.wrongNotes).map(([questionId, note]) => ({ user_id: userId, question_id: questionId, wrong_count: note.wrongCount, last_wrong_at: note.lastWrongAt, memo: note.memo, mastered: note.mastered }));
@@ -72,7 +76,7 @@ export async function mergeAccountStore(local: LocalStore): Promise<LocalStore> 
     supabase.from("question_bank_wrong_notes").select("question_id,wrong_count,last_wrong_at,memo,mastered").eq("user_id", userId),
   ]);
   const remoteAttempts: LocalAttempt[] = (attempts.data || []).map((row) => ({ id: row.client_id || row.id, config: row.config as AttemptConfig, questionIds: row.question_ids as string[], answers: row.answers as Record<string, number>, lockedIds: Array.isArray(row.config?.lockedIds) ? row.config.lockedIds : [], startedAt: row.started_at, endAt: row.end_at, submittedAt: row.submitted_at || undefined, score: row.score === null ? undefined : Number(row.score), status: row.status as LocalAttempt["status"] }));
-  const mergedAttempts = [...local.attempts]; for (const attempt of remoteAttempts) if (!mergedAttempts.some((item) => item.id === attempt.id)) mergedAttempts.push(attempt);
+  const mergedAttempts = [...local.attempts]; for (const attempt of remoteAttempts) { const index = mergedAttempts.findIndex((item) => item.id === attempt.id); if (index < 0) mergedAttempts.push(attempt); else if (attempt.status === "submitted") mergedAttempts[index] = attempt; }
   const mergedNotes = { ...local.wrongNotes }; for (const row of wrongNotes.data || []) mergedNotes[row.question_id] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at, memo: row.memo, mastered: row.mastered };
   return { ...local, attempts: mergedAttempts, bookmarks: Array.from(new Set([...local.bookmarks, ...(bookmarks.data || []).map((row) => row.question_id)])), wrongNotes: mergedNotes };
 }

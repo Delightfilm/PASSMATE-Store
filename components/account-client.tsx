@@ -37,12 +37,6 @@ export function AccountClient() {
       setProfile(row);
       setDisplayName(row?.display_name ?? "");
       const local = readLocalStore();
-      // ponytail: one-time best-effort migration; server rows become authoritative after the migration lands.
-      const migrationKey = `passmate.cbt-migrated.${userData.user.id}`;
-      if (!sessionStorage.getItem(migrationKey)) {
-        sessionStorage.setItem(migrationKey, "1");
-        void supabase.from("question_bank_attempts").insert(local.attempts.filter((item) => item.status === "submitted").map((item) => ({ user_id: userData.user.id, config: item.config, question_ids: item.questionIds, answers: item.answers, started_at: item.startedAt, end_at: item.endAt, submitted_at: item.submittedAt, score: item.score, status: item.status })));
-      }
       setLoading(false);
     }
 
@@ -77,7 +71,6 @@ export function AccountClient() {
     <div className="account-card">
       <div className="account-summary">
         <span>이메일</span><strong>{user?.email ?? "-"}</strong>
-        <span>계정</span><strong>{profile?.display_name || "PASSMATE 회원"}</strong>
       </div>
       <form className="auth-form" onSubmit={saveProfile}>
         <div className="auth-field"><label htmlFor="profile-name">표시 이름</label><input id="profile-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} minLength={2} required /></div>
@@ -90,13 +83,17 @@ export function AccountClient() {
         <div><span>북마크</span><strong>{cbtSummary.bookmarks}개</strong></div>
       </section>
       <div className="account-actions">
+        <div className="account-actions-main">
         {profile?.role === "admin" && (
           <Link className="button button-primary" href="/admin/">관리자 대시보드</Link>
         )}
         <Link className="button button-ghost" href="/library/">내 자료 보기</Link>
-        <Link className="button button-ghost" href="/question-bank/">CBT Mate 문제은행</Link>
+        <Link className="button button-ghost" href="/cbt/">CBT MATE 문제은행</Link>
+        </div>
+        <div className="account-actions-secondary">
         <Link className="button button-ghost" href="/account/forgot-password/">비밀번호 변경</Link>
-        <button className="button button-ghost auth-submit" type="button" onClick={signOut}>로그아웃</button>
+        <button className="button button-logout auth-submit" type="button" onClick={signOut}>로그아웃</button>
+        </div>
       </div>
     </div>
   );

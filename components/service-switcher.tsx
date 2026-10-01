@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export const SERVICE_TABS = [
-  { key: "passmate", label: "PASS MATE", href: "/" },
+  { key: "passmate", label: "PASSMATE", href: "/" },
   { key: "cbt", label: "CBT MATE", href: "/cbt/" },
 ] as const;
 

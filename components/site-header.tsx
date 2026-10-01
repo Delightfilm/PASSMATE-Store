@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { PassmateLogo } from "./logo";
 import { AuthNav } from "./auth-nav";
@@ -25,8 +26,8 @@ export function SiteHeader() {
   return (
     <header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}`}>
       <div className="container nav-wrap">
-        <Link href="/" className="logo-link" aria-label="PASSMATE 홈">
-          <PassmateLogo compact />
+        <Link href={cbt ? "/cbt/" : "/"} className="logo-link" aria-label={cbt ? "CBT MATE 홈" : "PASSMATE 홈"}>
+          {cbt ? <Image src="/cbtmate-logo.png" width={164} height={32} alt="CBT MATE" /> : <PassmateLogo compact />}
         </Link>
         <ServiceSwitcher />
         {!admin && <nav className="main-nav" aria-label={cbt ? "CBT 주요 메뉴" : "스토어 주요 메뉴"}>
