@@ -577,12 +577,6 @@ export function AdminClient() {
   return (
     <div className="store-admin-shell">
       <aside className="store-admin-sidebar">
-        <div className="store-admin-brand">
-          <span>PASSMATE</span>
-          <strong>관리자</strong>
-          <small>jhpodong@naver.com</small>
-        </div>
-
         <AdminNavGroup label="관리">
           <AdminNavButton active={activeMenu === "overview"} onClick={() => setActiveMenu("overview")}>
             홈
@@ -629,7 +623,6 @@ export function AdminClient() {
       <main className="store-admin-main">
         <header className="store-admin-topbar">
           <div>
-            <span className="eyebrow">PASSMATE ADMIN</span>
             <h1>{menuTitle(activeMenu)}</h1>
           </div>
           <button className="button button-ghost" type="button" onClick={refresh}>

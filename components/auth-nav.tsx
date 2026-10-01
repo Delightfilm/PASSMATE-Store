@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { readLocalStore, type LocalAttempt } from "@/lib/question-bank";
@@ -11,6 +12,10 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
   const [isAdmin, setIsAdmin] = useState(false);
   const [ready, setReady] = useState(false);
   const [ongoing, setOngoing] = useState<LocalAttempt | null>(null);
+  const pathname = usePathname();
+  const menuRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => { if (menuRef.current) menuRef.current.open = false; }, [pathname]);
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
@@ -80,30 +85,25 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
     return <div className="auth-nav" aria-hidden="true" />;
   }
 
-  if (!user) {
-    return (
-      <div className="auth-nav">
-        {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
-        {service === "passmate" && <Link className="auth-nav-link" href="/account/login/?next=%2Fcart%2F">장바구니</Link>}
-        <Link className="auth-nav-link" href={`/account/login/?next=${encodeURIComponent(service === "cbt" ? "/cbt/" : "/")}`}>로그인</Link>
-      </div>
-    );
-  }
-
   return (
     <div className="auth-nav">
       {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
-      <span className="auth-nav-user">{user.email}</span>
-      {isAdmin && (
-        <Link className="auth-nav-link" href="/admin/">관리자</Link>
-      )}
-      {service === "passmate" && <Link className="auth-nav-link" href="/cart/">장바구니</Link>}
-      <Link className="auth-nav-link" href="/account/">내 계정</Link>
+      <details className="auth-menu" ref={menuRef}>
+        <summary className="auth-nav-link" aria-label={user ? "계정 메뉴 열기" : "메뉴 열기"}><span>{user ? "내 계정" : "메뉴"}</span><span className="auth-menu-icon" aria-hidden="true">☰</span></summary>
+        <nav className="auth-menu-panel" aria-label="계정 및 서비스 메뉴">
+          {user && <span className="auth-menu-email">{user.email}</span>}
+          <Link className="auth-menu-store-link" href="/products/">요약노트</Link>
+          <Link className="auth-menu-store-link" href="/library/">내 자료</Link>
+          {isAdmin && <Link href="/admin/">관리자</Link>}
+          {service === "passmate" && <Link href={user ? "/cart/" : "/account/login/?next=%2Fcart%2F"}>장바구니</Link>}
+          <Link href={user ? "/account/" : `/account/login/?next=${encodeURIComponent(service === "cbt" ? "/cbt/" : "/")}`}>{user ? "내 계정" : "로그인"}</Link>
+        </nav>
+      </details>
     </div>
   );
 }
 
 function ResumeLink({ attempt }: { attempt: LocalAttempt }) {
   const cert = attempt.config.certSlug || attempt.config.certId;
-  return <Link className="auth-nav-resume" href={`/cbt/${encodeURIComponent(cert)}/exam/${attempt.id}/`}>이어서 풀기</Link>;
+  return <Link className="auth-nav-resume" aria-label="이어서 풀기" href={`/cbt/${encodeURIComponent(cert)}/exam/${attempt.id}/`}><span>이어서 풀기</span><span className="auth-resume-icon" aria-hidden="true">▶</span></Link>;
 }

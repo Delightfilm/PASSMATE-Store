@@ -18,7 +18,7 @@ export function ServiceSwitcher() {
         {SERVICE_TABS.map((tab) => {
           const active = tab.key === "cbt" ? cbtActive : !cbtActive;
           return (
-            <Link className={`service-switcher__tab${active ? " is-active" : ""}`} href={tab.href} key={tab.key}>
+            <Link className={`service-switcher__tab${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined} href={tab.href} key={tab.key}>
               <span className={`service-switcher__logo service-switcher__logo--${tab.key}`}>{tab.label}</span>
             </Link>
           );

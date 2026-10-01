@@ -1,15 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { PassmateLogo } from "./logo";
 import { AuthNav } from "./auth-nav";
+import { ServiceSwitcher } from "./service-switcher";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const cbt = pathname.startsWith("/cbt");
+  const admin = pathname.startsWith("/admin");
   const exam = /^\/cbt\/[^/]+\/exam\//.test(pathname);
   const detailPath = /^\/cbt\/[^/]+\/?$/.test(pathname) && !/^\/cbt\/(wrong-notes|bookmarks|history)\/?$/.test(pathname);
   const builderActive = searchParams.get("tab") === "builder";
@@ -25,22 +26,26 @@ export function SiteHeader() {
   if (exam) return null;
 
   return (
-    <header className={`site-header${cbt ? " site-header--cbt" : ""}`}>
+    <header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}`}>
       <div className="container nav-wrap">
-        <Link href={cbt ? "/cbt/" : "/"} className="logo-link" aria-label={cbt ? "CBT MATE 홈" : "PASSMATE 홈"}>
-          {cbt ? <Image className="cbt-logo" src="/cbtmate-logo.png" width={194} height={38} alt="CBTMATE" priority /> : <PassmateLogo compact />}
+        <Link href="/" className="logo-link" aria-label="PASSMATE 홈">
+          <PassmateLogo compact />
         </Link>
-        <nav className="main-nav" aria-label="주요 메뉴">
+        <ServiceSwitcher />
+        {!admin && <nav className="main-nav" aria-label={cbt ? "CBT 주요 메뉴" : "스토어 주요 메뉴"}>
           {cbt ? cbtLinks.map((item) => (
-            <Link className={item.active ? "is-active" : ""} href={item.href} key={item.href}>{item.label}</Link>
+            <Link className={item.active ? "is-active" : ""} aria-current={item.active ? "page" : undefined} href={item.href} key={item.href}>{item.label}</Link>
           )) : <>
             <Link href="/products">요약노트</Link>
             <Link href="/library">내 자료</Link>
           </>}
-        </nav>
-        {!cbt && <Link href="/products/computer-literacy-2" className="nav-cta">첫 상품 보기</Link>}
+        </nav>}
+        {admin && <span className="header-context">관리자</span>}
         <AuthNav service={cbt ? "cbt" : "passmate"} />
       </div>
+      {cbt && <nav className="mobile-cbt-nav" aria-label="CBT 모바일 주요 메뉴">
+        {cbtLinks.map((item) => <Link href={item.href} aria-current={item.active ? "page" : undefined} key={item.href}>{item.label}</Link>)}
+      </nav>}
     </header>
   );
 }

@@ -4,7 +4,6 @@ import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageTransition } from "@/components/page-transition";
-import { ServiceSwitcher } from "@/components/service-switcher";
 
 export const metadata: Metadata = {
   title: "PASSMATE | 합격까지 함께하는 요약노트",
@@ -15,7 +14,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko" data-scroll-behavior="smooth">
       <body>
-        <ServiceSwitcher />
         <Suspense><SiteHeader /></Suspense>
         <main><PageTransition>{children}</PageTransition></main>
         <SiteFooter />
