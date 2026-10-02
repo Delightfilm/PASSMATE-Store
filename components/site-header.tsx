@@ -6,7 +6,7 @@ import { CbtMateLogo, PassmateLogo } from "./logo";
 import { AuthNav } from "./auth-nav";
 import { ServiceSwitcher } from "./service-switcher";
 
-export function SiteHeader() {
+export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}) {
   const pathname = usePathname();
   const cbt = pathname.startsWith("/cbt");
   const admin = pathname.startsWith("/admin");
@@ -20,7 +20,7 @@ export function SiteHeader() {
     { href: "/cbt/history/", label: "내 기록", active: pathname.startsWith("/cbt/history") },
   ];
 
-  if (exam) return null;
+  if (exam && !showOnExam) return null;
 
   return (
     <header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}`}>
