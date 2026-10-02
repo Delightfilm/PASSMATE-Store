@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { readLocalStore, type LocalAttempt } from "@/lib/question-bank";
+import { expiredAttempt } from "@/lib/cbt-presentation";
 
 export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt" }) {
   const [user, setUser] = useState<User | null>(null);
@@ -110,11 +111,13 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
 
   useEffect(() => {
     if (service !== "cbt") return;
-    const sync = () => setOngoing(readLocalStore().attempts.find((item) => item.status === "in_progress") ?? null);
+    const sync = () => setOngoing(readLocalStore().attempts.filter((item) => item.status === "in_progress" && !expiredAttempt(item)).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))[0] ?? null);
     sync();
+    const timer = window.setInterval(sync, 1000);
     window.addEventListener("cbt-store", sync);
     window.addEventListener("storage", sync);
     return () => {
+      window.clearInterval(timer);
       window.removeEventListener("cbt-store", sync);
       window.removeEventListener("storage", sync);
     };
@@ -129,7 +132,7 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
       <div className="auth-menu" ref={menuRef} onKeyDown={moveMenu} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); }}>
         <button ref={triggerRef} type="button" className="auth-nav-link auth-menu-trigger" aria-label={user ? "계정 메뉴" : "메뉴"} aria-haspopup="true" aria-expanded={menuOpen} aria-controls="account-menu-panel" onClick={() => setMenuOpen((open) => !open)}><svg className="auth-menu-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c0-4 3-6.5 7.5-6.5s7.5 2.5 7.5 6.5" /></svg><span className="auth-menu-label">{user ? "내 계정" : "메뉴"}</span><svg className="auth-menu-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m3 6 5 5 5-5" /></svg><span className="auth-menu-icon" aria-hidden="true">☰</span></button>
         <nav id="account-menu-panel" className="auth-menu-panel" aria-label="계정 및 서비스 메뉴" hidden={!menuOpen}>
-          {user && <span className="auth-menu-email">{user.email}</span>}
+          {user && service === "passmate" && <span className="auth-menu-email">{user.email}</span>}
           {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
           <Link className="auth-menu-store-link" href="/products/">요약노트</Link>
           <Link className="auth-menu-store-link" href="/library/">내 자료</Link>

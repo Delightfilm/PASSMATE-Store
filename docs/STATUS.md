@@ -1,6 +1,6 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-09-28**
+> Last updated: **2026-10-03**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
@@ -213,6 +213,46 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 공개 문항을 \`/question-bank/\`가 Supabase에서 페이지 단위로 읽어 회차별·단원별·사용자 조합 모의고사에 사용
 - 이미지 URL 문항 표시 및 검증 오류 보고서 다운로드 구현
 
+### 2026-10-02 CBT 21개 점검 항목
+
+- `codex/cbt-21-review`에서 UI 및 테스트 전용 서버 출제/연습용 번호 변경 진행. 운영 `main` 배포는 변경하지 않음.
+- 별도 Supabase 테스트 프로젝트 연결은 미확인. Preview의 CBT 원격 쓰기는 연결 확인 전 차단.
+- 격리된 메모리 PostgreSQL에서 100회 20/20/20 출제, 일자별 번호, 상태/소유권/멱등 검증 통과. hosted Supabase 및 실제 두 탭 동시 제출 QA는 미완료.
+- 상세 변경/회귀/되돌리기 자료: `docs/CBT_21_REVIEW.md`, 테스트 전용 SQL: `docs/cbt-test-migration.DRAFT.sql`.
+
+### 2026-10-02 CBT 재검토 11개 항목
+
+- 기존 로컬 응시의 권한을 유지하는 RESTRICTIVE RLS로 변경. 서버 응시만 직접 쓰기/승격 차단.
+- 낙관적 문항별 저장 큐, 모의시험 중 채점 차단, 구성표/과목 테이블, 만료 기록의 로컬 숨김, 오류 상태 구분 및 mastered 반영.
+- `docs/CBT_11_REVIEW.md`가 이전 21개 보고서의 일괄 권한 회수/전역 저장 큐 설명을 대체한다.
+- 임시 로컬 PostgreSQL 18.4에서 실제 두 연결 검증 통과: B의 Lock 대기, 최초 제출 결과/행 1개, RLS 직접 쓰기 및 RPC 차단. Supabase hosted Auth/REST 및 브라우저 두 탭 QA는 별도 테스트 프로젝트가 없어 미완료.
+- 운영 공개 카탈로그 메타데이터의 읽기 전용 집계: 1,138문항/19회차, 2001년 4회 색채와 금속도장 각각 19문항; 나머지 55개 회차×과목 셀은 20. 누락 번호/원인 및 보기·정답까지 유효한 풀은 아직 확인 필요. 응시/정답 조회나 DB 쓰기는 하지 않음.
+- **별도 테스트 DB의 두 연결/Auth/REST/브라우저 QA가 모두 끝난 뒤에만 병합 검토.** 현재 운영 DB/배포는 변경하지 않음. 생산 환경 차단 가드 해제 및 운영 전환은 별도 검토 필요.
+
+### 2026-10-02 CBT 후속 재검토 9개 항목
+
+- 이전 11개 검토의 권한/구성표/롤아웃 지침은 `docs/CBT_9_REVIEW.md`가 대체한다. 보고서에 현재 DRAFT SQL 전문을 포함했다.
+- authenticated의 attempts DELETE 권한과 두 DELETE 정책 제거. 기존 legacy INSERT/UPDATE 및 서버 관리 행 차단은 유지.
+- 구성표는 종목 UUID FK; 시드 UUID를 명시. 종목 이름 변경/동명 종목 검증 통과.
+- 앱 서버 접근은 환경 `CBT_SERVER_PROJECT_REFS` 명시 허용 목록, 기본 빈 값·시작 OFF. 환경은 활성화하지 않음. 테스트 SQL/QA의 운영 실행 금지는 유지.
+- 신규 서버 시험은 mock 전용. custom/past/subject 전환은 별도 PR. 준비 후 병합하는 A안을 기본 유지; B 자유 출제는 미구현/결정 필요.
+- 무제한 진행 중 기록은 이 브라우저의 최근 열람(없으면 시작일)으로 7일 계산해 접음. 표시/숨김은 로컬만 변경.
+- 공개 카탈로그 메타데이터 읽기 전용 확인: 2001년 4회 색채 12번, 금속도장 43번이 공개 목록에 없음. 전체 58문항. 비공개/수입·이미지/원본 원인은 관리자 조회와 NAS 대조 필요.
+- 로컬 native PostgreSQL 18.4 두 연결 및 전체 빌드/큐·UI·UUID/RLS 검사 통과. 실제 Preview Slow 3G/Supabase Auth/REST/두 탭 검증은 테스트 DB가 없어 미완료.
+- 운영 병합/DB 쓰기/문항 복구는 수행하지 않음.
+
+### 2026-10-03 CBT 후속 재검토 7개 항목
+
+- 최신 절차는 `CBT_7_REVIEW.md`, 한 장 병합 게이트는 `CBT_MERGE_GATE.md`. 이전 9개 보고서의 SQL은 역사 기록이고 현재 전문은 `cbt-test-migration.DRAFT.sql`.
+- 시작 clientId(UUID)를 클라이언트에서 재시도까지 유지. DB 계정별 시작 잠금 + user/client 유니크 + 별칭 키로 동일/두 탭 시작을 기존 미만료 mock 응시로 연결. 만료/제출 뒤 같은 키도 원래 응시 반환.
+- 앱의 정확한 ref 허용 목록과 DB `cbt_private.server_exams.enabled=true`가 모두 필요. DB 기본 false, absent/false는 start/answer/submit/identity 모두 차단. 앱 서비스에는 marker SELECT만, 구성표도 SELECT만.
+- PR1 UI와 PR2 서버 분리는 가능하지만 공용 client/저장 모듈/QA는 hunk 분리 필요. PR1 로컬 자유 출제 유지+비율 안내 또는 준비 중 선택은 결정 필요. 현재 통합 Draft의 준비 후 병합 방침 유지; PR1/PR2 새 PR 생성·운영 병합은 하지 않음.
+- 7일·이 브라우저 기준 문구를 유지하고 다른 기기의 활동은 반영하지 못한다는 문장을 명시. 로컬 표시/숨김만 변경.
+- 누락 문항 진단 SELECT에 실행 안내/해석표/원문·정답 배제와 감사/집계 provenance 추가. 현재 코드상 58은 공개 시 재집계 값이며 원본·수입 시점 수량 스냅샷은 아님. 운영 원본/로그 실행은 미확인.
+- 로컬 핸들러 더블클릭/응답 유실·재로드 UUID, PGlite 활성화·권한, native PostgreSQL 18.4 실제 두 연결 시작/제출 경합, 큐/UI/전체 빌드 검증 통과.
+- 별도 테스트 프로젝트가 없어 hosted Supabase Auth/REST·실제 Preview Slow 3G·브라우저 두 탭은 미실행. 운영 DB/허용 목록 활성화/main 병합은 하지 않음.
+- 작업 중 main의 NAS 콘텐츠 연결/재시도(#16/#17, bdaad6c)를 feature 브랜치에 통합. NAS 수치·개인 상태·legacy fallback과 서버 관리 응시 보호를 함께 유지. 새 UUID/기존 managed-*의 answer/submit 라우트 호환 검사 통과.
+- NAS qualification code/20자리 문항 ref와 UUID 서버 시험 구성은 서로 다른 식별자다. 이름 추측 매핑은 하지 않음. 구성 없는 NAS 종목은 준비 중; 운영 NAS 서버 출제 연결은 별도 검토/병합 게이트.
 ## NAS 콘텐츠 연결 — 2026-10-03
 
 - 공개 원본: `https://content.mypassmate.com`, Cloudflare Tunnel → 읽기 전용 NAS 서버.

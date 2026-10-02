@@ -71,13 +71,15 @@ export function ExamViewSettings({ fontSize, choiceLayout, position, onFontSize,
   </div>;
 }
 
-export function MockExamGuide({ name, onStart }: { name: string; onStart: () => void }) {
+export function MockExamGuide({ name, practiceNumber, date, certName, count = 60, minutes = 60, onStart }: { name: string; practiceNumber?: string; date?: string; certName: string; count?: number; minutes?: number; onStart: () => void }) {
   const [step, setStep] = useState(0);
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { title.current?.focus({ preventScroll: true }); }, [step]);
   const titles = ["수험자 정보 확인", "안내사항", "유의사항", "화면 사용법"];
   return <div className="cbt-guide">
     <ol className="cbt-guide-steps" aria-label="시험 전 안내 진행">{titles.map((title, index) => <li className={index === step ? "is-current" : index < step ? "is-done" : ""} aria-current={index === step ? "step" : undefined} key={title}><b>{index < step ? "✓" : index + 1}</b><span>{title}</span></li>)}</ol>
-    <div className="cbt-guide-content" aria-live="polite"><span className="eyebrow">{step + 1}/4</span><h3>{titles[step]}</h3>
-      {step === 0 && <><p>표시 이름을 확인해 주세요.</p><div className="cbt-guide-identity"><span>수험자</span><strong>{name}</strong></div><p>응시 번호는 시험을 시작한 뒤 화면 상단에 표시됩니다.</p></>}
+    <div className="cbt-guide-content"><span className="eyebrow">{step + 1}/4</span><h3 ref={title} tabIndex={-1}>{titles[step]}</h3>
+      {step === 0 && <><p>표시 이름을 확인해 주세요.</p><dl className="cbt-guide-identity-details"><div><dt>수험자</dt><dd>{name}</dd></div><div><dt>연습용 번호</dt><dd>{practiceNumber || "–"}</dd></div><div><dt>응시일</dt><dd>{date || "–"}</dd></div><div><dt>종목</dt><dd>{certName}</dd></div><div><dt>시험 구성</dt><dd>{count}문항 · {minutes}분</dd></div></dl></>}
       {step === 1 && <ul><li>시험 시작을 확정하면 제한시간이 흐릅니다.</li><li>선택한 답안은 자동으로 저장됩니다.</li><li>제출 전에 미응답 문항과 다시 볼 문항을 점검할 수 있습니다.</li></ul>}
       {step === 2 && <><p className="cbt-guide-notice">{CBT_RIGHTS_NOTICE}</p><ul><li>개인 학습용 연습 화면입니다.</li><li>시간이 종료되면 답안을 수정할 수 없으며, 결과 저장은 확인 후 진행됩니다.</li></ul></>}
       {step === 3 && <><div className="cbt-guide-sample" aria-label="화면 사용법 예시"><div><b>1</b> 남은 시간 · 보기 설정 · 제출</div><section><b>2</b> 문제 카드와 보기 선택</section><aside><b>3</b> 답안지 · 번호 이동과 답 선택</aside><footer><b>4</b> 이전 · 다음</footer></div><p>문제 카드와 답안지 양쪽에서 답을 선택할 수 있습니다. 모바일에서는 답안지를 하단 시트로 엽니다.</p></>}

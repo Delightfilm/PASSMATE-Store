@@ -1,8 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
+import { cbtError, cbtTestServer, cbtRpcError, CbtRequestError, isServerAttemptId } from "@/lib/cbt-test-server";
 
 export async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
+  if (process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY === "1") return Response.json({ error: "별도 테스트 DB 연결 후 결과를 저장할 수 있습니다." }, { status: 503 });
   const { attemptId } = await params;
+  if (attemptId.startsWith("managed-") || isServerAttemptId(attemptId)) {
+    try {
+      if (!isServerAttemptId(attemptId)) throw new CbtRequestError(422);
+      const { db, userId } = await cbtTestServer(request);
+      const { data, error } = await db.rpc("cbt_submit", { p_user: userId, p_attempt: attemptId });
+      if (error) throw cbtRpcError(error);
+      return Response.json(data, { headers: { "Cache-Control": "no-store" } });
+    } catch (error) { return cbtError(error); }
+  }
   const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
   if (!token) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
