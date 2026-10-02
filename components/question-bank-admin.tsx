@@ -17,7 +17,7 @@ type RemoteBatch = {
   created_at: string;
 };
 
-type IssueReport = { id: string; question_id: string; kind: string; memo: string; created_at: string; question_bank_questions: { no: number; stem: string } | null };
+type IssueReport = { id: string; question_id: string | null; question_ref?: string | null; kind: string; memo: string; created_at: string; question_bank_questions: { no: number; stem: string } | null };
 
 async function callQuestionBankAdmin<T>(body: Record<string, unknown>): Promise<T> {
   const supabase = getSupabaseBrowserClient();
@@ -202,7 +202,7 @@ export function QuestionBankAdmin() {
     </section>
     <section className="admin-panel">
       <div className="admin-panel-head"><div><span className="eyebrow">ISSUE REVIEW</span><h2>문제 오류 신고</h2><p>시험·결과 화면에서 접수된 검수 대기 항목입니다.</p></div><span className="admin-state">{reports.length}건</span></div>
-      {reports.length ? reports.map((report) => <div className="record-row" key={report.id}><span>{report.question_bank_questions?.no || "-"}번 · {report.question_bank_questions?.stem || report.question_id}<small>{report.kind} · {new Date(report.created_at).toLocaleString("ko-KR")} · {report.memo || "메모 없음"}</small></span><button className="button button-ghost" onClick={() => void resolveReport(report.id)}>검수 완료</button></div>) : <p className="admin-empty">검수 대기 중인 오류 신고가 없습니다.</p>}
+      {reports.length ? reports.map((report) => <div className="record-row" key={report.id}><span>{report.question_bank_questions?.no || "-"}번 · {report.question_bank_questions?.stem || report.question_ref || report.question_id}<small>{report.kind} · {new Date(report.created_at).toLocaleString("ko-KR")} · {report.memo || "메모 없음"}</small></span><button className="button button-ghost" onClick={() => void resolveReport(report.id)}>검수 완료</button></div>) : <p className="admin-empty">검수 대기 중인 오류 신고가 없습니다.</p>}
     </section>
   </section>;
 }

@@ -12,12 +12,12 @@ export type Question = {
 };
 export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };
-export type Cert = { id: string; name: string; category?: string; slug?: string };
-export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[] };
+export type Cert = { id: string; name: string; category?: string; slug?: string; questionCount?: number; examCount?: number };
+export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[]; totalQuestions?: number };
 export type AttemptConfig = { certId: string; certSlug?: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null };
 export type LocalAttempt = { id: string; config: AttemptConfig; questionIds: string[]; answers: Record<string, number>; lockedIds: string[]; startedAt: string; endAt: string | null; submittedAt?: string; status: "in_progress" | "submitted"; score?: number };
 export type IssueReport = { id: string; questionId: string; attemptId?: string; kind: "wrong_answer" | "broken_image" | "missing_choice" | "other"; memo: string; createdAt: string; status: "open" | "resolved" };
-export type LocalStore = { attempts: LocalAttempt[]; bookmarks: string[]; wrongNotes: Record<string, { wrongCount: number; lastWrongAt: string; memo: string; mastered: boolean }>; presets: { name: string; config: AttemptConfig }[]; imports: ImportBatch[]; issueReports: IssueReport[] };
+export type LocalStore = { attempts: LocalAttempt[]; bookmarks: string[]; wrongNotes: Record<string, { wrongCount: number; lastWrongAt: string; memo: string; mastered: boolean }>; presets: { name: string; config: AttemptConfig }[]; imports: ImportBatch[]; issueReports: IssueReport[]; questionCerts?: Record<string, string> };
 export type ImportRow = { id?: string; question_uid?: string; source_uid?: string; exam_id?: string; question_no?: number; subject_id?: string; stem?: string; question?: string; choices?: unknown; answer?: unknown; answer_no?: unknown; images?: unknown; visual_refs?: unknown; visual_assets?: unknown; exam?: string; subject?: string; cert?: string; sourceHash?: string; status?: QuestionStatus; [key: string]: unknown };
 export type ImportError = { row: number; message: string };
 export type ImportContext = {
@@ -38,7 +38,7 @@ export function certCategory(name: string) { return ["산업기사", "기능사"
 export function certSlug(cert: Cert) { return cert.slug || cert.name.trim().replace(/\s+/g, "-"); }
 export function findCert(dataset: Dataset, value: string) { const decoded = decodeURIComponent(value); return dataset.certs.find((cert) => cert.id === decoded || certSlug(cert) === decoded); }
 export function hangulInitials(value: string) { const initials = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"; return Array.from(value).map((char) => { const code = char.charCodeAt(0) - 0xac00; return code >= 0 && code <= 11171 ? initials[Math.floor(code / 588)] : char; }).join(""); }
-export async function submitIssueReport(report: IssueReport) { const supabase = getSupabaseBrowserClient(); await supabase.from("question_bank_issue_reports").insert({ id: report.id, question_id: report.questionId, attempt_id: report.attemptId || null, kind: report.kind, memo: report.memo, status: report.status }); }
+export async function submitIssueReport(report: IssueReport) { const supabase = getSupabaseBrowserClient(); const nas = /^[a-f0-9]{20}$/.test(report.questionId); const { error } = await supabase.from("question_bank_issue_reports").insert({ id: report.id, question_id: nas ? null : report.questionId, ...(nas ? { question_ref: report.questionId } : {}), attempt_id: report.attemptId || null, kind: report.kind, memo: report.memo, status: report.status }); if (error) throw error; }
 export async function syncAccountStore(store: LocalStore) {
   const supabase = getSupabaseBrowserClient(); const { data } = await supabase.auth.getSession(); const userId = data.session?.user.id; if (!userId) return;
   for (const attempt of store.attempts.filter((item) => item.status === "in_progress")) {
@@ -46,22 +46,37 @@ export async function syncAccountStore(store: LocalStore) {
     const { data: updated } = await supabase.from("question_bank_attempts").update(payload).eq("user_id", userId).eq("client_id", attempt.id).eq("status", "in_progress").select("id");
     if (!updated?.length) await supabase.from("question_bank_attempts").upsert(payload, { onConflict: "user_id,client_id", ignoreDuplicates: true });
   }
+  const isNas = (id: string) => /^[a-f0-9]{20}$/.test(id);
+  const nasIds = new Set([...store.bookmarks, ...Object.keys(store.wrongNotes), ...Object.keys(store.questionCerts || {})].filter(isNas));
+  const state = [...nasIds].filter((id) => store.questionCerts?.[id]).map((id) => {
+    const note = store.wrongNotes[id];
+    return { user_id: userId, question_ref: id, qualification_code: store.questionCerts![id], bookmarked: store.bookmarks.includes(id), wrong_count: note?.wrongCount || 0, last_wrong_at: note?.lastWrongAt || null, memo: note?.memo || "", mastered: note?.mastered || false, updated_at: new Date().toISOString() };
+  });
+  if (state.length) { const { error } = await supabase.from("question_bank_user_question_state").upsert(state, { onConflict: "user_id,question_ref" }); if (error) console.error("[CBT MATE] 개인 문항 기록 동기화 실패", error); }
+  const legacyBookmarks = store.bookmarks.filter((id) => !isNas(id));
   await supabase.from("question_bank_bookmarks").delete().eq("user_id", userId);
-  if (store.bookmarks.length) await supabase.from("question_bank_bookmarks").insert(store.bookmarks.map((questionId) => ({ user_id: userId, question_id: questionId })));
-  const notes = Object.entries(store.wrongNotes).map(([questionId, note]) => ({ user_id: userId, question_id: questionId, wrong_count: note.wrongCount, last_wrong_at: note.lastWrongAt, memo: note.memo, mastered: note.mastered }));
+  if (legacyBookmarks.length) await supabase.from("question_bank_bookmarks").insert(legacyBookmarks.map((questionId) => ({ user_id: userId, question_id: questionId })));
+  const notes = Object.entries(store.wrongNotes).filter(([id]) => !isNas(id)).map(([questionId, note]) => ({ user_id: userId, question_id: questionId, wrong_count: note.wrongCount, last_wrong_at: note.lastWrongAt, memo: note.memo, mastered: note.mastered }));
   if (notes.length) await supabase.from("question_bank_wrong_notes").upsert(notes, { onConflict: "user_id,question_id" });
 }
 export async function mergeAccountStore(local: LocalStore): Promise<LocalStore> {
   const supabase = getSupabaseBrowserClient(); const { data } = await supabase.auth.getSession(); const userId = data.session?.user.id; if (!userId) return local;
-  const [attempts, bookmarks, wrongNotes] = await Promise.all([
+  const [attempts, bookmarks, wrongNotes, nasState] = await Promise.all([
     supabase.from("question_bank_attempts").select("id,client_id,config,question_ids,answers,started_at,end_at,submitted_at,score,status").eq("user_id", userId),
     supabase.from("question_bank_bookmarks").select("question_id").eq("user_id", userId),
     supabase.from("question_bank_wrong_notes").select("question_id,wrong_count,last_wrong_at,memo,mastered").eq("user_id", userId),
+    supabase.from("question_bank_user_question_state").select("question_ref,qualification_code,bookmarked,wrong_count,last_wrong_at,memo,mastered").eq("user_id", userId),
   ]);
   const remoteAttempts: LocalAttempt[] = (attempts.data || []).map((row) => ({ id: row.client_id || row.id, config: row.config as AttemptConfig, questionIds: row.question_ids as string[], answers: row.answers as Record<string, number>, lockedIds: Array.isArray(row.config?.lockedIds) ? row.config.lockedIds : [], startedAt: row.started_at, endAt: row.end_at, submittedAt: row.submitted_at || undefined, score: row.score === null ? undefined : Number(row.score), status: row.status as LocalAttempt["status"] }));
   const mergedAttempts = [...local.attempts]; for (const attempt of remoteAttempts) { const index = mergedAttempts.findIndex((item) => item.id === attempt.id); if (index < 0) mergedAttempts.push(attempt); else if (attempt.status === "submitted") mergedAttempts[index] = attempt; }
   const mergedNotes = { ...local.wrongNotes }; for (const row of wrongNotes.data || []) mergedNotes[row.question_id] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at, memo: row.memo, mastered: row.mastered };
-  return { ...local, attempts: mergedAttempts, bookmarks: Array.from(new Set([...local.bookmarks, ...(bookmarks.data || []).map((row) => row.question_id)])), wrongNotes: mergedNotes };
+  const questionCerts = { ...local.questionCerts }; const nasBookmarks: string[] = [];
+  for (const row of nasState.data || []) {
+    questionCerts[row.question_ref] = row.qualification_code;
+    if (row.bookmarked) nasBookmarks.push(row.question_ref);
+    if (row.wrong_count > 0) mergedNotes[row.question_ref] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at, memo: row.memo, mastered: row.mastered };
+  }
+  return { ...local, attempts: mergedAttempts, bookmarks: Array.from(new Set([...local.bookmarks, ...(bookmarks.data || []).map((row) => row.question_id), ...nasBookmarks])), wrongNotes: mergedNotes, questionCerts };
 }
 export async function sourceHash(value: unknown) { const text = JSON.stringify(value); if (typeof crypto !== "undefined" && crypto.subtle) { const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)); return Array.from(new Uint8Array(bytes)).map((b) => b.toString(16).padStart(2, "0")).join(""); } return Array.from(text).reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0).toString(16); }
 
