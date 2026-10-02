@@ -86,4 +86,24 @@ for (const [seconds, klass, text] of [[601, null, null],[600, "is-warning", "10�
   else assert.doesNotMatch(screen, /cbt-live-timer is-warning|cbt-live-timer is-urgent|cbt-time-warning/);
   assert.match(screen, /연습용 번호 –/); assert.doesNotMatch(screen, /응시 번호 attempt-/);
 }
-console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls; no DB writes");
+const parsedClient = ts.createSourceFile("client.js", clientOutput, ts.ScriptTarget.Latest);
+let leaveCode;
+function findLeave(node) { if (ts.isFunctionDeclaration(node) && node.name?.text === "leave") leaveCode = node.getText(parsedClient); ts.forEachChild(node, findLeave); }
+findLeave(parsedClient);
+assert.ok(leaveCode, "Use the real exit function");
+let releaseSave;
+const exitState = { attempt: {}, cert: {}, pendingAnswers: { current: new Promise(resolve => { releaseSave = resolve; }) }, confirmedExit: { current: false }, question_bank_1: { certSlug: () => "테스트" }, window: { location: { replace: path => { exitState.path = path; } } }, setToast: text => { exitState.toast = text; } };
+const exit = new Script(`(${leaveCode})`).runInNewContext(exitState);
+const waitingExit = exit();
+assert.equal(exitState.path, undefined, "Wait for pending answers before navigating");
+assert.equal(exitState.confirmedExit.current, false);
+releaseSave(); await waitingExit;
+assert.equal(exitState.path, `/cbt/${encodeURIComponent("테스트")}/`);
+assert.equal(exitState.confirmedExit.current, true);
+exitState.path = undefined; exitState.confirmedExit.current = false;
+exitState.pendingAnswers.current = Promise.reject(new Error("save failed"));
+await exit();
+assert.equal(exitState.path, undefined, "Failed saving must keep the user on the exam");
+assert.equal(exitState.confirmedExit.current, false, "Failed saving keeps exit guards active");
+assert.ok(exitState.toast);
+console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls, confirmed exit waits for saving; no DB writes");

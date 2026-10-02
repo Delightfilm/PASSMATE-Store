@@ -44,7 +44,7 @@
 |---|---|---|---|
 | 5 · 01-④,07-5 | Toast effect가 매초 다시 생성되는 onDone에 의존해 timeout을 계속 취소/재설정 | 최신 callback은 ref에 보관, effect는 message만 의존, 2700ms 후 소멸. role=status 유지, 고정 이동 바 위로 배치 | question-bank-client.tsx function Toast; globals.css cbt-toast |
 | 6 · 03-①②③⑤,07-2,08-1② | 모바일 이동/답안지 버튼이 본문 일반 흐름, 헤더 과밀/시간 위계 약함 | 시간 20px, 유형/이름/번호 표시, 설정/시험 메뉴/제출 구분. ≤620px 두 줄 헤더와 safe-area 고정 이전/답안지/다음 | question-bank-client.tsx ExamScreen, cbt-exam-bottom-bar; globals.css 620px overrides |
-| 7 · 01-⑥,03-⑥,07-2,08-3 | 하나의 버튼이 중간 채점 확인과 나가기를 함께 담당 | 시험 ⋯에 중간 채점/나가기 분리. 나가기 확인은 답안 저장·시간 계속 안내. 기존 중간 채점은 응답 문항의 정오와 정답률 표시, 제출하지 않음 | question-bank-client.tsx exam menu/leave/interim. 정책 허용 여부는 확인 필요 |
+| 7 · 01-⑥,03-⑥,07-2,08-3 | 하나의 버튼이 중간 채점 확인과 나가기를 함께 담당 | 시험 ⋯에 중간 채점/나가기 분리. 나가기 확인은 답안 저장·시간 계속 안내. 확정 뒤 pending 답안 저장을 기다리고, 확인된 문서 이동만 exit 가드를 통과. 기존 중간 채점은 응답 문항의 정오와 정답률 표시, 제출하지 않음 | question-bank-client.tsx exam menu/leave/interim. 정책 허용 여부는 확인 필요 |
 | 8 · 01-③⑤,03-④,07-6⑦,08-4 | 전체 과목을 긴 답안지에 나열하고 행 간격 큼 | 과목 선택·미응답만·현재 행 내부 스크롤·나중에 보기. row48+gap4 ≈52px, 칩44. 서버 모의시험의 고정 순서로 1–20/21–40/41–60 | question-bank-client.tsx AnswerSheet/sections/filter; globals.css cbt-answer-row/scroll |
 | 9 · 02-B | 스트립 모드 카드만 별도 좁은 폭/가운데 정렬, 이웃10개 slice | 같은1180 컨테이너, 전체 문항을 가로 스크롤하며 현재 번호 중심 이동. 배경/하단 정렬 통일 | question-bank-client.tsx cbt-number-strip의 slice 제거; globals.css cbt-live-layout.is-strip |
 | 10 · 02-C | font class가 보기만 확대 | 본문·보기·답안지·요약의 text/meta/stem CSS 변수 적용. 기본16/12/21, 큼19/14/24, 아주 큼22/16/27 | globals.css exam-font-large/exam-font-xlarge, cbt-live-question/answer-sheet/exam-summary |
@@ -157,6 +157,9 @@ Preview 추가 점검에서 첫 로드는 정상이지만 데스크톱→모바�
 |⑦기록 만료읽기전용|SSR expired 라벨/버튼 및 store무변경 검사. SQL SELECT 무변경|hosted 화면열기 전후hash|
 |⑧10/5분표시|SSR601/600/300초 정상/amber/error 문구 검증|실제 시간이 threshold를 지날 때 announce1회/백그라운드|
 |⑨미응답번호복귀|모바일 점검35클릭→문제35,점검닫힘. 최종제출→확인modal→취소 확인. DBsubmit안함|hosted 저장 API까지 흐름|
+
+추가 코드 검사: 실제 leave 함수를 실행해 저장 대기 중 이동0, 저장 성공 후 이동, 저장 실패 때 가드 유지·이동0·오류 알림을 검증했다.
+Preview soft navigation에서 확인 후 응시 화면에 남는 현상이 발견돼 확정 후 document replace로 전환했다. 원인 세부는 기존 history 가드/SPA 이동 상호작용 후보이며 서버 상태 변경과 무관하다.
 
 추가 브라우저 확인: radio ←/→는 focus만 이동, Space 선택 후 문제카드/칩 같은 상태;
 다른 행 선택해도 현재 문제 유지; settings아주큼/2단/B전환, 본문27px과60개 strip 확인;
@@ -519,7 +522,7 @@ index 0c9cd6f..8889e21 100644
        {step === 2 && <><p className="cbt-guide-notice">{CBT_RIGHTS_NOTICE}</p><ul><li>개인 학습용 연습 화면입니다.</li><li>시간이 종료되면 답안을 수정할 수 없으며, 결과 저장은 확인 후 진행됩니다.</li></ul></>}
        {step === 3 && <><div className="cbt-guide-sample" aria-label="화면 사용법 예시"><div><b>1</b> 남은 시간 · 보기 설정 · 제출</div><section><b>2</b> 문제 카드와 보기 선택</section><aside><b>3</b> 답안지 · 번호 이동과 답 선택</aside><footer><b>4</b> 이전 · 다음</footer></div><p>문제 카드와 답안지 양쪽에서 답을 선택할 수 있습니다. 모바일에서는 답안지를 하단 시트로 엽니다.</p></>}
 diff --git a/components/question-bank-client.tsx b/components/question-bank-client.tsx
-index f93caa9..1c13545 100644
+index f93caa9..2124964 100644
 --- a/components/question-bank-client.tsx
 +++ b/components/question-bank-client.tsx
 @@ -5,19 +5,21 @@ import { SiteHeader } from "@/components/site-header";
@@ -671,7 +674,7 @@ index f93caa9..1c13545 100644
      <Toast message={toast} onDone={() => setToast("")} />
    </PageShell>;
  }
-@@ -129,18 +161,29 @@ function QuestionCountInput({ id, label, value, onChange }: { id: string; label:
+@@ -129,19 +161,31 @@ function QuestionCountInput({ id, label, value, onChange }: { id: string; label:
    </div>;
  }
  
@@ -689,6 +692,7 @@ index f93caa9..1c13545 100644
 +  const [timeAnnouncement, setTimeAnnouncement] = useState("");
 +  const announced = useRef(new Set<number>());
 +  const pendingAnswers = useRef<Promise<void>>(Promise.resolve());
++  const confirmedExit = useRef(false);
 +  const [savingAnswer, setSavingAnswer] = useState(false);
 +  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 +  useEffect(() => { setSelected(0); setSheetSubject(null); setWarningDismissed(false); announced.current.clear(); warned.current = false; }, [attemptId]);
@@ -699,12 +703,14 @@ index f93caa9..1c13545 100644
    useEffect(() => { try { const saved = localStorage.getItem("cbt-answer-position"); if (saved === "a" || saved === "b") setLayoutMode(saved); } catch { /* Storage can be disabled. */ } }, []);
    function setAnswerPosition(position: "a" | "b") { setLayoutMode(position); setSheetOpen(false); try { localStorage.setItem("cbt-answer-position", position); } catch { /* Keep the in-memory preference. */ } }
 -  useEffect(() => { document.querySelector<HTMLElement>('.cbt-answer-row.is-current')?.scrollIntoView({ block: "nearest", inline: "nearest" }); }, [selected, sheetOpen, layoutMode]);
+-  useEffect(() => { if (!attempt || attempt.status !== "in_progress") return; const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; }; const back = () => { window.history.pushState({ cbtGuard: true }, "", window.location.href); setModal("exit"); }; window.history.pushState({ cbtGuard: true }, "", window.location.href); window.addEventListener("beforeunload", beforeUnload); window.addEventListener("popstate", back); return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("popstate", back); }; }, [attempt?.id, attempt?.status]);
 +  useEffect(() => { if (question) setSheetSubject(question.subjectId); }, [selected, question?.subjectId]);
 +  useEffect(() => { const container = document.querySelector<HTMLElement>(".cbt-answer-scroll"); const row = container?.querySelector<HTMLElement>(".cbt-answer-row.is-current"); if (container && row) { const rect = row.getBoundingClientRect(), bounds = container.getBoundingClientRect(); if (rect.top < bounds.top + 6 || rect.bottom > bounds.bottom - 6) container.scrollTop += rect.top - bounds.top - 6; } const strip = document.querySelector<HTMLElement>(".cbt-number-strip nav"); const active = strip?.querySelector<HTMLElement>('[aria-current="step"]'); if (strip && active) centerInScroller(active, strip); }, [selected, sheetOpen, layoutMode, sheetSubject, sheetFilter]);
-   useEffect(() => { if (!attempt || attempt.status !== "in_progress") return; const beforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; }; const back = () => { window.history.pushState({ cbtGuard: true }, "", window.location.href); setModal("exit"); }; window.history.pushState({ cbtGuard: true }, "", window.location.href); window.addEventListener("beforeunload", beforeUnload); window.addEventListener("popstate", back); return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("popstate", back); }; }, [attempt?.id, attempt?.status]);
++  useEffect(() => { if (!attempt || attempt.status !== "in_progress") return; confirmedExit.current = false; const beforeUnload = (event: BeforeUnloadEvent) => { if (confirmedExit.current) return; event.preventDefault(); event.returnValue = ""; }; const back = () => { if (confirmedExit.current) return; window.history.pushState({ cbtGuard: true }, "", window.location.href); setModal("exit"); }; window.history.pushState({ cbtGuard: true }, "", window.location.href); window.addEventListener("beforeunload", beforeUnload); window.addEventListener("popstate", back); return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("popstate", back); }; }, [attempt?.id, attempt?.status]);
    const finish = useCallback(async () => {
      if (!attempt || attempt.status !== "in_progress" || finishedIds.current.has(attempt.id)) return;
-@@ -149,12 +192,14 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
+     finishedIds.current.add(attempt.id);
+@@ -149,12 +193,14 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
      try {
        const session = (await getSupabaseBrowserClient().auth.getSession()).data.session;
        if (user && !session) throw new Error("로그인 정보를 확인할 수 없습니다. 다시 로그인해 주세요.");
@@ -721,7 +727,7 @@ index f93caa9..1c13545 100644
          });
          if (!response.ok) throw new Error("결과를 저장하지 못했습니다. 다시 시도해 주세요.");
          result = await response.json();
-@@ -166,7 +211,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
+@@ -166,7 +212,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
        }
        const latest = readLocalStore();
        const wrongNotes = { ...latest.wrongNotes };
@@ -730,7 +736,7 @@ index f93caa9..1c13545 100644
          questions.forEach((item) => { const correct = result.answers[item.id] === item.answer; const old = wrongNotes[item.id]; if (!correct) wrongNotes[item.id] = { wrongCount: (old?.wrongCount || 0) + 1, lastWrongAt: result.submittedAt, memo: old?.memo || "", mastered: false }; else if (old) wrongNotes[item.id] = { ...old, mastered: true }; });
        }
        const submitted: LocalAttempt = { ...attempt, answers: result.answers, status: "submitted", submittedAt: result.submittedAt, score: result.score };
-@@ -179,59 +224,95 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
+@@ -179,59 +225,95 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
    }, [attempt, questions, saveStore, user]);
    useEffect(() => { if (!attempt?.endAt || attempt.status !== "in_progress") return; const tick = () => { const left = timeLeftSeconds(attempt.endAt); setSecondsLeft(left); if (left === 0) setModal("expired"); else if (left !== null && left <= 60 && !warned.current) { warned.current = true; setToast("종료까지 1분 미만 남았습니다."); } return left; }; if (tick() === 0) return; const timer = window.setInterval(() => { if (tick() === 0) window.clearInterval(timer); }, 1000); return () => window.clearInterval(timer); }, [attempt?.endAt, attempt?.status]);
    function updateAttempt(next: LocalAttempt) { saveStore({ ...store, attempts: store.attempts.map((item) => item.id === next.id ? next : item) }); }
@@ -769,7 +775,7 @@ index f93caa9..1c13545 100644
 +    setToast(active ? "나중에 보기 표시를 해제했습니다." : "나중에 볼 문제로 표시했습니다.");
 +  }, [question, attemptId, saveStore]);
 +  function saveBookmark() { if (!question) return; const latest = readLocalStore(); saveStore({ ...latest, bookmarks: [...new Set([...latest.bookmarks, question.id])] }); setModal(null); setToast("북마크에 저장했습니다."); }
-+  function leave() { if (!attempt || !cert) return; router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/`); }
++  async function leave() { if (!attempt || !cert) return; try { await pendingAnswers.current; confirmedExit.current = true; window.location.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/`); } catch (error) { confirmedExit.current = false; setToast(error instanceof Error ? error.message : "답안 저장을 확인한 뒤 다시 나가 주세요."); } }
 +  async function retry(ids: string[]) { if (!attempt || !cert) return; if (attempt.serverManaged) { try { const row = await cbtPost<Parameters<typeof serverAttempt>[0]>("/api/cbt/attempts/start/", { certId: cert.id, mode: "custom", questionIds: reshuffle ? shuffle(ids) : ids, minutes: attempt.config.timeLimitMinutes, gradeMode: attempt.config.gradeMode }); const next = serverAttempt(row), latest = readLocalStore(); saveStore({ ...latest, attempts: [next, ...latest.attempts] }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${next.id}/`); } catch (error) { setToast(error instanceof Error ? error.message : "다시 풀기를 시작하지 못했습니다."); } return; } const id = makeId("attempt"); const now = new Date(); const next: LocalAttempt = { ...attempt, id, config: { ...attempt.config, mode: "custom" }, reviewIds: [], practiceNumber: undefined, displayNameSnapshot: accountName, questionIds: reshuffle ? shuffle(ids) : ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: attempt.config.timeLimitMinutes ? new Date(now.getTime() + attempt.config.timeLimitMinutes * 60000).toISOString() : null, submittedAt: undefined, score: undefined, status: "in_progress" }; saveStore({ ...store, attempts: [next, ...store.attempts] }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`); }
 +  useEffect(() => { if (!attempt || attempt.status !== "in_progress") return; const keyboard = (event: KeyboardEvent) => { if (event.defaultPrevented || modal || shortcutsOpen || sheetOpen || reviewOpen || (event.target as HTMLElement)?.closest('input,textarea,select,[role="radiogroup"],[role="dialog"],dialog')) return; if (/^[1-4]$/.test(event.key)) answer(Number(event.key) - 1); else if (event.key === "ArrowLeft") setSelected((value) => Math.max(0, value - 1)); else if (event.key === "ArrowRight") setSelected((value) => Math.min(questions.length - 1, value + 1)); else if (event.key.toLowerCase() === "b") toggleReview(); }; window.addEventListener("keydown", keyboard); return () => window.removeEventListener("keydown", keyboard); }, [answer, attempt, questions.length, toggleReview, modal, shortcutsOpen, sheetOpen, reviewOpen]);
    if (!attempt || !cert || !questions.length) return <PageShell><EmptyState title="응시 기록을 찾을 수 없습니다." body="저장되지 않았거나 삭제된 시험입니다." href="/cbt/" action="종목 선택으로" /></PageShell>;
@@ -849,7 +855,7 @@ index f93caa9..1c13545 100644
      {modal === "submit" && <Modal title="답안을 제출할까요?" onClose={() => setModal(null)}><p>안 푼 문제 <strong>{(questions.length - answered).toLocaleString()}개</strong>가 있습니다. 제출하면 시험이 종료됩니다.</p><div className="cbt-modal-actions"><button className="button button-ghost" disabled={submitting} onClick={() => setModal(null)}>계속 풀기</button><button className="button button-primary" disabled={submitting} onClick={finish}>{submitting ? "저장 중…" : "제출하고 채점"}</button></div></Modal>}
      {modal === "expired" && <Modal title="제한 시간이 끝났습니다" onClose={() => setModal(null)} initialFocus><p>답안은 더 수정할 수 없습니다. 결과를 저장하고 확인할까요? 안 푼 문제 {(questions.length - answered).toLocaleString()}개도 오답으로 채점됩니다.</p><div className="cbt-modal-actions"><button className="button button-ghost" disabled={submitting} onClick={() => setModal(null)}>나중에 결정</button><button className="button button-primary" disabled={submitting} onClick={finish}>{submitting ? "저장 중…" : "결과 저장하고 보기"}</button></div></Modal>}
      {reportQuestion && <ReportModal question={reportQuestion} attemptId={attempt.id} store={store} saveStore={saveStore} onClose={() => setReportQuestion(null)} onDone={() => { setReportQuestion(null); setToast("오류 신고를 접수했습니다."); }} />}<Toast message={toast} onDone={() => setToast("")} />
-@@ -257,11 +338,11 @@ function ResultScreen({ displayName, dataset, cert, attempt, questions, reshuffl
+@@ -257,11 +339,11 @@ function ResultScreen({ displayName, dataset, cert, attempt, questions, reshuffl
    const resultStart = Math.floor(selectedIndex / 60) * 60;
    const weakest = subjectStats.length ? subjectStats.reduce((lowest, item) => item.rate < lowest.rate ? item : lowest) : null;
    function showWrongExplanation() { setSelectedIndex(questions.findIndex((question) => question.id === wrongIds[0])); document.getElementById("cbt-result-review")?.scrollIntoView({ block: "start" }); }
@@ -863,7 +869,7 @@ index f93caa9..1c13545 100644
        <strong className="result-score"><span>{score}</span><small>점</small></strong>
        <h1>{score >= (exam?.passScore || 60) ? "합격 기준을 넘었습니다." : "조금 더 복습해 보세요."}</h1>
        <p>정답 {correct}문항 · 오답 {questions.length - correct - unanswered}문항 · 미응답 {unanswered}문항 · 소요시간 {spent}분</p>
-@@ -344,7 +425,7 @@ function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: {
+@@ -344,7 +426,7 @@ function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: {
        {mode === "wrong-notes" && <select aria-label="오답 정렬" value={sort} onChange={(event) => { setSort(event.target.value); resetPage(); }}><option value="recent">최근 틀린 순</option><option value="frequent">많이 틀린 순</option></select>}
      </div>}
      {mode === "wrong-notes" && (wrongQuestions.length ? <section className="records-card">
@@ -872,7 +878,7 @@ index f93caa9..1c13545 100644
        <p className="cbt-list-range" aria-live="polite">{wrongQuestions.length.toLocaleString()}문항 중 {(currentPage - 1) * 20 + 1}~{Math.min(currentPage * 20, wrongQuestions.length)}번 표시 · 현재 페이지 문항을 다시 풉니다{batchCert ? ` (${batchCert.name})` : ""}</p>
        {visibleWrongQuestions.map((question) => { const note = store.wrongNotes[question.id]; const expanded = expandedNotes.includes(question.id); return <article className="cbt-learning-row cbt-wrong-row" key={question.id}>
          <label className="cbt-note-select"><input type="checkbox" aria-label={`${question.no}번 문제 선택`} checked={selectedNotes.includes(question.id)} onChange={(event) => setSelectedNotes(event.target.checked ? [...selectedNotes, question.id] : selectedNotes.filter((id) => id !== question.id))} /></label>
-@@ -354,16 +435,32 @@ function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: {
+@@ -354,16 +436,32 @@ function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: {
        {pageCount > 1 && <nav className="cbt-pagination" aria-label="오답노트 페이지"><button className="button button-ghost" disabled={currentPage === 1} onClick={() => { setPage(currentPage - 1); setSelectedNotes([]); }}>이전</button><span aria-live="polite">{currentPage} / {pageCount}</span><button className="button button-ghost" disabled={currentPage === pageCount} onClick={() => { setPage(currentPage + 1); setSelectedNotes([]); }}>다음</button></nav>}
      </section> : <EmptyState title="조건에 맞는 오답이 없습니다." body="문제를 풀고 틀린 문항이 생기면 여기에 자동으로 모입니다." href="/cbt/" action="문제 풀기" />)}
      {mode === "bookmarks" && (bookmarkQuestions.length ? <section className="records-card"><div className="cbt-section-head"><h2>저장한 문제</h2><button className="button button-primary" onClick={() => retry(bookmarkBatch.map((question) => question.id))}>{dataset.certs.find((cert) => cert.id === bookmarkQuestions[0].certId)?.name} {bookmarkBatch.length}문항 다시 풀기</button></div>{bookmarkQuestions.map((question) => <article className="cbt-learning-row" key={question.id}><div><small>{dataset.certs.find((cert) => cert.id === question.certId)?.name}</small><strong>{question.no}. {question.stem}</strong></div><button className="button button-ghost" onClick={() => saveStore({ ...store, bookmarks: store.bookmarks.filter((id) => id !== question.id) })}>북마크 해제</button></article>)}</section> : hasBookmarks ? <EmptyState title="조건에 맞는 북마크가 없습니다." body="필터를 바꿔 다른 문제를 확인해 보세요." action="필터 초기화" onAction={() => { setCertId("all"); setSubjectId("all"); }} /> : <EmptyState title="저장한 북마크가 없습니다." body="시험 화면에서 다시 보고 싶은 문제를 저장해 보세요." href="/cbt/" action="문제 풀기" />)}
@@ -1064,7 +1070,7 @@ index 9ea1a17..aa1c0c1 100644
  
  export default nextConfig;
 diff --git a/scripts/validate-cbt-ui.mjs b/scripts/validate-cbt-ui.mjs
-index 69ff8c6..e887568 100644
+index 69ff8c6..e73b5d8 100644
 --- a/scripts/validate-cbt-ui.mjs
 +++ b/scripts/validate-cbt-ui.mjs
 @@ -29,24 +29,30 @@ assert.match(html, /aria-label="12번 문항 ③번 보기"/);
@@ -1101,10 +1107,11 @@ index 69ff8c6..e887568 100644
  const questions = Array.from({ length: 25 }, (_, i) => ({ id: `q${i}`, certId: "test", subjectId: "test", no: i + 1, stem: `검증용 문항 ${i + 1}` }));
  const wrongNotes = Object.fromEntries(questions.map((question) => [question.id, { wrongCount: 3, lastWrongAt: "2026-10-01T00:00:00Z", memo: "", mastered: false }]));
  const list = renderToStaticMarkup(React.createElement(client.exports.LearningScreen, { mode: "wrong-notes", dataset: { certs: [{ id: "test", name: "검증용 종목" }], subjects: [{ id: "test", certId: "test", name: "검증용 과목" }], questions }, store: { attempts: [], bookmarks: [], wrongNotes }, user: {}, authReady: true, saveStore() { throw new Error("Rendering must not write data"); } }));
-@@ -55,4 +61,29 @@ assert.equal((list.match(/type="checkbox"/g) || []).length, 20);
+@@ -55,4 +61,49 @@ assert.equal((list.match(/type="checkbox"/g) || []).length, 20);
  assert.doesNotMatch(list, /<textarea/);
  assert.match(list, /많이 틀린 순/);
  assert.match(list, /20문항 풀기/);
+-console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls; no DB writes");
 +const cert = { id: "test", name: "검증용 종목" };
 +const record = { id: "attempt-test", config: { certId: "test", mode: "mock", examIds: [] }, questionIds: ["q1"], status: "in_progress", answers: {}, lockedIds: [], startedAt: "2026-10-01T00:00:00Z", endAt: "2026-10-01T00:01:00Z" };
 +const unchanged = JSON.stringify(record);
@@ -1130,7 +1137,27 @@ index 69ff8c6..e887568 100644
 +  else assert.doesNotMatch(screen, /cbt-live-timer is-warning|cbt-live-timer is-urgent|cbt-time-warning/);
 +  assert.match(screen, /연습용 번호 –/); assert.doesNotMatch(screen, /응시 번호 attempt-/);
 +}
- console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls; no DB writes");
++const parsedClient = ts.createSourceFile("client.js", clientOutput, ts.ScriptTarget.Latest);
++let leaveCode;
++function findLeave(node) { if (ts.isFunctionDeclaration(node) && node.name?.text === "leave") leaveCode = node.getText(parsedClient); ts.forEachChild(node, findLeave); }
++findLeave(parsedClient);
++assert.ok(leaveCode, "Use the real exit function");
++let releaseSave;
++const exitState = { attempt: {}, cert: {}, pendingAnswers: { current: new Promise(resolve => { releaseSave = resolve; }) }, confirmedExit: { current: false }, question_bank_1: { certSlug: () => "테스트" }, window: { location: { replace: path => { exitState.path = path; } } }, setToast: text => { exitState.toast = text; } };
++const exit = new Script(`(${leaveCode})`).runInNewContext(exitState);
++const waitingExit = exit();
++assert.equal(exitState.path, undefined, "Wait for pending answers before navigating");
++assert.equal(exitState.confirmedExit.current, false);
++releaseSave(); await waitingExit;
++assert.equal(exitState.path, `/cbt/${encodeURIComponent("테스트")}/`);
++assert.equal(exitState.confirmedExit.current, true);
++exitState.path = undefined; exitState.confirmedExit.current = false;
++exitState.pendingAnswers.current = Promise.reject(new Error("save failed"));
++await exit();
++assert.equal(exitState.path, undefined, "Failed saving must keep the user on the exam");
++assert.equal(exitState.confirmedExit.current, false, "Failed saving keeps exit guards active");
++assert.ok(exitState.toast);
++console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls, confirmed exit waits for saving; no DB writes");
 diff --git a/scripts/validate-question-bank-contract.mjs b/scripts/validate-question-bank-contract.mjs
 index f5fcc4a..c006280 100644
 --- a/scripts/validate-question-bank-contract.mjs
