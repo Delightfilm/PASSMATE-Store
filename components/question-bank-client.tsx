@@ -103,7 +103,15 @@ function CertDetail({ dataset, cert, store, saveStore, user, displayName }: { da
   const [identity, setIdentity] = useState<{ practiceNumber: string; displayName: string; date: string } | null>(null);
   const [starting, setStarting] = useState(false);
   useEffect(() => { const value = new URLSearchParams(window.location.search).get("tab"); if (value === "builder") setTab("custom"); else if (value === "subjects" || value === "mock" || value === "custom" || value === "records") setTabState(value); }, []);
-  useEffect(() => { const container = tabsRef.current; const active = container?.querySelector<HTMLElement>('[aria-selected="true"]'); if (container && active) centerInScroller(active, container); }, [tab]);
+  useEffect(() => {
+    const container = tabsRef.current;
+    const reveal = () => { const active = container?.querySelector<HTMLElement>('[aria-selected="true"]'); if (container && active) centerInScroller(active, container); };
+    reveal();
+    if (!container) return;
+    const observer = new ResizeObserver(reveal);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [tab]);
   function setTab(value: typeof tab) { setTabState(value); const url = new URL(window.location.href); if (value === "exams") url.searchParams.delete("tab"); else url.searchParams.set("tab", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
   async function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects) { const ids = exact ? questionIds : order === "random" ? shuffle(questionIds).slice(0, count) : questionIds.slice(0, count); if (!ids.length) { setToast("선택한 범위에 출제 가능한 문제가 없습니다."); return; } if (SERVER_EXAMS) {
     setStarting(true);
