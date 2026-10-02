@@ -11,22 +11,22 @@ select c.name as cert,e.year,e.round,s.name as internal_subject,
 from public.question_bank_exams e
 join public.question_bank_certs c on c.id=e.cert_id
 join public.question_bank_subjects s on s.cert_id=c.id
-join public.question_bank_mock_subjects r on r.cert_name=c.name and s.name in (r.internal_name,r.official_name)
+join public.question_bank_mock_subjects r on r.cert_id=c.id and s.name in (r.internal_name,r.official_name)
 left join public.question_bank_questions q on q.exam_id=e.id and q.subject_id=s.id and q.status='published'
 where c.name='금속도장기능사'
 group by c.name,e.id,e.year,e.round,s.id,s.name,s.part_number,r.official_name,r.question_count
 order by e.year desc,e.round,s.part_number,s.name;
 
 -- Mapping must match exactly one subject. Valid all-round pool decides mock readiness.
-select r.cert_name,r.official_name,r.question_count as required,
+select r.cert_id,c.name as cert,r.official_name,r.question_count as required,
   count(distinct s.id)::int as mapped_subjects,
   count(q.id) filter(where jsonb_array_length(q.choices)=4 and q.answer between 0 and 3)::int as valid_pool,
   case when count(distinct s.id)=1 and count(q.id) filter(where jsonb_array_length(q.choices)=4 and q.answer between 0 and 3)>=r.question_count then '출제 가능' else '시작 차단' end as mock_status
 from public.question_bank_mock_subjects r
-join public.question_bank_certs c on c.name=r.cert_name
+join public.question_bank_certs c on c.id=r.cert_id
 left join public.question_bank_subjects s on s.cert_id=c.id and s.name in (r.internal_name,r.official_name)
 left join public.question_bank_questions q on q.cert_id=c.id and q.subject_id=s.id and q.status='published'
-group by r.cert_name,r.position,r.official_name,r.question_count order by r.cert_name,r.position;
+group by r.cert_id,c.name,r.position,r.official_name,r.question_count order by r.cert_id,r.position;
 
 -- TEST DB ONLY. Fill the temporary test attempt ID. No updates in this file.
 -- Before/after GET, browser reload and expired record display: compare all fields.
@@ -49,6 +49,7 @@ from cbt_private.daily_numbers group by day;
 -- Grants alone cannot prove managed rows are blocked: run the two-connection script.
 select has_table_privilege('authenticated','public.question_bank_attempts','UPDATE') as client_update,
   has_table_privilege('authenticated','public.question_bank_attempts','INSERT') as client_insert,
+  has_table_privilege('authenticated','public.question_bank_attempts','DELETE') as client_delete,
   has_function_privilege('authenticated','public.cbt_start(uuid,uuid,text,jsonb,integer,text)','EXECUTE') as client_start,
   has_function_privilege('anon','public.cbt_submit(uuid,text)','EXECUTE') as anon_submit;
 select policyname,permissive,roles,cmd,qual,with_check from pg_policies

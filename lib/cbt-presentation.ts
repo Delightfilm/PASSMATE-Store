@@ -12,6 +12,20 @@ export function attemptLabel(attempt: LocalAttempt) {
 export function expiredAttempt(attempt: LocalAttempt, now = Date.now()) {
   return attempt.status === "in_progress" && !!attempt.endAt && new Date(attempt.endAt).getTime() <= now;
 }
+export function oldProgressAttempt(attempt: LocalAttempt, lastSeen: number | undefined, now = Date.now()) {
+  const started = Date.parse(attempt.startedAt);
+  const seen = Number.isFinite(lastSeen) ? Math.max(started, lastSeen!) : started;
+  return attempt.status === "in_progress" && !attempt.endAt && Number.isFinite(seen) && now - seen >= 7 * 86400000;
+}
+export function readAttemptVisits(accountId: string): Record<string, number> {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(`passmate.cbt-visits.v1:${accountId}`) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).filter(([,time]) => typeof time === "number" && Number.isFinite(time))) : {};
+  } catch { return {}; }
+}
+export function markAttemptVisit(accountId: string, id: string) {
+  try { localStorage.setItem(`passmate.cbt-visits.v1:${accountId}`, JSON.stringify({ ...readAttemptVisits(accountId), [id]: Date.now() })); } catch { /* Display grouping only; no DB writes. */ }
+}
 // Scroll only this container; scrollIntoView can also move the page vertically.
 export function centerInScroller(element: HTMLElement, container: HTMLElement) {
   const item = element.getBoundingClientRect(), parent = container.getBoundingClientRect();

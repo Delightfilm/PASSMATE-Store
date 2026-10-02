@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { getPublicSupabaseConfig } from "./public-supabase-config";
+import { cbtProjectAllowed } from "./cbt-server-config";
 
 export class CbtRequestError extends Error {
   constructor(public status: number) { super("CBT request failed"); }
@@ -10,15 +11,14 @@ export function cbtRpcError(error: { code?: string }) {
   return new CbtRequestError(code === "PT403" || code === "42501" || code === "P0002" ? 403 : code === "PT409" || code === "40001" || code === "23505" ? 409 : code === "PT422" || code === "P0001" || code.startsWith("22") || code.startsWith("23") ? 422 : 500);
 }
 export function requireServerStart(mode: string) {
-  if (process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS !== "1" || !(process.env.NEXT_PUBLIC_CBT_SERVER_MODES || "mock").split(",").map(value => value.trim()).includes(mode)) throw new CbtRequestError(409);
+  if (process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS !== "1" || mode !== "mock") throw new CbtRequestError(409);
 }
 export async function cbtTestServer(request: Request) {
   const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
   if (!token) throw new CbtRequestError(401);
   const { url, key } = getPublicSupabaseConfig();
-  const ref = new URL(url).hostname.split(".")[0];
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (process.env.CBT_TEST_PROJECT_REF !== ref || !ref || ref === "fmecqeadghrdisirucqm" || process.env.VERCEL_ENV === "production" || !secret) {
+  if (!cbtProjectAllowed(url, process.env.CBT_SERVER_PROJECT_REFS) || !secret) {
     throw new CbtRequestError(500);
   }
   const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });

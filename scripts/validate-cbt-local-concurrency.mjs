@@ -36,9 +36,10 @@ try {
   `);
   await db.query(readFileSync(resolve("supabase/migrations/20260930003531_cbt_mate_question_bank_runtime.sql"),"utf8"));
   await db.query("alter table question_bank_attempts add column client_id text; SET app.cbt_test_database='true'");
-  await db.query(readFileSync(resolve("docs/cbt-test-migration.DRAFT.sql"),"utf8"));
   const one = async (sql,args=[]) => (await db.query(sql,args)).rows[0];
   const cert = (await one("insert into question_bank_certs(code,name) values('qa-metal','금속도장기능사') returning id")).id;
+  await db.query("select set_config('app.cbt_seed_cert_id',$1,false)",[cert]);
+  await db.query(readFileSync(resolve("docs/cbt-test-migration.DRAFT.sql"),"utf8"));
   const exam = (await one("insert into question_bank_exams(cert_id,external_id,year,round,title) values($1,'QA',2026,'QA','가상 검증용') returning id",[cert])).id;
   const batch = (await one("insert into question_bank_import_batches(file_name,qualification_code) values('QA FAKE','qa-metal') returning id")).id;
   for (const [index,name] of ['금속도장재료','금속도장','색채'].entries()) {
@@ -48,9 +49,10 @@ try {
   }
   const user = (await one("insert into auth.users values(gen_random_uuid()) returning id")).id;
   await db.query("insert into profiles values($1,'CBT QA local two connections')",[user]);
-  await db.query("insert into cbt_private.test_environment values('local-test'); update question_bank_mock_configs set status='published' where cert_name='금속도장기능사'");
+  await db.query("insert into cbt_private.test_environment values('local-test')");
+  await db.query("update question_bank_mock_configs set status='published' where cert_id=$1",[cert]);
   const result = await new Promise((resolve,reject) => {
-    const child = spawn(process.execPath,["scripts/validate-cbt-two-connections.mjs"],{cwd:process.cwd(),stdio:["ignore","pipe","pipe"],env:{...process.env,CBT_QA_CONFIRM_TEST_DB:"YES",CBT_QA_PROJECT_REF:"local-test",CBT_QA_USER_ID:user,CBT_QA_DATABASE_URL:`postgresql://postgres:${password}@127.0.0.1:${port}/postgres`}});
+    const child = spawn(process.execPath,["scripts/validate-cbt-two-connections.mjs"],{cwd:process.cwd(),stdio:["ignore","pipe","pipe"],env:{...process.env,CBT_QA_CONFIRM_TEST_DB:"YES",CBT_QA_PROJECT_REF:"local-test",CBT_QA_CERT_ID:cert,CBT_QA_USER_ID:user,CBT_QA_DATABASE_URL:`postgresql://postgres:${password}@127.0.0.1:${port}/postgres`}});
     let output="";child.stdout.on("data",data=>{output+=data;process.stdout.write(data);});child.stderr.on("data",data=>process.stderr.write(data));
     child.on("error",reject);child.on("close",code=>resolve({code,output}));
   });

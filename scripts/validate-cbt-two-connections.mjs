@@ -38,7 +38,8 @@ try {
   assert.ok(await one(a,"select id from profiles where id=$1 and display_name like 'CBT QA %'",[user]),"Use a dedicated profile named CBT QA …");
   for (const table of ["question_bank_attempts","question_bank_wrong_notes"]) assert.equal((await one(a,`select count(*)::int n from public.${table} where user_id=$1`,[user])).n,0,"Test account must have no existing attempts/notes.");
   assert.equal((await one(a,"select count(*)::int n from cbt_private.daily_numbers where user_id=$1",[user])).n,0,"Use a fresh QA identity.");
-  const cert = await one(a,"select c.id from question_bank_certs c join question_bank_mock_configs m on m.cert_name=c.name where c.name='금속도장기능사' and m.status='published'");
+  assert.match(process.env.CBT_QA_CERT_ID || "",/^[0-9a-f-]{36}$/i,"Set the verified test cert UUID.");
+  const cert = await one(a,"select c.id from question_bank_certs c join question_bank_mock_configs m on m.cert_id=c.id where c.id=$1 and m.status='published'",[process.env.CBT_QA_CERT_ID]);
   assert.ok(cert,"Publish only the verified test configuration first.");
   verified = true;
   await a.query("SET ROLE service_role");
@@ -57,7 +58,7 @@ try {
   await a.query("RESET ROLE; BEGIN; SET LOCAL ROLE authenticated");
   await a.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user,JSON.stringify({sub:user,role:"authenticated"})]);
   assert.equal((await a.query("update question_bank_attempts set score=99 where client_id=$1 returning id",[attempt.client_id])).rowCount,0);
-  assert.equal((await a.query("delete from question_bank_attempts where client_id=$1 returning id",[attempt.client_id])).rowCount,0);
+  await denied("delete from question_bank_attempts where client_id=$1 returning id",[attempt.client_id],'42501');
   await denied("insert into question_bank_attempts(user_id,client_id,config,question_ids) values($1,$2,'{\"serverManaged\":true}','[]')",[user,`bad-${randomUUID()}`]);
   await a.query("insert into question_bank_attempts(user_id,client_id,config,question_ids) values($1,$2,'{}',$3)",[user,legacy,JSON.stringify([q])]);
   assert.equal((await a.query("update question_bank_attempts set answers=$1 where client_id=$2 returning id",[JSON.stringify({[q]:correct}),legacy])).rowCount,1);
@@ -73,7 +74,7 @@ try {
   }
   await a.query("RESET ROLE; BEGIN; SET LOCAL ROLE authenticated");
   await a.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[user,JSON.stringify({sub:user,role:"authenticated"})]);
-  assert.equal((await a.query("delete from question_bank_attempts where client_id=$1 returning id",[legacy])).rowCount,1);
+  await denied("delete from question_bank_attempts where client_id=$1 returning id",[legacy],'42501');
   const other = randomUUID();
   await a.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[other,JSON.stringify({sub:other,role:"authenticated"})]);
   assert.equal((await a.query("select id from question_bank_attempts where client_id=$1",[attempt.client_id])).rowCount,0);
@@ -111,7 +112,7 @@ try {
   const before = await one(a,"select status,submitted_at,answers,score from question_bank_attempts where client_id=$1",[expired.client_id]);
   const after = await one(b,"select status,submitted_at,answers,score from question_bank_attempts where client_id=$1",[expired.client_id]);
   assert.deepEqual(after,before); assert.equal(after.status,"in_progress"); assert.equal(after.submitted_at,null);
-  console.log("PASS: two real connections; B waited on A; one row/first result retained; notes updated once; legacy writes allowed; promotion/managed writes/direct RPC denied; missing flag rejected; expired SELECT unchanged.");
+  console.log("PASS: two real connections; B waited on A; one row/first result retained; notes updated once; legacy INSERT/UPDATE allowed, all client DELETE denied; promotion/managed writes/direct RPC denied; missing flag rejected; expired SELECT unchanged.");
 } catch (error) {
   // Do not print URLs, connection credentials or raw DB error details.
   console.error("FAIL: test DB QA did not complete.",error instanceof assert.AssertionError?error.message:"Check the test DB setup and permissions."); process.exitCode=1;

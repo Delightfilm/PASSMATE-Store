@@ -13,7 +13,7 @@ export type Question = {
 export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };
 export type Cert = { id: string; name: string; category?: string; slug?: string };
-export type MockConfig = { certName: string; minutes: number; passScore: number; passRule: "overall"; subjects: { internal: string; name: string; count: number; position: number }[] };
+export type MockConfig = { certId: string; minutes: number; passScore: number; passRule: "overall"; subjects: { internal: string; name: string; count: number; position: number }[] };
 export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[]; mockConfigs?: MockConfig[] };
 export type AttemptConfig = { mode?: "mock" | "custom" | "past" | "subject"; certId: string; certSlug?: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null; passScore?: number };
 export type LocalAttempt = { id: string; config: AttemptConfig; questionIds: string[]; answers: Record<string, number>; lockedIds: string[]; reviewIds?: string[]; practiceNumber?: string; displayNameSnapshot?: string; seed?: string; serverManaged?: boolean; startedAt: string; endAt: string | null; submittedAt?: string; status: "in_progress" | "submitted"; score?: number };
@@ -126,7 +126,7 @@ export async function loadPublishedDataset(): Promise<Dataset> {
     supabase.from("question_bank_certs").select("id,name").order("name"),
     supabase.from("question_bank_subjects").select("id,cert_id,name").order("part_number"),
     supabase.from("question_bank_exams").select("id,cert_id,year,round,title,duration_minutes,pass_score,question_count").order("exam_date", { ascending: false }),
-    supabase.from("question_bank_mock_configs").select("cert_name,duration_minutes,pass_score,pass_rule,question_bank_mock_subjects(internal_name,official_name,question_count,position)").eq("status", "published"),
+    supabase.from("question_bank_mock_configs").select("cert_id,duration_minutes,pass_score,pass_rule,question_bank_mock_subjects(internal_name,official_name,question_count,position)").eq("status", "published"),
   ]);
   if (certResult.error || subjectResult.error || examResult.error) {
     throw new Error(`CBT 목록 조회 실패: ${certResult.error?.message || subjectResult.error?.message || examResult.error?.message}`);
@@ -152,7 +152,7 @@ export async function loadPublishedDataset(): Promise<Dataset> {
   if (mockResult.error && !["42P01", "PGRST205", "PGRST200"].includes(mockResult.error.code)) throw new Error("모의시험 구성을 불러오지 못했습니다. 다시 시도해 주세요.");
 
   return {
-    mockConfigs: (mockResult.data || []).map(row => ({ certName: row.cert_name, minutes: row.duration_minutes, passScore: row.pass_score, passRule: row.pass_rule as "overall", subjects: row.question_bank_mock_subjects.map(subject => ({ internal: subject.internal_name, name: subject.official_name, count: subject.question_count, position: subject.position })).sort((a,b) => a.position-b.position) })),
+    mockConfigs: (mockResult.data || []).map(row => ({ certId: row.cert_id, minutes: row.duration_minutes, passScore: row.pass_score, passRule: row.pass_rule as "overall", subjects: row.question_bank_mock_subjects.map(subject => ({ internal: subject.internal_name, name: subject.official_name, count: subject.question_count, position: subject.position })).sort((a,b) => a.position-b.position) })),
     certs: certResult.data.map((row) => ({ id: row.id, name: row.name })),
     subjects: subjectResult.data.map((row) => ({ id: row.id, certId: row.cert_id, name: row.name })),
     exams: examResult.data.map((row) => ({ id: row.id, certId: row.cert_id, year: row.year, round: row.round, title: row.title, durationMinutes: row.duration_minutes, passScore: Number(row.pass_score), questionCount: row.question_count })),

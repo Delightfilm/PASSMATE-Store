@@ -3,7 +3,7 @@ import type { LocalAttempt } from "./question-bank";
 
 export const SERVER_EXAMS = process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS === "1";
 export function serverExamMode(mode: string) {
-  return SERVER_EXAMS && (process.env.NEXT_PUBLIC_CBT_SERVER_MODES || "mock").split(",").map(value => value.trim()).includes(mode);
+  return SERVER_EXAMS && process.env.NEXT_PUBLIC_CBT_SERVER_READY === "1" && mode === "mock";
 }
 export async function cbtPost<T>(path: string, body: unknown = {}): Promise<T> {
   const { data } = await getSupabaseBrowserClient().auth.getSession();

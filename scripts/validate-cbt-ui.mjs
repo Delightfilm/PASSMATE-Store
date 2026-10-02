@@ -73,6 +73,16 @@ assert.equal(helpers.exports.attemptLabel(record), "모의시험");
 assert.equal(helpers.exports.attemptLabel({ ...record, config: { ...record.config, mode: undefined } }), "이전 시험");
 assert.equal(helpers.exports.expiredAttempt({ ...record, status: "submitted" }), false);
 assert.equal(helpers.exports.expiredAttempt({ ...record, endAt: null }), false);
+const noLimit = { ...record, id: 'old-no-limit', startedAt: '2020-01-01T00:00:00Z', endAt: null };
+const sevenDays = Date.parse(noLimit.startedAt) + 7 * 86400000;
+assert.equal(helpers.exports.oldProgressAttempt(noLimit,undefined,sevenDays-1),false);
+assert.equal(helpers.exports.oldProgressAttempt(noLimit,undefined,sevenDays),true);
+assert.equal(helpers.exports.oldProgressAttempt(noLimit,sevenDays,sevenDays),false);
+assert.equal(helpers.exports.oldProgressAttempt({...noLimit,status:'submitted'},undefined,sevenDays),false);
+assert.equal(helpers.exports.oldProgressAttempt({...noLimit,endAt:record.endAt},undefined,sevenDays),false);
+assert.equal(helpers.exports.oldProgressAttempt({...noLimit,startedAt:'invalid'},undefined,sevenDays),false);
+const oldRecords=renderToStaticMarkup(React.createElement(client.exports.Records,{cert,dataset:{exams:[]},store:{attempts:[noLimit]}}));
+assert.match(oldRecords,/오래된 진행 중 1건/); assert.match(oldRecords,/<div id="old-test" hidden=""/); assert.match(oldRecords,/이어서 풀기/);
 assert.equal(helpers.exports.subjectName("금속도장"), "금속도장 작업 및 안전");
 // Render real UI at the three display thresholds; effects/API calls never run.
 const paperQuestions = Array.from({ length: 60 }, (_, i) => ({ id: `q${i}`, certId: "test", examId: "test-round", subjectId: `s${Math.floor(i / 20)}`, no: i + 1, stem: `예시 문제 ${i + 1}`, choices: [0,1,2,3].map(n => ({ label: "①②③④"[n], text: "예시 보기" })), answer: 0, images: [], explanation: "" }));
@@ -150,4 +160,18 @@ try{for(const status of [401,403,409,422,500]){const response=serverModule.expor
 assert.equal(serverModule.exports.cbtError(new Error('private secret SQL details')).status,500);}finally{console.error=log;}
 assert.match(readFileSync(clientPath,'utf8'),/previous === "all" \? "all"/);
 assert.match(readFileSync(clientPath,'utf8'),/modal === "interim" && attempt.config.mode !== "mock"/);
-console.log('CBT review OK: optimistic rapid keys, per-question serialization/concurrent saves, stale ACK isolation, rollback/retry, review independence, expired collapsed/hidden locally, persistent all-subject tab, Korean 401/403/409/422/500 errors.');
+const configPath=resolve('lib/cbt-server-config.ts'),configModule={exports:{}};
+const configOutput=ts.transpileModule(readFileSync(configPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+new Script(`(function(module,exports){${configOutput}\n})`).runInThisContext()(configModule,configModule.exports);
+const allowed=configModule.exports.cbtProjectAllowed;
+assert.equal(allowed('https://prodref.supabase.co',undefined),false);
+assert.equal(allowed('https://prodref.supabase.co',''),false);
+assert.equal(allowed('https://prodref.supabase.co','testref'),false);
+assert.equal(allowed('https://prodref.supabase.co','testref, prodref'),true);
+for(const url of ['http://prodref.supabase.co','https://prodref.supabase.co.evil.test','https://prodref.supabase.co:8443','https://user@prodref.supabase.co','invalid']) assert.equal(allowed(url,'prodref'),false);
+const previousFlag=process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS;
+try { process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS='1'; serverModule.exports.requireServerStart('mock');
+  for(const mode of ['custom','past','subject']) assert.throws(()=>serverModule.exports.requireServerStart(mode));
+  process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS='0'; assert.throws(()=>serverModule.exports.requireServerStart('mock'));
+} finally { if(previousFlag===undefined) delete process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS; else process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS=previousFlag; }
+console.log('CBT review OK: queue rapid keys/concurrency/rollback/flush; old unlimited records seven-day boundary; empty project allowlist blocks; exact HTTPS ref matching; mock-only start; expired local hide; all-subject persistence; Korean error codes.');

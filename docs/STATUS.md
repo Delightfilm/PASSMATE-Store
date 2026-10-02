@@ -1,6 +1,6 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-09-28**
+> Last updated: **2026-10-02**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
@@ -228,3 +228,15 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 임시 로컬 PostgreSQL 18.4에서 실제 두 연결 검증 통과: B의 Lock 대기, 최초 제출 결과/행 1개, RLS 직접 쓰기 및 RPC 차단. Supabase hosted Auth/REST 및 브라우저 두 탭 QA는 별도 테스트 프로젝트가 없어 미완료.
 - 운영 공개 카탈로그 메타데이터의 읽기 전용 집계: 1,138문항/19회차, 2001년 4회 색채와 금속도장 각각 19문항; 나머지 55개 회차×과목 셀은 20. 누락 번호/원인 및 보기·정답까지 유효한 풀은 아직 확인 필요. 응시/정답 조회나 DB 쓰기는 하지 않음.
 - **별도 테스트 DB의 두 연결/Auth/REST/브라우저 QA가 모두 끝난 뒤에만 병합 검토.** 현재 운영 DB/배포는 변경하지 않음. 생산 환경 차단 가드 해제 및 운영 전환은 별도 검토 필요.
+
+### 2026-10-02 CBT 후속 재검토 9개 항목
+
+- 이전 11개 검토의 권한/구성표/롤아웃 지침은 `docs/CBT_9_REVIEW.md`가 대체한다. 보고서에 현재 DRAFT SQL 전문을 포함했다.
+- authenticated의 attempts DELETE 권한과 두 DELETE 정책 제거. 기존 legacy INSERT/UPDATE 및 서버 관리 행 차단은 유지.
+- 구성표는 종목 UUID FK; 시드 UUID를 명시. 종목 이름 변경/동명 종목 검증 통과.
+- 앱 서버 접근은 환경 `CBT_SERVER_PROJECT_REFS` 명시 허용 목록, 기본 빈 값·시작 OFF. 환경은 활성화하지 않음. 테스트 SQL/QA의 운영 실행 금지는 유지.
+- 신규 서버 시험은 mock 전용. custom/past/subject 전환은 별도 PR. 준비 후 병합하는 A안을 기본 유지; B 자유 출제는 미구현/결정 필요.
+- 무제한 진행 중 기록은 이 브라우저의 최근 열람(없으면 시작일)으로 7일 계산해 접음. 표시/숨김은 로컬만 변경.
+- 공개 카탈로그 메타데이터 읽기 전용 확인: 2001년 4회 색채 12번, 금속도장 43번이 공개 목록에 없음. 전체 58문항. 비공개/수입·이미지/원본 원인은 관리자 조회와 NAS 대조 필요.
+- 로컬 native PostgreSQL 18.4 두 연결 및 전체 빌드/큐·UI·UUID/RLS 검사 통과. 실제 Preview Slow 3G/Supabase Auth/REST/두 탭 검증은 테스트 DB가 없어 미완료.
+- 운영 병합/DB 쓰기/문항 복구는 수행하지 않음.
