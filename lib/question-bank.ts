@@ -13,8 +13,9 @@ export type Question = {
 export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };
 export type Cert = { id: string; name: string; category?: string; slug?: string };
-export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[] };
-export type AttemptConfig = { mode?: "mock" | "custom" | "past" | "subject"; certId: string; certSlug?: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null };
+export type MockConfig = { certName: string; minutes: number; passScore: number; passRule: "overall"; subjects: { internal: string; name: string; count: number; position: number }[] };
+export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[]; mockConfigs?: MockConfig[] };
+export type AttemptConfig = { mode?: "mock" | "custom" | "past" | "subject"; certId: string; certSlug?: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null; passScore?: number };
 export type LocalAttempt = { id: string; config: AttemptConfig; questionIds: string[]; answers: Record<string, number>; lockedIds: string[]; reviewIds?: string[]; practiceNumber?: string; displayNameSnapshot?: string; seed?: string; serverManaged?: boolean; startedAt: string; endAt: string | null; submittedAt?: string; status: "in_progress" | "submitted"; score?: number };
 export type IssueReport = { id: string; questionId: string; attemptId?: string; kind: "wrong_answer" | "broken_image" | "missing_choice" | "other"; memo: string; createdAt: string; status: "open" | "resolved" };
 export type LocalStore = { attempts: LocalAttempt[]; bookmarks: string[]; wrongNotes: Record<string, { wrongCount: number; lastWrongAt: string; memo: string; mastered: boolean }>; presets: { name: string; config: AttemptConfig }[]; imports: ImportBatch[]; issueReports: IssueReport[] };
@@ -31,6 +32,8 @@ export type ImportBatch = { id: string; remoteId?: string; createdAt: string; fi
 
 export const EMPTY_STORE: LocalStore = { attempts: [], bookmarks: [], wrongNotes: {}, presets: [], imports: [], issueReports: [] };
 export const STORE_KEY = "passmate.cbt-mate.v1";
+// Memory only; protect optimistic fields during auth refresh/catalog account merge.
+export const pendingManagedAnswers = new Set<string>();
 export const CBT_PREVIEW_READ_ONLY = process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY === "1";
 export function readLocalStore(): LocalStore { if (typeof window === "undefined") return EMPTY_STORE; try { return { ...EMPTY_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; } catch { return EMPTY_STORE; } }
 export function writeLocalStore(store: LocalStore) { if (typeof window !== "undefined") { localStorage.setItem(STORE_KEY, JSON.stringify(store)); window.dispatchEvent(new Event("cbt-store")); } }
@@ -63,7 +66,18 @@ export async function mergeAccountStore(local: LocalStore): Promise<LocalStore> 
     supabase.from("question_bank_wrong_notes").select("question_id,wrong_count,last_wrong_at,memo,mastered").eq("user_id", userId),
   ]);
   const remoteAttempts: LocalAttempt[] = (attempts.data || []).map((row) => ({ id: row.client_id || row.id, config: row.config as AttemptConfig, questionIds: row.question_ids as string[], answers: row.answers as Record<string, number>, lockedIds: Array.isArray(row.config?.lockedIds) ? row.config.lockedIds : [], reviewIds: row.config?.reviewIds || [], practiceNumber: row.config?.practiceNumber, displayNameSnapshot: row.config?.displayNameSnapshot, seed: row.config?.seed, serverManaged: row.config?.serverManaged === true, startedAt: row.started_at, endAt: row.end_at, submittedAt: row.submitted_at || undefined, score: row.score === null ? undefined : Number(row.score), status: row.status as LocalAttempt["status"] }));
-  const mergedAttempts = [...local.attempts]; for (const attempt of remoteAttempts) { const index = mergedAttempts.findIndex((item) => item.id === attempt.id); if (index < 0) mergedAttempts.push(attempt); else if (attempt.status === "submitted" || attempt.serverManaged) mergedAttempts[index] = attempt; }
+  const current = readLocalStore();
+  const mergedAttempts = [...local.attempts]; for (const attempt of remoteAttempts) {
+    const optimistic = current.attempts.find(item => item.id === attempt.id);
+    if (attempt.serverManaged && attempt.status === "in_progress" && optimistic?.status === "in_progress") {
+      for (const id of attempt.questionIds.filter(id => pendingManagedAnswers.has(`${attempt.id}:${id}`))) {
+        if (optimistic.answers[id] === undefined) delete attempt.answers[id]; else attempt.answers[id] = optimistic.answers[id];
+        attempt.reviewIds = [...(attempt.reviewIds || []).filter(value => value !== id), ...((optimistic.reviewIds || []).includes(id) ? [id] : [])];
+        attempt.lockedIds = [...attempt.lockedIds.filter(value => value !== id), ...(optimistic.lockedIds.includes(id) ? [id] : [])];
+      }
+    }
+    const index = mergedAttempts.findIndex((item) => item.id === attempt.id); if (index < 0) mergedAttempts.push(attempt); else if (attempt.status === "submitted" || attempt.serverManaged) mergedAttempts[index] = attempt;
+  }
   const mergedNotes = { ...local.wrongNotes }; for (const row of wrongNotes.data || []) mergedNotes[row.question_id] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at, memo: row.memo, mastered: row.mastered };
   return { ...local, attempts: mergedAttempts, bookmarks: Array.from(new Set([...local.bookmarks, ...(bookmarks.data || []).map((row) => row.question_id)])), wrongNotes: mergedNotes };
 }
@@ -108,10 +122,11 @@ function normalizeLiveChoices(value: unknown): Choice[] {
 
 export async function loadPublishedDataset(): Promise<Dataset> {
   const supabase = getSupabaseBrowserClient();
-  const [certResult, subjectResult, examResult] = await Promise.all([
+  const [certResult, subjectResult, examResult, mockResult] = await Promise.all([
     supabase.from("question_bank_certs").select("id,name").order("name"),
     supabase.from("question_bank_subjects").select("id,cert_id,name").order("part_number"),
     supabase.from("question_bank_exams").select("id,cert_id,year,round,title,duration_minutes,pass_score,question_count").order("exam_date", { ascending: false }),
+    supabase.from("question_bank_mock_configs").select("cert_name,duration_minutes,pass_score,pass_rule,question_bank_mock_subjects(internal_name,official_name,question_count,position)").eq("status", "published"),
   ]);
   if (certResult.error || subjectResult.error || examResult.error) {
     throw new Error(`CBT 목록 조회 실패: ${certResult.error?.message || subjectResult.error?.message || examResult.error?.message}`);
@@ -133,8 +148,11 @@ export async function loadPublishedDataset(): Promise<Dataset> {
     if (page.length < 1000) break;
   }
   if (!questionRows.length) throw new Error("공개된 CBT 문항이 없습니다.");
+  // The new table is absent before migration; legacy catalog must remain usable.
+  if (mockResult.error && !["42P01", "PGRST205", "PGRST200"].includes(mockResult.error.code)) throw new Error("모의시험 구성을 불러오지 못했습니다. 다시 시도해 주세요.");
 
   return {
+    mockConfigs: (mockResult.data || []).map(row => ({ certName: row.cert_name, minutes: row.duration_minutes, passScore: row.pass_score, passRule: row.pass_rule as "overall", subjects: row.question_bank_mock_subjects.map(subject => ({ internal: subject.internal_name, name: subject.official_name, count: subject.question_count, position: subject.position })).sort((a,b) => a.position-b.position) })),
     certs: certResult.data.map((row) => ({ id: row.id, name: row.name })),
     subjects: subjectResult.data.map((row) => ({ id: row.id, certId: row.cert_id, name: row.name })),
     exams: examResult.data.map((row) => ({ id: row.id, certId: row.cert_id, year: row.year, round: row.round, title: row.title, durationMinutes: row.duration_minutes, passScore: Number(row.pass_score), questionCount: row.question_count })),

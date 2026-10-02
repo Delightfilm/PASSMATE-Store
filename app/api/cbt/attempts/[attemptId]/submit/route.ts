@@ -1,16 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
-import { cbtError, cbtTestServer } from "@/lib/cbt-test-server";
+import { cbtError, cbtTestServer, cbtRpcError, CbtRequestError } from "@/lib/cbt-test-server";
 
 export async function POST(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   if (process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY === "1") return Response.json({ error: "별도 테스트 DB 연결 후 결과를 저장할 수 있습니다." }, { status: 503 });
   const { attemptId } = await params;
   if (attemptId.startsWith("managed-")) {
     try {
-      if (!/^managed-[0-9a-f-]{36}$/i.test(attemptId)) throw new Error("응시 번호를 확인해 주세요.");
+      if (!/^managed-[0-9a-f-]{36}$/i.test(attemptId)) throw new CbtRequestError(422);
       const { db, userId } = await cbtTestServer(request);
       const { data, error } = await db.rpc("cbt_submit", { p_user: userId, p_attempt: attemptId });
-      if (error) throw new Error("결과를 저장하지 못했습니다. 다시 시도해 주세요.");
+      if (error) throw cbtRpcError(error);
       return Response.json(data, { headers: { "Cache-Control": "no-store" } });
     } catch (error) { return cbtError(error); }
   }

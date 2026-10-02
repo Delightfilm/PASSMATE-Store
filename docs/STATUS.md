@@ -219,3 +219,11 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 별도 Supabase 테스트 프로젝트 연결은 미확인. Preview의 CBT 원격 쓰기는 연결 확인 전 차단.
 - 격리된 메모리 PostgreSQL에서 100회 20/20/20 출제, 일자별 번호, 상태/소유권/멱등 검증 통과. hosted Supabase 및 실제 두 탭 동시 제출 QA는 미완료.
 - 상세 변경/회귀/되돌리기 자료: `docs/CBT_21_REVIEW.md`, 테스트 전용 SQL: `docs/cbt-test-migration.DRAFT.sql`.
+
+### 2026-10-02 CBT 재검토 11개 항목
+
+- 기존 로컬 응시의 권한을 유지하는 RESTRICTIVE RLS로 변경. 서버 응시만 직접 쓰기/승격 차단.
+- 낙관적 문항별 저장 큐, 모의시험 중 채점 차단, 구성표/과목 테이블, 만료 기록의 로컬 숨김, 오류 상태 구분 및 mastered 반영.
+- `docs/CBT_11_REVIEW.md`가 이전 21개 보고서의 일괄 권한 회수/전역 저장 큐 설명을 대체한다.
+- 임시 로컬 PostgreSQL 18.4에서 실제 두 연결 검증 통과: B의 Lock 대기, 최초 제출 결과/행 1개, RLS 직접 쓰기 및 RPC 차단. Supabase hosted Auth/REST 및 브라우저 두 탭 QA는 별도 테스트 프로젝트가 없어 미완료.
+- **별도 테스트 DB의 두 연결/Auth/REST/브라우저 QA가 모두 끝난 뒤에만 병합 검토.** 현재 운영 DB/배포는 변경하지 않음. 생산 환경 차단 가드 해제 및 운영 전환은 별도 검토 필요.

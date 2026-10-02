@@ -8,6 +8,8 @@ do $$ begin
   end if;
 end $$;
 create schema if not exists cbt_private;
+-- Add the independently verified test project ref manually before hosted QA.
+create table cbt_private.test_environment (project_ref text primary key check (project_ref <> 'fmecqeadghrdisirucqm'));
 revoke all on schema cbt_private from public, anon, authenticated;
 grant usage on schema cbt_private to service_role;
 create extension if not exists pgcrypto with schema extensions;
@@ -28,14 +30,57 @@ grant select, insert on cbt_private.daily_numbers to service_role;
 -- Ownership SELECT policy already exists in baseline migration. Keep it.
 alter table public.question_bank_attempts enable row level security;
 revoke all on public.question_bank_attempts from public, anon;
-revoke insert, update, delete on public.question_bank_attempts from authenticated;
-grant select on public.question_bank_attempts to authenticated;
+grant select, insert, update, delete on public.question_bank_attempts to authenticated;
+-- Restrictive policies AND with existing owner policies (permissive policies OR).
+create policy "clients insert legacy attempts only" on public.question_bank_attempts
+  as restrictive for insert to authenticated
+  with check (config->>'serverManaged' is distinct from 'true');
+create policy "clients update legacy attempts only" on public.question_bank_attempts
+  as restrictive for update to authenticated
+  using (config->>'serverManaged' is distinct from 'true')
+  with check (config->>'serverManaged' is distinct from 'true');
+create policy "clients delete legacy attempts only" on public.question_bank_attempts
+  as restrictive for delete to authenticated
+  using (config->>'serverManaged' is distinct from 'true');
+create policy "users delete own legacy attempts" on public.question_bank_attempts
+  for delete to authenticated using (auth.uid() = user_id);
 grant select, insert, update on public.question_bank_attempts to service_role;
 grant usage on schema auth, extensions to service_role;
 grant select on auth.users, public.profiles, public.question_bank_certs, public.question_bank_exams, public.question_bank_subjects, public.question_bank_questions to service_role;
 grant select, insert, update on public.question_bank_wrong_notes to service_role;
 create unique index if not exists question_bank_attempts_user_client_idx
   on public.question_bank_attempts(user_id, client_id);
+
+create table public.question_bank_mock_configs (
+  cert_name text primary key,
+  duration_minutes integer not null check (duration_minutes between 1 and 180),
+  pass_rule text not null check (pass_rule = 'overall'),
+  pass_score integer not null check (pass_score between 0 and 100),
+  calculator_allowed boolean not null default false,
+  status text not null default 'draft' check (status in ('draft','published'))
+);
+create table public.question_bank_mock_subjects (
+  cert_name text not null references public.question_bank_mock_configs(cert_name) on delete cascade,
+  position integer not null check (position > 0),
+  internal_name text not null,
+  official_name text not null,
+  question_count integer not null check (question_count between 1 and 120),
+  primary key (cert_name, position), unique (cert_name, internal_name)
+);
+alter table public.question_bank_mock_configs enable row level security;
+alter table public.question_bank_mock_subjects enable row level security;
+revoke all on public.question_bank_mock_configs, public.question_bank_mock_subjects from public, anon, authenticated;
+grant select on public.question_bank_mock_configs, public.question_bank_mock_subjects to anon, authenticated, service_role;
+grant insert, update, delete on public.question_bank_mock_configs, public.question_bank_mock_subjects to service_role;
+create policy "published mock configs" on public.question_bank_mock_configs for select to anon, authenticated using (status='published');
+create policy "published mock subjects" on public.question_bank_mock_subjects for select to anon, authenticated
+  using (exists (select 1 from public.question_bank_mock_configs c where c.cert_name=question_bank_mock_subjects.cert_name and c.status='published'));
+-- Draft until mapping, valid pools and test DB QA are verified. No public fallback.
+insert into public.question_bank_mock_configs values ('금속도장기능사',60,'overall',60,false,'draft');
+insert into public.question_bank_mock_subjects values
+  ('금속도장기능사',1,'금속도장재료','금속도장재료',20),
+  ('금속도장기능사',2,'금속도장','금속도장 작업 및 안전',20),
+  ('금속도장기능사',3,'색채','색채 및 조색',20);
 
 -- SECURITY INVOKER: only verified server service_role can execute. No elevated
 -- DEFINER needed; empty search_path and qualified tables/functions in every RPC.
@@ -72,24 +117,30 @@ declare
   ids jsonb := '[]'; picked jsonb; r record; mapped_subject uuid; subjects_count integer;
   seed text := encode(extensions.gen_random_bytes(32), 'hex');
   identity jsonb; a public.question_bank_attempts; cfg jsonb; started timestamptz := clock_timestamp();
-  cert_name text; minutes integer := p_minutes; grade text := p_grade; exam_ids jsonb; subject_ids jsonb;
+  v_cert_name text; minutes integer := p_minutes; grade text := p_grade; exam_ids jsonb; subject_ids jsonb;
+  mock_config public.question_bank_mock_configs;
 begin
   if p_mode is null or p_grade is null or p_cert is null or p_mode not in ('mock','custom','past','subject') or p_grade not in ('submit','instant')
     or (p_minutes is not null and p_minutes not in (30,60,90)) then raise exception 'Invalid config'; end if;
-  select name into strict cert_name from public.question_bank_certs where id = p_cert;
+  select name into strict v_cert_name from public.question_bank_certs where id = p_cert;
   if p_mode = 'mock' then
-    if cert_name <> '금속도장기능사' then raise exception 'Subject mapping not verified'; end if;
-    minutes := 60; grade := 'submit';
-    for r in select * from (values (1,'금속도장재료','금속도장재료'), (2,'금속도장','금속도장 작업 및 안전'), (3,'색채','색채 및 조색')) as rules(position, internal_name, official_name) order by position loop
+    select * into mock_config from public.question_bank_mock_configs c where c.cert_name=v_cert_name and c.status='published';
+    if not found then raise exception using errcode='PT422', message='Mock config unavailable'; end if;
+    if not exists (select 1 from public.question_bank_mock_subjects s where s.cert_name=v_cert_name)
+      or (select sum(question_count) from public.question_bank_mock_subjects s where s.cert_name=v_cert_name) > 120 then
+      raise exception using errcode='PT422', message='Mock subjects unavailable';
+    end if;
+    minutes := mock_config.duration_minutes; grade := 'submit';
+    for r in select * from public.question_bank_mock_subjects s where s.cert_name=v_cert_name order by position loop
       select count(*), (array_agg(id))[1] into subjects_count, mapped_subject from public.question_bank_subjects
         where cert_id = p_cert and name in (r.internal_name, r.official_name);
       if subjects_count <> 1 then raise exception 'Subject mapping ambiguous'; end if;
       select coalesce(jsonb_agg(id order by rank, id), '[]') into picked from (
         select id, md5(seed || id::text) as rank from public.question_bank_questions
         where cert_id = p_cert and subject_id = mapped_subject and status = 'published' and jsonb_array_length(choices)=4 and answer between 0 and 3
-        order by rank, id limit 20
+        order by rank, id limit r.question_count
       ) q;
-      if jsonb_array_length(picked) <> 20 then raise exception 'Need 20 available questions for every subject'; end if;
+      if jsonb_array_length(picked) <> r.question_count then raise exception using errcode='PT422', message='Insufficient subject pool'; end if;
       ids := ids || picked;
     end loop;
   else
@@ -107,10 +158,11 @@ begin
   end if;
   identity := public.cbt_prepare_identity(p_user);
   started := clock_timestamp();
-  cfg := jsonb_build_object('mode',p_mode,'certId',p_cert,'certSlug',cert_name,'examIds',exam_ids,'subjectIds',subject_ids,
+  cfg := jsonb_build_object('mode',p_mode,'certId',p_cert,'certSlug',v_cert_name,'examIds',exam_ids,'subjectIds',subject_ids,
     'count',jsonb_array_length(ids),'order','ordered','target','all','gradeMode',grade,'timeLimitMinutes',minutes,
     'seed',seed,'practiceNumber',identity->>'practiceNumber','displayNameSnapshot',identity->>'displayName',
     'serverManaged',true,'reviewIds','[]'::jsonb,'lockedIds','[]'::jsonb);
+  if p_mode='mock' then cfg := cfg || jsonb_build_object('passRule',mock_config.pass_rule,'passScore',mock_config.pass_score,'calculatorAllowed',mock_config.calculator_allowed); end if;
   insert into public.question_bank_attempts(user_id,client_id,config,question_ids,answers,started_at,end_at,status)
     values(p_user,'managed-' || gen_random_uuid()::text,cfg,ids,'{}',started,case when minutes is null then null else started+make_interval(mins=>minutes) end,'in_progress') returning * into a;
   return to_jsonb(a) - 'user_id';
@@ -121,14 +173,15 @@ returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare a public.question_bank_attempts; next_answers jsonb; reviews jsonb; locked jsonb;
 begin
   select * into strict a from public.question_bank_attempts where user_id=p_user and client_id=p_attempt for update;
-  if a.config->>'serverManaged' <> 'true' or a.status <> 'in_progress' or (a.end_at is not null and clock_timestamp() >= a.end_at)
-    or not (a.question_ids ? p_question::text) or (p_choice is not null and (p_choice not between 0 and 3 or p_choice >= (select jsonb_array_length(choices) from public.question_bank_questions where id=p_question))) then raise exception 'Attempt closed or invalid answer'; end if;
+  if a.config->>'serverManaged' is distinct from 'true' then raise exception using errcode='PT403', message='Not server managed'; end if;
+  if a.status <> 'in_progress' or (a.end_at is not null and clock_timestamp() >= a.end_at) then raise exception using errcode='PT409', message='Attempt closed'; end if;
+  if p_question is null or not (a.question_ids ? p_question::text) or (p_choice is not null and (p_choice not between 0 and 3 or p_choice >= (select jsonb_array_length(choices) from public.question_bank_questions where id=p_question))) then raise exception using errcode='PT422', message='Invalid answer'; end if;
   next_answers := a.answers; reviews := coalesce(a.config->'reviewIds','[]'); locked := coalesce(a.config->'lockedIds','[]');
   if p_review is not null then
     reviews := reviews - p_question::text;
     if p_review then reviews := reviews || jsonb_build_array(p_question::text); end if;
   else
-    if locked ? p_question::text then raise exception 'Answer locked'; end if;
+    if locked ? p_question::text then raise exception using errcode='PT409', message='Answer locked'; end if;
     next_answers := next_answers - p_question::text;
     if p_choice is not null then
       next_answers := next_answers || jsonb_build_object(p_question::text,p_choice);
@@ -145,7 +198,8 @@ language plpgsql security invoker set search_path = '' as $$
 declare a public.question_bank_attempts; already boolean; right_count integer; result_score numeric;
 begin
   select * into strict a from public.question_bank_attempts where user_id=p_user and client_id=p_attempt for update;
-  if a.config->>'serverManaged' <> 'true' then raise exception 'Not server managed'; end if;
+  if a.config->>'serverManaged' is distinct from 'true' then raise exception using errcode='PT403', message='Not server managed'; end if;
+  if a.status not in ('in_progress','submitted') then raise exception using errcode='PT409', message='Attempt closed'; end if;
   already := a.status = 'submitted';
   if not already then
     select count(*) into right_count from public.question_bank_questions q
@@ -157,6 +211,10 @@ begin
       select p_user,q.id,1,a.submitted_at,'',false from public.question_bank_questions q
       where a.question_ids ? q.id::text and (a.answers->>q.id::text is distinct from q.answer::text)
       on conflict(user_id,question_id) do update set wrong_count=public.question_bank_wrong_notes.wrong_count+1,last_wrong_at=excluded.last_wrong_at,mastered=false;
+    -- Match legacy: correct answers master an existing note; do not create one.
+    update public.question_bank_wrong_notes n set mastered=true
+      from public.question_bank_questions q
+      where n.user_id=p_user and n.question_id=q.id and a.question_ids ? q.id::text and a.answers->>q.id::text=q.answer::text;
   end if;
   return jsonb_build_object('answers',a.answers,'submittedAt',a.submitted_at,'score',a.score,'alreadySubmitted',already);
 end $$;

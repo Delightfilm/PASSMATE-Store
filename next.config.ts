@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const cbtRef = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fmecqeadghrdisirucqm.supabase.co").hostname.split(".")[0];
-const cbtTestReady = process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS === "1" && process.env.CBT_TEST_PROJECT_REF === cbtRef && cbtRef !== "fmecqeadghrdisirucqm";
+const cbtTestReady = process.env.CBT_TEST_PROJECT_REF === cbtRef && cbtRef !== "fmecqeadghrdisirucqm";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

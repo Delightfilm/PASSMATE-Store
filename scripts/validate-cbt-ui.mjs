@@ -66,6 +66,8 @@ const record = { id: "attempt-test", config: { certId: "test", mode: "mock", exa
 const unchanged = JSON.stringify(record);
 const records = renderToStaticMarkup(React.createElement(client.exports.Records, { cert, dataset: { exams: [] }, store: { attempts: [record] } }));
 assert.match(records, /시간 만료/); assert.match(records, /결과 저장하기/); assert.doesNotMatch(records, /이어서 풀기/);
+assert.match(records,/만료된 기록 1건/); assert.match(records,/aria-expanded="false"/);
+assert.match(records,/이 목록에서 숨기기/); assert.match(records,/<div id="expired-test" hidden=""/);
 assert.equal(JSON.stringify(record), unchanged, "Expiry rendering cannot mutate records");
 assert.equal(helpers.exports.attemptLabel(record), "모의시험");
 assert.equal(helpers.exports.attemptLabel({ ...record, config: { ...record.config, mode: undefined } }), "이전 시험");
@@ -115,3 +117,37 @@ assert.equal(exitState.path, undefined, "Failed saving must keep the user on the
 assert.equal(exitState.confirmedExit.current, false, "Failed saving keeps exit guards active");
 assert.ok(exitState.toast);
 console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls, confirmed exit waits for saving; no DB writes");
+
+// Controlled network replies exercise the actual per-question queue.
+const queuePath = resolve("lib/cbt-answer-queue.ts"), queueModule = { exports: {} };
+const queueOutput = ts.transpileModule(readFileSync(queuePath,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+new Script(`(function(require,module,exports){${queueOutput}\n})`).runInThisContext()(createRequire(queuePath),queueModule,queueModule.exports);
+const choices = new Map(), calls = [], errors = [];
+const state = id => ({choice:null,review:false,locked:false,...choices.get(id)});
+const queue = queueModule.exports.createAnswerQueue(state,(id,field,value)=>{const next=state(id);if(field==='answer'){next.choice=value.choice;next.locked=value.locked;}else next.review=value.review;choices.set(id,next);},(id,choice,review)=>new Promise((resolve,reject)=>calls.push({id,choice,review,resolve,reject})),error=>errors.push(error));
+const turn = () => new Promise(resolve=>setImmediate(resolve));
+for (const choice of [0,1,2,3]) queue.enqueue('a',choice,null);
+queue.enqueue('b',2,null);
+assert.equal(state('a').choice,3,'Rapid keys update UI immediately to the latest selection');
+await turn(); assert.deepEqual(calls.map(call=>call.id),['a','b'],'Another question starts saving while the first is pending');
+calls[1].resolve({choice:2,review:false,locked:false});calls[0].resolve({choice:0,review:false,locked:false});
+await turn(); assert.equal(state('a').choice,3,'An older ACK cannot replace optimistic choice');
+for(let index=2;index<5;index++){assert.equal(calls[index].id,'a');calls[index].resolve({choice:calls[index].choice,review:false,locked:false});await turn();}
+await queue.flush();assert.equal(state('a').choice,3);assert.equal(state('b').choice,2);
+queue.enqueue('a',1,null);await turn();const failed=calls.at(-1);failed.reject(new Error('network failure'));await turn();
+assert.equal(state('a').choice,3,'Failed latest save rolls back to confirmed selection');
+await assert.rejects(queue.flush(),/network failure/);assert.equal(errors.length,1);
+queue.enqueue('a',2,null);await turn();calls.at(-1).resolve({choice:2,review:false,locked:false});await queue.flush();
+queue.enqueue('a',null,true);queue.enqueue('a',null,false);await turn();calls.at(-1).resolve({choice:2,review:true,locked:false});await turn();
+assert.equal(state('a').review,false);calls.at(-1).resolve({choice:2,review:false,locked:false});await queue.flush();
+assert.equal(state('a').choice,2);assert.equal(state('a').review,false);
+const serverPath=resolve('lib/cbt-test-server.ts'), serverModule={exports:{}};
+const serverOutput=ts.transpileModule(readFileSync(serverPath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+new Script(`(function(require,module,exports){${serverOutput}\n})`).runInThisContext()(name=>name==='server-only'?{}:name.startsWith('./')?{}:createRequire(serverPath)(name),serverModule,serverModule.exports);
+for(const [code,status] of [['PT403',403],['P0002',403],['PT409',409],['23505',409],['PT422',422],['22023',422],['XX000',500]]) assert.equal(serverModule.exports.cbtRpcError({code}).status,status);
+const log=console.error;console.error=()=>{};
+try{for(const status of [401,403,409,422,500]){const response=serverModule.exports.cbtError(new serverModule.exports.CbtRequestError(status));assert.equal(response.status,status);const body=await response.json();assert.match(body.error,/[가-힣]/);assert.doesNotMatch(body.error,/CBT request|SQL|token|postgres/);}
+assert.equal(serverModule.exports.cbtError(new Error('private secret SQL details')).status,500);}finally{console.error=log;}
+assert.match(readFileSync(clientPath,'utf8'),/previous === "all" \? "all"/);
+assert.match(readFileSync(clientPath,'utf8'),/modal === "interim" && attempt.config.mode !== "mock"/);
+console.log('CBT review OK: optimistic rapid keys, per-question serialization/concurrent saves, stale ACK isolation, rollback/retry, review independence, expired collapsed/hidden locally, persistent all-subject tab, Korean 401/403/409/422/500 errors.');

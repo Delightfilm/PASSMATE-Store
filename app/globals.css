@@ -1161,6 +1161,7 @@ body{word-break:keep-all}
 .cbt-record-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
 .cbt-cert-record small{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
 .cbt-cert-record .button{min-height:44px;font-size:12px;padding-inline:12px;white-space:normal}
+.cbt-record-actions{display:flex;flex-direction:column;gap:8px;align-items:stretch}
 .cbt-record-status{min-width:88px;padding:8px 12px;border-radius:999px;background:var(--soft);color:var(--ink);font-size:12px;font-weight:800;text-align:center}
 .cbt-record-status.is-expired{background:var(--warning-soft);color:var(--warning)}
 .cbt-wrong-row{gap:10px}
@@ -1221,7 +1222,7 @@ body{word-break:keep-all}
 @media(max-width:900px){
   .exam-redesign .cbt-live-topbar{grid-template-columns:minmax(0,1fr) auto auto 44px auto}
   .cbt-cert-record{grid-template-columns:minmax(0,1fr) auto;gap:12px}
-  .cbt-cert-record>.button,.cbt-cert-record>.record-unavailable{grid-column:2;grid-row:2;justify-self:end}
+  .cbt-cert-record>.button,.cbt-cert-record>.record-unavailable,.cbt-cert-record>.cbt-record-actions{grid-column:2;grid-row:2;justify-self:end}
   .cbt-cert-record>.cbt-record-status{grid-column:2;grid-row:1}
 }
 @media(max-width:620px){
