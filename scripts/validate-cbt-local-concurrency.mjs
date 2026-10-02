@@ -49,6 +49,7 @@ try {
   }
   const user = (await one("insert into auth.users values(gen_random_uuid()) returning id")).id;
   await db.query("insert into profiles values($1,'CBT QA local two connections')",[user]);
+  await db.query("update cbt_private.server_exams set enabled=true");
   await db.query("insert into cbt_private.test_environment values('local-test')");
   await db.query("update question_bank_mock_configs set status='published' where cert_id=$1",[cert]);
   const result = await new Promise((resolve,reject) => {

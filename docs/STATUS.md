@@ -1,6 +1,6 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-02**
+> Last updated: **2026-10-03**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
@@ -240,3 +240,14 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 공개 카탈로그 메타데이터 읽기 전용 확인: 2001년 4회 색채 12번, 금속도장 43번이 공개 목록에 없음. 전체 58문항. 비공개/수입·이미지/원본 원인은 관리자 조회와 NAS 대조 필요.
 - 로컬 native PostgreSQL 18.4 두 연결 및 전체 빌드/큐·UI·UUID/RLS 검사 통과. 실제 Preview Slow 3G/Supabase Auth/REST/두 탭 검증은 테스트 DB가 없어 미완료.
 - 운영 병합/DB 쓰기/문항 복구는 수행하지 않음.
+
+### 2026-10-03 CBT 후속 재검토 7개 항목
+
+- 최신 절차는 `CBT_7_REVIEW.md`, 한 장 병합 게이트는 `CBT_MERGE_GATE.md`. 이전 9개 보고서의 SQL은 역사 기록이고 현재 전문은 `cbt-test-migration.DRAFT.sql`.
+- 시작 clientId(UUID)를 클라이언트에서 재시도까지 유지. DB 계정별 시작 잠금 + user/client 유니크 + 별칭 키로 동일/두 탭 시작을 기존 미만료 mock 응시로 연결. 만료/제출 뒤 같은 키도 원래 응시 반환.
+- 앱의 정확한 ref 허용 목록과 DB `cbt_private.server_exams.enabled=true`가 모두 필요. DB 기본 false, absent/false는 start/answer/submit/identity 모두 차단. 앱 서비스에는 marker SELECT만, 구성표도 SELECT만.
+- PR1 UI와 PR2 서버 분리는 가능하지만 공용 client/저장 모듈/QA는 hunk 분리 필요. PR1 로컬 자유 출제 유지+비율 안내 또는 준비 중 선택은 결정 필요. 현재 통합 Draft의 준비 후 병합 방침 유지; PR1/PR2 새 PR 생성·운영 병합은 하지 않음.
+- 7일·이 브라우저 기준 문구를 유지하고 다른 기기의 활동은 반영하지 못한다는 문장을 명시. 로컬 표시/숨김만 변경.
+- 누락 문항 진단 SELECT에 실행 안내/해석표/원문·정답 배제와 감사/집계 provenance 추가. 현재 코드상 58은 공개 시 재집계 값이며 원본·수입 시점 수량 스냅샷은 아님. 운영 원본/로그 실행은 미확인.
+- 로컬 핸들러 더블클릭/응답 유실·재로드 UUID, PGlite 활성화·권한, native PostgreSQL 18.4 실제 두 연결 시작/제출 경합, 큐/UI/전체 빌드 검증 통과.
+- 별도 테스트 프로젝트가 없어 hosted Supabase Auth/REST·실제 Preview Slow 3G·브라우저 두 탭은 미실행. 운영 DB/허용 목록 활성화/main 병합은 하지 않음.

@@ -13,6 +13,21 @@ create schema if not exists cbt_private;
 create table cbt_private.test_environment (project_ref text primary key check (project_ref <> 'fmecqeadghrdisirucqm'));
 revoke all on schema cbt_private from public, anon, authenticated;
 grant usage on schema cbt_private to service_role;
+-- Independent DB switch: absent/false blocks every server exam RPC.
+create table cbt_private.server_exams (id boolean primary key default true check (id), enabled boolean not null default false);
+insert into cbt_private.server_exams values (true,false);
+alter table cbt_private.server_exams enable row level security;
+revoke all on cbt_private.server_exams from public, anon, authenticated, service_role;
+grant select on cbt_private.server_exams to service_role;
+create function cbt_private.require_server_exams() returns void
+language plpgsql security invoker set search_path = '' as $$
+begin
+  if not exists(select 1 from cbt_private.server_exams where id and enabled) then
+    raise exception using errcode='PT409', message='Server exams disabled';
+  end if;
+end $$;
+revoke all on function cbt_private.require_server_exams() from public, anon, authenticated;
+grant execute on function cbt_private.require_server_exams() to service_role;
 create extension if not exists pgcrypto with schema extensions;
 create table cbt_private.number_secret (id boolean primary key default true check (id), secret bytea not null);
 insert into cbt_private.number_secret values (true, extensions.gen_random_bytes(32));
@@ -49,6 +64,17 @@ grant select on auth.users, public.profiles, public.question_bank_certs, public.
 grant select, insert, update on public.question_bank_wrong_notes to service_role;
 create unique index if not exists question_bank_attempts_user_client_idx
   on public.question_bank_attempts(user_id, client_id);
+-- Reused active attempts also remember each accepted start key. A lost response
+-- retried after expiry/submission still returns the original attempt, unchanged.
+create table cbt_private.start_requests (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  client_id uuid not null,
+  attempt_id uuid not null references public.question_bank_attempts(id) on delete cascade,
+  primary key(user_id,client_id)
+);
+alter table cbt_private.start_requests enable row level security;
+revoke all on cbt_private.start_requests from public, anon, authenticated, service_role;
+grant select, insert on cbt_private.start_requests to service_role;
 
 create table public.question_bank_mock_configs (
   cert_id uuid primary key references public.question_bank_certs(id) on delete restrict,
@@ -68,9 +94,9 @@ create table public.question_bank_mock_subjects (
 );
 alter table public.question_bank_mock_configs enable row level security;
 alter table public.question_bank_mock_subjects enable row level security;
-revoke all on public.question_bank_mock_configs, public.question_bank_mock_subjects from public, anon, authenticated;
+revoke all on public.question_bank_mock_configs, public.question_bank_mock_subjects from public, anon, authenticated, service_role;
 grant select on public.question_bank_mock_configs, public.question_bank_mock_subjects to anon, authenticated, service_role;
-grant insert, update, delete on public.question_bank_mock_configs, public.question_bank_mock_subjects to service_role;
+revoke insert, update, delete on public.question_bank_mock_configs, public.question_bank_mock_subjects from service_role;
 create policy "published mock configs" on public.question_bank_mock_configs for select to anon, authenticated using (status='published');
 create policy "published mock subjects" on public.question_bank_mock_subjects for select to anon, authenticated
   using (exists (select 1 from public.question_bank_mock_configs c where c.cert_id=question_bank_mock_subjects.cert_id and c.status='published'));
@@ -96,6 +122,7 @@ declare
   d date := (statement_timestamp() at time zone 'Asia/Seoul')::date;
   n integer; base integer; offset_n integer; key_bytes bytea; name text;
 begin
+  perform cbt_private.require_server_exams();
   if not exists (select 1 from auth.users where id = p_user) then raise exception 'Unknown user'; end if;
   -- ponytail: daily allocation serializes briefly; shard locks if volume warrants.
   perform pg_advisory_xact_lock(hashtextextended('cbt-number-' || d::text, 0));
@@ -117,7 +144,9 @@ begin
   return jsonb_build_object('practiceNumber', to_char(d, 'YYYYMMDD') || '-' || lpad(n::text, 5, '0'), 'displayName', coalesce(name, '수험자'), 'date', d);
 end $$;
 
-create function public.cbt_start(p_user uuid, p_cert uuid, p_mode text, p_ids jsonb, p_minutes integer, p_grade text)
+-- Remove the old entry point so an older caller cannot bypass the start key.
+drop function if exists public.cbt_start(uuid,uuid,text,jsonb,integer,text);
+create function public.cbt_start(p_user uuid, p_cert uuid, p_mode text, p_ids jsonb, p_minutes integer, p_grade text, p_client_id uuid)
 -- p_minutes remains in the prior RPC signature; published config owns duration.
 returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare
@@ -127,8 +156,32 @@ declare
   minutes integer; exam_ids jsonb; subject_ids jsonb;
   mock_config public.question_bank_mock_configs;
 begin
+  perform cbt_private.require_server_exams();
   if p_mode is distinct from 'mock' or p_grade is distinct from 'submit' or p_cert is null
-    or p_ids is distinct from '[]'::jsonb then raise exception using errcode='PT422', message='Mock mode only'; end if;
+    or p_user is null or p_client_id is null or p_ids is distinct from '[]'::jsonb then raise exception using errcode='PT422', message='Mock mode and UUID start key required'; end if;
+  -- Starts serialize per account; answer/submit keep their existing row locks.
+  perform pg_advisory_xact_lock(hashtextextended('cbt-start:' || p_user::text,0));
+  select t.* into a from public.question_bank_attempts t
+    join cbt_private.start_requests request_key on request_key.attempt_id=t.id
+    where request_key.user_id=p_user and request_key.client_id=p_client_id and t.user_id=p_user;
+  if not found then
+    select * into a from public.question_bank_attempts where user_id=p_user and client_id=p_client_id::text;
+  end if;
+  if found then
+    if a.config->>'serverManaged' is distinct from 'true' or a.config->>'mode' is distinct from 'mock'
+      or a.config->>'certId' is distinct from p_cert::text then
+      raise exception using errcode='PT409', message='Start key conflict';
+    end if;
+    return to_jsonb(a)-'user_id';
+  end if;
+  select * into a from public.question_bank_attempts where user_id=p_user
+    and config->>'serverManaged'='true' and config->>'mode'='mock' and config->>'certId'=p_cert::text
+    and status='in_progress' and (end_at is null or end_at>clock_timestamp())
+    order by started_at desc,id limit 1;
+  if found then
+    insert into cbt_private.start_requests values(p_user,p_client_id,a.id);
+    return to_jsonb(a)-'user_id';
+  end if;
     select * into mock_config from public.question_bank_mock_configs c where c.cert_id=p_cert and c.status='published';
     if not found then raise exception using errcode='PT422', message='Mock config unavailable'; end if;
     if not exists (select 1 from public.question_bank_mock_subjects s where s.cert_id=p_cert)
@@ -161,7 +214,8 @@ begin
     'serverManaged',true,'reviewIds','[]'::jsonb,'lockedIds','[]'::jsonb);
   cfg := cfg || jsonb_build_object('passRule',mock_config.pass_rule,'passScore',mock_config.pass_score,'calculatorAllowed',mock_config.calculator_allowed);
   insert into public.question_bank_attempts(user_id,client_id,config,question_ids,answers,started_at,end_at,status)
-    values(p_user,'managed-' || gen_random_uuid()::text,cfg,ids,'{}',started,case when minutes is null then null else started+make_interval(mins=>minutes) end,'in_progress') returning * into a;
+    values(p_user,p_client_id::text,cfg,ids,'{}',started,case when minutes is null then null else started+make_interval(mins=>minutes) end,'in_progress') returning * into a;
+  insert into cbt_private.start_requests values(p_user,p_client_id,a.id);
   return to_jsonb(a) - 'user_id';
 end $$;
 
@@ -169,6 +223,7 @@ create function public.cbt_answer(p_user uuid, p_attempt text, p_question uuid, 
 returns jsonb language plpgsql security invoker set search_path = '' as $$
 declare a public.question_bank_attempts; next_answers jsonb; reviews jsonb; locked jsonb;
 begin
+  perform cbt_private.require_server_exams();
   select * into strict a from public.question_bank_attempts where user_id=p_user and client_id=p_attempt for update;
   if a.config->>'serverManaged' is distinct from 'true' then raise exception using errcode='PT403', message='Not server managed'; end if;
   if a.status <> 'in_progress' or (a.end_at is not null and clock_timestamp() >= a.end_at) then raise exception using errcode='PT409', message='Attempt closed'; end if;
@@ -194,6 +249,7 @@ create function public.cbt_submit(p_user uuid, p_attempt text) returns jsonb
 language plpgsql security invoker set search_path = '' as $$
 declare a public.question_bank_attempts; already boolean; right_count integer; result_score numeric;
 begin
+  perform cbt_private.require_server_exams();
   select * into strict a from public.question_bank_attempts where user_id=p_user and client_id=p_attempt for update;
   if a.config->>'serverManaged' is distinct from 'true' then raise exception using errcode='PT403', message='Not server managed'; end if;
   if a.status not in ('in_progress','submitted') then raise exception using errcode='PT409', message='Attempt closed'; end if;
@@ -216,8 +272,8 @@ begin
   return jsonb_build_object('answers',a.answers,'submittedAt',a.submitted_at,'score',a.score,'alreadySubmitted',already);
 end $$;
 
-revoke all on function public.cbt_prepare_identity(uuid), public.cbt_start(uuid,uuid,text,jsonb,integer,text), public.cbt_answer(uuid,text,uuid,integer,boolean), public.cbt_submit(uuid,text) from public, anon, authenticated;
-grant execute on function public.cbt_prepare_identity(uuid), public.cbt_start(uuid,uuid,text,jsonb,integer,text), public.cbt_answer(uuid,text,uuid,integer,boolean), public.cbt_submit(uuid,text) to service_role;
+revoke all on function public.cbt_prepare_identity(uuid), public.cbt_start(uuid,uuid,text,jsonb,integer,text,uuid), public.cbt_answer(uuid,text,uuid,integer,boolean), public.cbt_submit(uuid,text) from public, anon, authenticated;
+grant execute on function public.cbt_prepare_identity(uuid), public.cbt_start(uuid,uuid,text,jsonb,integer,text,uuid), public.cbt_answer(uuid,text,uuid,integer,boolean), public.cbt_submit(uuid,text) to service_role;
 -- No new schema is needed for #13/#19/#20: end_at, answers, stored IDs and
 -- config.reviewIds suffice. GET renders expiry and warnings; only POST submits.
 commit;

@@ -82,7 +82,7 @@ assert.equal(helpers.exports.oldProgressAttempt({...noLimit,status:'submitted'},
 assert.equal(helpers.exports.oldProgressAttempt({...noLimit,endAt:record.endAt},undefined,sevenDays),false);
 assert.equal(helpers.exports.oldProgressAttempt({...noLimit,startedAt:'invalid'},undefined,sevenDays),false);
 const oldRecords=renderToStaticMarkup(React.createElement(client.exports.Records,{cert,dataset:{exams:[]},store:{attempts:[noLimit]}}));
-assert.match(oldRecords,/오래된 진행 중 1건/); assert.match(oldRecords,/<div id="old-test" hidden=""/); assert.match(oldRecords,/이어서 풀기/);
+assert.match(oldRecords,/다른 기기에서 학습한 기록은 이 기준과 다를 수 있습니다/); assert.match(oldRecords,/오래된 진행 중 1건/); assert.match(oldRecords,/<div id="old-test" hidden=""/); assert.match(oldRecords,/이어서 풀기/);
 assert.equal(helpers.exports.subjectName("금속도장"), "금속도장 작업 및 안전");
 // Render real UI at the three display thresholds; effects/API calls never run.
 const paperQuestions = Array.from({ length: 60 }, (_, i) => ({ id: `q${i}`, certId: "test", examId: "test-round", subjectId: `s${Math.floor(i / 20)}`, no: i + 1, stem: `예시 문제 ${i + 1}`, choices: [0,1,2,3].map(n => ({ label: "①②③④"[n], text: "예시 보기" })), answer: 0, images: [], explanation: "" }));
@@ -175,3 +175,26 @@ try { process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS='1'; serverModule.exports.require
   process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS='0'; assert.throws(()=>serverModule.exports.requireServerStart('mock'));
 } finally { if(previousFlag===undefined) delete process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS; else process.env.NEXT_PUBLIC_CBT_SERVER_EXAMS=previousFlag; }
 console.log('CBT review OK: queue rapid keys/concurrency/rollback/flush; old unlimited records seven-day boundary; empty project allowlist blocks; exact HTTPS ref matching; mock-only start; expired local hide; all-subject persistence; Korean error codes.');
+
+// Execute the actual start handler with controlled transport/storage, no network.
+const source=readFileSync(clientPath,'utf8');
+const handler=source.slice(source.indexOf('  async function beginMock()'),source.indexOf('  const allBuilderQuestions'));
+const handlerJs=ts.transpileModule(handler,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText;
+const pendingStarts=[], startStorage=new Map();let uuidCount=0,local={attempts:[{id:'existing'}]};
+const context={mockAvailable:true,serverExamMode:()=>true,user:{id:'test-user'},cert:{id:'test-cert'},starting:false,mockStart:{current:{busy:false,key:'',clientId:''}},
+  crypto:{randomUUID:()=>`00000000-0000-4000-8000-${String(++uuidCount).padStart(12,'0')}`},
+  sessionStorage:{getItem:key=>startStorage.get(key),setItem:(key,value)=>startStorage.set(key,value),removeItem:key=>startStorage.delete(key)},
+  setStarting:value=>{context.starting=value;},setToast:()=>{},cbtPost:(_path,body)=>new Promise((resolve,reject)=>pendingStarts.push({body,resolve,reject})),
+  serverAttempt:row=>({id:row.client_id}),readLocalStore:()=>local,saveStore:value=>{local=value;},certSlug:()=> 'test-cert',router:{push:()=>{}}};
+new Script(handlerJs).runInNewContext(context);
+const firstStart=context.beginMock();await context.beginMock();
+assert.equal(pendingStarts.length,1,'Double click must issue only one POST');
+const startKey=pendingStarts[0].body.clientId;
+pendingStarts[0].reject(new Error('Simulated lost response'));await firstStart;
+context.mockStart.current={busy:false,key:'',clientId:''}; // Reload: only session storage survives.
+const retryStart=context.beginMock();assert.equal(pendingStarts[1].body.clientId,startKey,'Reload/retry must reuse the pending UUID');
+pendingStarts[1].resolve({client_id:'existing'});await retryStart;
+assert.equal(local.attempts.length,1,'Resumed row must not duplicate the local list');
+assert.equal(startStorage.size,0,'Clear pending UUID only after successful local persistence');
+assert.equal(uuidCount,1);
+console.log('CBT start UI OK: synchronous double-click guard, lost response/reload UUID retry, local row deduplication; no network/DB writes.');

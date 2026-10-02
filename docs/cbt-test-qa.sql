@@ -47,17 +47,24 @@ from cbt_private.daily_numbers group by day;
 
 -- Legacy client INSERT/UPDATE must be true; direct RPC execute must be false.
 -- Grants alone cannot prove managed rows are blocked: run the two-connection script.
+-- Administrator connection only; reading these flags does not activate them.
+select enabled as db_server_exams_enabled from cbt_private.server_exams where id;
+select has_table_privilege('service_role','cbt_private.server_exams','SELECT') as service_marker_read,
+  has_table_privilege('service_role','cbt_private.server_exams','UPDATE') as service_marker_write,
+  has_table_privilege('service_role','public.question_bank_mock_configs','INSERT') as service_config_insert,
+  has_table_privilege('service_role','public.question_bank_mock_configs','UPDATE') as service_config_update,
+  has_table_privilege('service_role','public.question_bank_mock_subjects','DELETE') as service_subject_delete;
 select has_table_privilege('authenticated','public.question_bank_attempts','UPDATE') as client_update,
   has_table_privilege('authenticated','public.question_bank_attempts','INSERT') as client_insert,
   has_table_privilege('authenticated','public.question_bank_attempts','DELETE') as client_delete,
-  has_function_privilege('authenticated','public.cbt_start(uuid,uuid,text,jsonb,integer,text)','EXECUTE') as client_start,
+  has_function_privilege('authenticated','public.cbt_start(uuid,uuid,text,jsonb,integer,text,uuid)','EXECUTE') as client_start,
   has_function_privilege('anon','public.cbt_submit(uuid,text)','EXECUTE') as anon_submit;
 select policyname,permissive,roles,cmd,qual,with_check from pg_policies
 where schemaname='public' and tablename='question_bank_attempts' order by policyname;
 
 -- All functions fix search_path; they intentionally use SECURITY INVOKER.
 select proname,prosecdef,proconfig from pg_proc
-where oid in ('public.cbt_start(uuid,uuid,text,jsonb,integer,text)'::regprocedure,
+where oid in ('public.cbt_start(uuid,uuid,text,jsonb,integer,text,uuid)'::regprocedure,
   'public.cbt_answer(uuid,text,uuid,integer,boolean)'::regprocedure,
   'public.cbt_submit(uuid,text)'::regprocedure,
   'public.cbt_prepare_identity(uuid)'::regprocedure);

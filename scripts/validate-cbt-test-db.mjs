@@ -28,15 +28,17 @@ try {
   await db.query("select set_config('app.cbt_seed_cert_id',$1,false)",[cert]);
   await db.exec(readFileSync(resolve("docs/cbt-test-migration.DRAFT.sql"), "utf8"));
   await db.exec("SET ROLE service_role;");
-  await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,'mock','[]',60,'submit')", [cert]), /Mock config unavailable/);
+  await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,'mock','[]',60,'submit',gen_random_uuid())", [cert]), error=>error.code==='PT409');
+  await db.exec("RESET ROLE; update cbt_private.server_exams set enabled=true; SET ROLE service_role;");
+  await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,'mock','[]',60,'submit',gen_random_uuid())", [cert]), /Mock config unavailable/);
   await db.exec("RESET ROLE;");
   await db.query("update question_bank_mock_configs set status='published' where cert_id=$1",[cert]);
   await db.query("update question_bank_certs set name='변경한 종목명' where id=$1",[cert]);
   const otherCert = (await one("insert into question_bank_certs(code,name) values('duplicate-name','변경한 종목명') returning id")).id;
   assert.equal((await one("select count(*)::int n from question_bank_mock_configs where cert_id=$1",[cert])).n,1);
   await db.exec("SET ROLE service_role;");
-  await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,'mock','[]',60,'submit')",[otherCert]),/Mock config unavailable/);
-  for (const mode of ['custom','past','subject']) await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,$2,'[]',60,'submit')",[cert,mode]),error=>error.code==='PT422');
+  await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,'mock','[]',60,'submit',gen_random_uuid())",[otherCert]),/Mock config unavailable/);
+  for (const mode of ['custom','past','subject']) await assert.rejects(one("select cbt_start(gen_random_uuid(),$1,$2,'[]',60,'submit',gen_random_uuid())",[cert,mode]),error=>error.code==='PT422');
   await db.exec("RESET ROLE;");
   const batch = (await one("insert into question_bank_import_batches(file_name,qualification_code) values('FAKE','test-metal') returning id")).id;
   const subjects = [];
@@ -63,8 +65,9 @@ try {
   assert.equal(new Set(numbers).size, 100);
   const starts = [];
   for (let i = 0; i < 100; i++) {
-    const attempt = (await one("select public.cbt_start($1,$2,'mock','[]',60,'submit') as result", [users[0], cert])).result;
+    const attempt = (await one("select public.cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid()) as result", [users[0], cert])).result;
     starts.push(attempt);
+    if (i<99) { await db.exec('RESET ROLE'); await db.query("update question_bank_attempts set end_at=clock_timestamp()-interval '1 second' where client_id=$1",[attempt.client_id]); await db.exec('SET ROLE service_role'); }
     assert.equal(attempt.question_ids.length, 60); assert.equal(new Set(attempt.question_ids).size, 60);
     assert.equal(attempt.config.practiceNumber, identity.practiceNumber);
     assert.equal(attempt.config.displayNameSnapshot, identity.displayName);
@@ -74,12 +77,22 @@ try {
     assert.deepEqual((await one("select question_ids,config from question_bank_attempts where client_id=$1", [attempt.client_id])).question_ids, attempt.question_ids);
   }
   assert.equal(new Set(starts.map(a => a.config.seed)).size, 100);
-  const attempt = starts[0], q = attempt.question_ids[0];
+  const attempt = starts[99], q = attempt.question_ids[0];
   await db.exec("RESET ROLE;");
   const correctQuestion = attempt.question_ids[1];
   await db.query("insert into question_bank_wrong_notes(user_id,question_id,wrong_count,memo,mastered) values($1,$2,3,'기존 메모',false)", [users[0],correctQuestion]);
   await db.exec("SET ROLE service_role;");
   await one("select cbt_answer($1,$2,$3,0,null)", [users[0],attempt.client_id,correctQuestion]);
+  // Same key and a different tab key reuse the exact active attempt.
+  const currentAttempt = (await one("select to_jsonb(t)-'user_id' result from question_bank_attempts t where client_id=$1",[attempt.client_id])).result;
+  assert.deepEqual((await one("select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[users[0],cert,attempt.client_id])).result,currentAttempt);
+  const alias = (await one("select gen_random_uuid() id")).id;
+  const snapshot = (await one("select * from question_bank_attempts where client_id=$1",[attempt.client_id]));
+  const reuse = (await one("select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[users[0],cert,alias])).result;
+  assert.equal(reuse.client_id,attempt.client_id);
+  assert.deepEqual(await one("select * from question_bank_attempts where client_id=$1",[attempt.client_id]),snapshot);
+  await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit',$3)",[users[0],otherCert,alias]),error=>error.code==='PT409');
+  await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit',null)",[users[0],cert]),error=>error.code==='PT422');
   const selected = (await one("select cbt_answer($1,$2,$3,2,null) as result", [users[0], attempt.client_id, q])).result;
   assert.equal(selected.answers[q], 2);
   const reviewed = (await one("select cbt_answer($1,$2,$3,null,true) as result", [users[0], attempt.client_id, q])).result;
@@ -90,6 +103,25 @@ try {
   const result = (await one("select cbt_submit($1,$2) as result", [users[0], attempt.client_id])).result;
   const repeated = (await one("select cbt_submit($1,$2) as result", [users[0], attempt.client_id])).result;
   assert.equal(result.alreadySubmitted, false); assert.equal(repeated.alreadySubmitted, true);
+  assert.equal((await one("select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[users[0],cert,alias])).result.client_id,attempt.client_id);
+  const guardAttempt=(await one("select cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid()) result",[users[1],cert])).result;
+  const guardBefore=await one("select * from question_bank_attempts where client_id=$1",[guardAttempt.client_id]);
+  for (const state of ['absent','disabled']) {
+    await db.exec("RESET ROLE");
+    await db.exec(state==='absent' ? "delete from cbt_private.server_exams" : "insert into cbt_private.server_exams values(true,false)");
+    await db.exec("SET ROLE service_role");
+    for (const sql of ["select cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid())","select cbt_answer($1,$2,$3,0,null)","select cbt_submit($1,$2)"]) {
+      await assert.rejects(one(sql,sql.includes('start')?[users[1],cert]:sql.includes('answer')?[users[1],guardAttempt.client_id,guardAttempt.question_ids[0]]:[users[1],guardAttempt.client_id]),error=>error.code==='PT409');
+    }
+    assert.deepEqual(await one("select * from question_bank_attempts where client_id=$1",[guardAttempt.client_id]),guardBefore);
+  }
+  await db.exec("RESET ROLE; update cbt_private.server_exams set enabled=true;");
+  await db.query("delete from question_bank_attempts where client_id=$1",[guardAttempt.client_id]);
+  await db.exec("SET ROLE service_role;");
+  for (const table of ['question_bank_mock_configs','question_bank_mock_subjects','cbt_private.server_exams']) {
+    for (const privilege of ['INSERT','UPDATE','DELETE']) assert.equal((await one("select has_table_privilege('service_role',$1,$2) allowed",[table,privilege])).allowed,false);
+    await assert.rejects(db.query("delete from "+table),error=>error.code==='42501');
+  }
   assert.deepEqual({ ...repeated, alreadySubmitted: false }, result);
   assert.equal((await one("select count(*)::int as n from question_bank_attempts where client_id=$1", [attempt.client_id])).n, 1);
   const mastered = await one("select mastered,wrong_count,memo from question_bank_wrong_notes where user_id=$1 and question_id=$2",[users[0],correctQuestion]);
@@ -124,18 +156,22 @@ try {
   await db.exec("RESET ROLE; SET ROLE authenticated;");
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[users[0]]);
   await assert.rejects(db.query("delete from question_bank_attempts where client_id='legacy-test' returning id"),error=>error.code==='42501');
-  await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit')", [users[0], cert]));
+  await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid())", [users[0], cert]));
   await db.exec("RESET ROLE;");
   await db.exec(readFileSync(resolve("docs/cbt-test-qa.sql"), "utf8"));
   // Only the shape needed by the read-only diagnostic; no app/data writes.
-  await db.exec("create table public.question_bank_issue_reports(question_id uuid,kind text,status text)");
-  await db.exec(readFileSync(resolve("docs/cbt-missing-questions.READONLY.sql"), "utf8"));
+  await db.exec("create table public.question_bank_issue_reports(question_id uuid,kind text,status text); create table public.admin_action_events(target_id uuid,target_type text,action text,created_at timestamptz,detail jsonb)");
+  const diagnostic=readFileSync(resolve("docs/cbt-missing-questions.READONLY.sql"), "utf8");
+  const selectOnly=diagnostic.replace(/--[^\n]*/g,'').trim();
+  for (const statement of selectOnly.split(';').map(s=>s.trim()).filter(Boolean)) assert.match(statement,/^(begin read only|select\b|with\b|commit$)/i);
+  assert.doesNotMatch(selectOnly,/\bquestion_bank_attempts\b|\bq\.(stem|choices|answer|explanation)\b|\bb\.metadata\s*,|\ba\.detail\s*,/i);
+  await db.exec(diagnostic);
   await db.query("delete from question_bank_questions where subject_id=$1", [subjects[2]]);
   const countBefore = (await one("select count(*)::int as n from question_bank_attempts")).n;
   await db.exec("SET ROLE service_role;");
-  await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit')", [users[0], cert]));
+  await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid())", [users[0], cert]));
   assert.equal((await one("select count(*)::int as n from question_bank_attempts")).n, countBefore);
-  console.log("PASS: isolated PostgreSQL; draft blocked; renamed/duplicate cert names do not change UUID config; mock-only start; 100 starts 20/20/20; identity/idempotency/mastered preserved; legacy INSERT/UPDATE allowed and DELETE denied; promotion/managed writes/RPC denied; missing flag rejected; expiry SELECT unchanged; insufficient pool creates no attempt.");
+  console.log("PASS: DB absent/disabled switch blocks start/answer/submit; app config writes denied; same/alias start keys reuse unchanged attempt after submission; isolated PostgreSQL; draft blocked; renamed/duplicate cert names do not change UUID config; mock-only start; 100 starts 20/20/20; identity/idempotency/mastered preserved; legacy INSERT/UPDATE allowed and DELETE denied; promotion/managed writes/RPC denied; missing flag rejected; expiry SELECT unchanged; insufficient pool creates no attempt.");
   console.log("PENDING: hosted Supabase RLS/Auth integration and actual concurrent sessions/tabs; PGlite serializes one connection.");
-} catch (error) { console.error("FAIL:", error.message); process.exitCode = 1; }
+} catch (error) { console.error("FAIL:", error.stack); process.exitCode = 1; }
 finally { await db.close(); }

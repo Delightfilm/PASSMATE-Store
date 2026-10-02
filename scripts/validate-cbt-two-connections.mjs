@@ -42,13 +42,42 @@ try {
   const cert = await one(a,"select c.id from question_bank_certs c join question_bank_mock_configs m on m.cert_id=c.id where c.id=$1 and m.status='published'",[process.env.CBT_QA_CERT_ID]);
   assert.ok(cert,"Publish only the verified test configuration first.");
   verified = true;
+  assert.equal((await one(a,"select enabled from cbt_private.server_exams where id"))?.enabled,true,"Enable the DB switch explicitly after test-only setup.");
   await a.query("SET ROLE service_role");
   const start = async () => {
-    const row = (await one(a,"select cbt_start($1,$2,'mock','[]',60,'submit') result",[user,cert.id])).result;
+    const row = (await one(a,"select cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid()) result",[user,cert.id])).result;
     managed.push(row.client_id); row.question_ids.forEach(id => ownedQuestionIds.add(id));
     return row;
   };
+  await b.query("SET ROLE service_role");
+  const startPid = (await one(b,"select pg_backend_pid() pid")).pid;
+  for (const sameKey of [true,false]) {
+    const keyA = randomUUID(), keyB = sameKey ? keyA : randomUUID();
+    await a.query("BEGIN");
+    const first = (await one(a,"select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[user,cert.id,keyA])).result;
+    managed.push(first.client_id); first.question_ids.forEach(id=>ownedQuestionIds.add(id)); dailyDay=first.config.practiceNumber.slice(0,8);
+    await a.query("RESET ROLE");
+    await b.query("BEGIN");
+    const pending = one(b,"select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[user,cert.id,keyB]);
+    void pending.catch(()=>undefined);
+    let locked=false;
+    for (let i=0;i<100;i++) { await a.query("select pg_stat_clear_snapshot()"); if ((await one(a,"select wait_event_type from pg_stat_activity where pid=$1",[startPid]))?.wait_event_type==="Lock") { locked=true;break; } await pause(20); }
+    assert.ok(locked,"Concurrent start must wait on the per-account lock.");
+    await a.query("SET ROLE service_role; COMMIT");
+    const second=(await pending).result; await b.query("COMMIT");
+    assert.deepEqual(second,first,"Same and distinct tab keys must reuse the complete first attempt.");
+    assert.equal((await one(a,"select count(*)::int n from question_bank_attempts where user_id=$1 and status='in_progress' and end_at>clock_timestamp()",[user])).n,1);
+    assert.deepEqual((await one(b,"select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[user,cert.id,keyB])).result,first,"Lost response retry cannot resample or reset time.");
+    await a.query("RESET ROLE");
+    await a.query("update question_bank_attempts set end_at=clock_timestamp()-interval '1 second' where client_id=$1",[first.client_id]);
+    assert.equal((await one(b,"select cbt_start($1,$2,'mock','[]',60,'submit',$3) result",[user,cert.id,keyB])).result.client_id,first.client_id,"Alias retry after expiry must still reuse its original attempt.");
+    await a.query("SET ROLE service_role");
+  }
   const attempt = await start(); dailyDay = attempt.config.practiceNumber.slice(0,8);
+  for (const table of ['question_bank_mock_configs','question_bank_mock_subjects','cbt_private.server_exams']) {
+    for (const privilege of ['INSERT','UPDATE','DELETE']) assert.equal((await one(a,"select has_table_privilege('service_role',$1,$2) allowed",[table,privilege])).allowed,false);
+    await assert.rejects(a.query("delete from "+table),error=>error.code==='42501');
+  }
   await a.query("RESET ROLE");
   const q = attempt.question_ids[0];
   const correct = (await one(a,"select answer from question_bank_questions where id=$1",[q])).answer;
@@ -63,7 +92,7 @@ try {
   await a.query("insert into question_bank_attempts(user_id,client_id,config,question_ids) values($1,$2,'{}',$3)",[user,legacy,JSON.stringify([q])]);
   assert.equal((await a.query("update question_bank_attempts set answers=$1 where client_id=$2 returning id",[JSON.stringify({[q]:correct}),legacy])).rowCount,1);
   await denied("update question_bank_attempts set config='{\"serverManaged\":true}' where client_id=$1",[legacy]);
-  for (const sql of ["select cbt_start($1,$2,'mock','[]',60,'submit')","select cbt_answer($1,$3,$4,0,null)","select cbt_submit($1,$3)"]) {
+  for (const sql of ["select cbt_start($1,$2,'mock','[]',60,'submit',gen_random_uuid())","select cbt_answer($1,$3,$4,0,null)","select cbt_submit($1,$3)"]) {
     // Each statement uses its own placeholders to avoid PostgreSQL unknown types.
     const args = sql.includes("cbt_start") ? [user,cert.id] : sql.includes("cbt_answer") ? [user,attempt.client_id,q] : [user,attempt.client_id];
     await denied(sql.replace('$3','$2').replace('$4','$3'),args);
@@ -112,7 +141,7 @@ try {
   const before = await one(a,"select status,submitted_at,answers,score from question_bank_attempts where client_id=$1",[expired.client_id]);
   const after = await one(b,"select status,submitted_at,answers,score from question_bank_attempts where client_id=$1",[expired.client_id]);
   assert.deepEqual(after,before); assert.equal(after.status,"in_progress"); assert.equal(after.submitted_at,null);
-  console.log("PASS: two real connections; B waited on A; one row/first result retained; notes updated once; legacy INSERT/UPDATE allowed, all client DELETE denied; promotion/managed writes/direct RPC denied; missing flag rejected; expired SELECT unchanged.");
+  console.log("PASS: two real connections; same/different start keys waited on account lock and reused one unchanged attempt; lost response and post-expiry alias retry retained original; service config/DB switch writes denied; B waited on A; one row/first result retained; notes updated once; legacy INSERT/UPDATE allowed, all client DELETE denied; promotion/managed writes/direct RPC denied; missing flag rejected; expired SELECT unchanged.");
 } catch (error) {
   // Do not print URLs, connection credentials or raw DB error details.
   console.error("FAIL: test DB QA did not complete.",error instanceof assert.AssertionError?error.message:"Check the test DB setup and permissions."); process.exitCode=1;

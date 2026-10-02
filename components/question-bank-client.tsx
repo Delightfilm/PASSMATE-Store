@@ -103,6 +103,7 @@ function CertDetail({ dataset, cert, store, saveStore, user, displayName }: { da
   const [guideOpen, setGuideOpen] = useState(false);
   const [identity, setIdentity] = useState<{ practiceNumber: string; displayName: string; date: string } | null>(null);
   const [starting, setStarting] = useState(false);
+  const mockStart = useRef({ busy: false, key: "", clientId: "" });
   useEffect(() => { const value = new URLSearchParams(window.location.search).get("tab"); if (value === "builder") setTab("custom"); else if (value === "subjects" || value === "mock" || value === "custom" || value === "records") setTabState(value); }, []);
   useEffect(() => {
     const container = tabsRef.current;
@@ -127,9 +128,24 @@ function CertDetail({ dataset, cert, store, saveStore, user, displayName }: { da
     catch (error) { setToast(error instanceof Error ? error.message : "시험 정보를 준비하지 못했습니다."); } finally { setStarting(false); }
   }
   async function beginMock() {
-    if (!mockAvailable || !serverExamMode("mock") || !user || starting) return; setStarting(true);
-    try { const row = await cbtPost<Parameters<typeof serverAttempt>[0]>("/api/cbt/attempts/start/", { certId: cert.id, mode: "mock", questionIds: [], gradeMode: "submit" }); const attempt = serverAttempt(row); const latest = readLocalStore(); saveStore({ ...latest, attempts: [attempt, ...latest.attempts] }); router.push(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${attempt.id}/`); }
-    catch (error) { setToast(error instanceof Error ? error.message : "시험을 시작하지 못했습니다."); } finally { setStarting(false); }
+    if (!mockAvailable || !serverExamMode("mock") || !user || starting || mockStart.current.busy) return;
+    mockStart.current.busy = true; setStarting(true);
+    const key = `cbt-pending-start:${user.id}:${cert.id}`;
+    try {
+      if (mockStart.current.key !== key) mockStart.current = { busy: true, key, clientId: "" };
+      if (!mockStart.current.clientId) {
+        let saved = ""; try { saved = sessionStorage.getItem(key) || ""; } catch { /* Memory retry still works. */ }
+        mockStart.current.clientId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(saved) ? saved : crypto.randomUUID();
+        try { sessionStorage.setItem(key, mockStart.current.clientId); } catch { /* Storage may be unavailable. */ }
+      }
+      const row = await cbtPost<Parameters<typeof serverAttempt>[0]>("/api/cbt/attempts/start/", { certId: cert.id, clientId: mockStart.current.clientId, mode: "mock", questionIds: [], gradeMode: "submit" });
+      const attempt = serverAttempt(row); const latest = readLocalStore();
+      saveStore({ ...latest, attempts: [attempt, ...latest.attempts.filter(item => item.id !== attempt.id)] });
+      try { sessionStorage.removeItem(key); } catch { /* Reusing a stale key is safe. */ }
+      mockStart.current.clientId = "";
+      router.push(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${attempt.id}/`);
+    } catch (error) { setToast(error instanceof Error ? error.message : "시험을 시작하지 못했습니다."); }
+    finally { mockStart.current.busy = false; setStarting(false); }
   }
   const allBuilderQuestions = dataset.questions.filter((question) => question.certId === cert.id && selectedExamIds.includes(question.examId) && (!selectedSubjects.length || selectedSubjects.includes(question.subjectId)));
   const attempted = new Set(store.attempts.flatMap((attempt) => Object.keys(attempt.answers)));
@@ -479,7 +495,7 @@ function Records({ cert, dataset, store, accountId = "local" }: { cert: Cert; da
     const remaining = attempt.endAt ? formatSeconds(Math.max(0, Math.ceil((Date.parse(attempt.endAt) - now) / 1000))) : "제한 없음";
     return <div className="record-row cbt-cert-record" key={attempt.id}><div><div className="cbt-record-meta"><span className="cbt-subject-chip">{attemptLabel(attempt)}</span><span>{attempt.questionIds.length}문항</span>{exam && <span>{exam.year}년 {exam.round}</span>}</div><small>{displayDate(attempt.submittedAt || attempt.startedAt)}{!submitted && !expired ? ` · 남은 ${remaining}` : ""}</small></div><span className={expired ? "cbt-record-status is-expired" : "cbt-record-status"}>{submitted ? `${attempt.score ?? 0}점` : expired ? "시간 만료" : old ? "오래된 진행 중" : "진행 중"}</span><div className="cbt-record-actions">{(submitted || expired || old || latest?.id === attempt.id) ? <Link className="button button-secondary" href={`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${attempt.id}/`}>{submitted ? "결과 보기" : expired ? "결과 저장하기" : "이어서 풀기"}</Link> : <span className="record-unavailable">다른 시험 진행 중</span>}{(expired || old) && <button type="button" className="button button-ghost" onClick={() => hideRecord(attempt.id)}>이 목록에서 숨기기</button>}</div></div>;
   }
-  return attempts.length || hiddenIds.length ? <section className="records-card"><h2>이 종목 기록</h2>{active.map(recordRow)}{expiredRecords.length > 0 && <><button type="button" className="button button-ghost" aria-expanded={expanded} aria-controls={`expired-${cert.id}`} onClick={() => setExpanded(!expanded)}>만료된 기록 {expiredRecords.length}건 {expanded ? "접기" : "펼치기"}</button><div id={`expired-${cert.id}`} hidden={!expanded}>{expiredRecords.map(recordRow)}</div></>}{oldRecords.length > 0 && <><button type="button" className="button button-ghost" aria-expanded={oldExpanded} aria-controls={`old-${cert.id}`} onClick={() => setOldExpanded(!oldExpanded)}>오래된 진행 중 {oldRecords.length}건 {oldExpanded ? "접기" : "펼치기"}</button><p>이 브라우저에서 7일 이상 열지 않은 기록입니다. 열람 정보가 없으면 시작일을 기준으로 표시합니다.</p><div id={`old-${cert.id}`} hidden={!oldExpanded}>{oldRecords.map(recordRow)}</div></>}{hiddenIds.length > 0 && <button type="button" className="button button-ghost" onClick={() => hideRecord()}>숨긴 기록 {hiddenIds.length}건 다시 표시</button>}</section> : <EmptyState title="아직 학습 기록이 없습니다." body="회차별 기출이나 모의시험을 시작해 보세요." />;
+  return attempts.length || hiddenIds.length ? <section className="records-card"><h2>이 종목 기록</h2>{active.map(recordRow)}{expiredRecords.length > 0 && <><button type="button" className="button button-ghost" aria-expanded={expanded} aria-controls={`expired-${cert.id}`} onClick={() => setExpanded(!expanded)}>만료된 기록 {expiredRecords.length}건 {expanded ? "접기" : "펼치기"}</button><div id={`expired-${cert.id}`} hidden={!expanded}>{expiredRecords.map(recordRow)}</div></>}{oldRecords.length > 0 && <><button type="button" className="button button-ghost" aria-expanded={oldExpanded} aria-controls={`old-${cert.id}`} onClick={() => setOldExpanded(!oldExpanded)}>오래된 진행 중 {oldRecords.length}건 {oldExpanded ? "접기" : "펼치기"}</button><p>이 브라우저에서 7일 이상 열지 않은 기록입니다. 열람 정보가 없으면 시작일을 기준으로 표시합니다. 다른 기기에서 학습한 기록은 이 기준과 다를 수 있습니다.</p><div id={`old-${cert.id}`} hidden={!oldExpanded}>{oldRecords.map(recordRow)}</div></>}{hiddenIds.length > 0 && <button type="button" className="button button-ghost" onClick={() => hideRecord()}>숨긴 기록 {hiddenIds.length}건 다시 표시</button>}</section> : <EmptyState title="아직 학습 기록이 없습니다." body="회차별 기출이나 모의시험을 시작해 보세요." />;
 }
 function CardHead({ no, title, desc }: { no: string; title: string; desc: string }) { return <div className="question-card-head"><span>{no}</span><div><strong>{title}</strong><p>{desc}</p></div></div>; }
 function CustomCheckbox({ checked, onChange, disabled = false }: { checked: boolean; onChange: () => void; disabled?: boolean }) { return <span className="cbt-checkbox"><input type="checkbox" checked={checked} onChange={onChange} disabled={disabled} /><span aria-hidden="true">{checked && <svg viewBox="0 0 16 16"><path d="m3 8 3 3 7-7" /></svg>}</span></span>; }
