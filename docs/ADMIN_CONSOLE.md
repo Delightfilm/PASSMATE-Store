@@ -100,3 +100,4 @@ User JWT
 - 같은 \`question_uid\`를 다시 가져와 공개하면 과거 행은 삭제하지 않고 \`draft\`로 보존하며 최신 행만 공개한다.
 - 이미지 문항은 bundle의 \`visual_refs\`와 \`visual_assets[].source_url\`을 함께 저장한다.
 - 검증 실패 시 관리자 화면에서 JSON 오류 보고서를 내려받을 수 있다.
+- 신고 문항 편집과 수정/검수 이력 보존은 [QUESTION_REVIEW.md](QUESTION_REVIEW.md)를 따른다.

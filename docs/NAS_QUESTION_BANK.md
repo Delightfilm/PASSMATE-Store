@@ -34,3 +34,7 @@ The production RLS smoke test uses a rollback transaction and leaves no QA recor
 Rollback: unset the public content URL and redeploy to use the original published
 Supabase dataset. The additive state table and existing records should be retained.
 No crawler, source master DB, or COMCBT process needs to change.
+
+Reported-question corrections are sparse public patches in Supabase, not a corpus
+import. The source NAS bundles remain immutable. Private audit events and report
+memos are never included in public patches. See [QUESTION_REVIEW.md](QUESTION_REVIEW.md).
