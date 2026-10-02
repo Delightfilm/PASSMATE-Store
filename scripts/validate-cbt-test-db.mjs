@@ -95,6 +95,7 @@ try {
   await assert.rejects(db.exec("update public.question_bank_attempts set status='submitted'"));
   await assert.rejects(one("select cbt_start($1,$2,'mock','[]',60,'submit')", [users[0], cert]));
   await db.exec("RESET ROLE;");
+  await db.exec(readFileSync(resolve("docs/cbt-test-qa.sql"), "utf8"));
   await db.query("delete from question_bank_questions where subject_id=$1", [subjects[2]]);
   const countBefore = (await one("select count(*)::int as n from question_bank_attempts")).n;
   await db.exec("SET ROLE service_role;");

@@ -212,3 +212,10 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 운영 DB 저장 → 검수 대기 → 공개/되돌리기 배치 흐름 구현
 - 공개 문항을 \`/question-bank/\`가 Supabase에서 페이지 단위로 읽어 회차별·단원별·사용자 조합 모의고사에 사용
 - 이미지 URL 문항 표시 및 검증 오류 보고서 다운로드 구현
+
+### 2026-10-02 CBT 21개 점검 항목
+
+- `codex/cbt-21-review`에서 UI 및 테스트 전용 서버 출제/연습용 번호 변경 진행. 운영 `main` 배포는 변경하지 않음.
+- 별도 Supabase 테스트 프로젝트 연결은 미확인. Preview의 CBT 원격 쓰기는 연결 확인 전 차단.
+- 격리된 메모리 PostgreSQL에서 100회 20/20/20 출제, 일자별 번호, 상태/소유권/멱등 검증 통과. hosted Supabase 및 실제 두 탭 동시 제출 QA는 미완료.
+- 상세 변경/회귀/되돌리기 자료: `docs/CBT_21_REVIEW.md`, 테스트 전용 SQL: `docs/cbt-test-migration.DRAFT.sql`.
