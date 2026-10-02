@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { makeId, parseImportFile, sourceHash, type ImportBatch, type ImportContext, type ImportError, type ImportRow } from "@/lib/question-bank";
+import type { Question } from "@/lib/question-bank";
+import { loadContentCatalog } from "@/lib/question-bank-content";
 
 type RemoteBatch = {
   id: string;
@@ -17,7 +19,22 @@ type RemoteBatch = {
   created_at: string;
 };
 
-type IssueReport = { id: string; question_id: string | null; question_ref?: string | null; kind: string; memo: string; created_at: string; question_bank_questions: { no: number; stem: string } | null };
+type IssueReport = { id: string; question_id: string | null; question_ref?: string | null; qualification_code?: string | null; kind: string; memo: string; created_at: string; question_bank_questions: { no: number; stem: string } | null };
+type ReviewContent = Pick<Question, "stem" | "choices" | "answer" | "explanation">;
+type ReviewQuestion = ReviewContent & Pick<Question, "id" | "certId" | "no" | "images">;
+type ReviewEvent = { id: number; report_id: string; question_ref: string; qualification_code: string | null; actor_user_id: string; action: string; reason: string; before_content: ReviewContent | { status: string }; after_content: ReviewContent | { status: string }; created_at: string };
+type ReviewData = { question: ReviewQuestion; version: number; sourceHash: string };
+const reportKinds: Record<string, string> = { wrong_answer: "잘못된 정답", broken_image: "이미지 깨짐", missing_choice: "보기 누락", other: "기타" };
+function reviewError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes("version_conflict")) return "다른 수정이 먼저 저장됐습니다. 문항을 다시 불러온 후 수정해 주세요.";
+  if (message.includes("source_changed")) return "원본 데이터가 변경됐습니다. 관리자 확인이 필요합니다.";
+  if (message.includes("already_resolved")) return "이미 검수 완료된 신고입니다. 목록을 새로고침해 주세요.";
+  if (message.includes("qualification_required")) return "이전 신고에는 종목 정보가 없습니다. 종목을 선택한 뒤 문항을 불러오세요.";
+  if (message.includes("question_not_found")) return "선택한 종목에서 해당 문항을 찾지 못했습니다.";
+  if (message.includes("invalid_question_patch")) return "문제와 보기 4개, 정답 및 수정 사유를 확인해 주세요.";
+  return "요청을 처리하지 못했습니다. 입력 내용은 유지됩니다. 다시 시도해 주세요.";
+}
 
 async function callQuestionBankAdmin<T>(body: Record<string, unknown>): Promise<T> {
   const supabase = getSupabaseBrowserClient();
@@ -40,6 +57,15 @@ export function QuestionBankAdmin() {
   const [context, setContext] = useState<ImportContext | null>(null);
   const [recentBatches, setRecentBatches] = useState<RemoteBatch[]>([]);
   const [reports, setReports] = useState<IssueReport[]>([]);
+  const [events, setEvents] = useState<ReviewEvent[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const [reviewNotice, setReviewNotice] = useState("");
+  const [reviewFailure, setReviewFailure] = useState("");
+  const [editing, setEditing] = useState<IssueReport | null>(null);
+  const [reviewData, setReviewData] = useState<ReviewData | null>(null);
+  const [qualifications, setQualifications] = useState<{ code: string; title: string }[]>([]);
+  const [qualificationCode, setQualificationCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [notice, setNotice] = useState("");
@@ -55,17 +81,55 @@ export function QuestionBankAdmin() {
   }
 
   async function loadReports() {
+    setReviewLoading(true);
     try {
-      const result = await callQuestionBankAdmin<{ reports: IssueReport[] }>({ action: "list_reports" });
+      const [result, history] = await Promise.all([
+        callQuestionBankAdmin<{ reports: IssueReport[] }>({ action: "list_reports" }),
+        callQuestionBankAdmin<{ events: ReviewEvent[] }>({ action: "list_review_history" }),
+      ]);
       setReports(result.reports);
-    } catch { setReports([]); }
+      setEvents(history.events); setReviewFailure("");
+    } catch { setReviewFailure("신고 목록 또는 처리 이력을 불러오지 못했습니다. 새로고침해 주세요."); }
+    finally { setReviewLoading(false); }
   }
 
   useEffect(() => { void loadRecent(); void loadReports(); }, []);
 
   async function resolveReport(reportId: string) {
-    await callQuestionBankAdmin({ action: "resolve_report", reportId });
-    setReports((items) => items.filter((item) => item.id !== reportId));
+    if (!window.confirm("이 신고를 검수 완료로 처리할까요? 신고 기록과 처리 이력은 보존됩니다.")) return;
+    setReviewBusy(true); setReviewFailure("");
+    try {
+      await callQuestionBankAdmin({ action: "resolve_report", reportId });
+      setReports((items) => items.filter((item) => item.id !== reportId));
+      if (editing?.id === reportId) { setEditing(null); setReviewData(null); }
+      setReviewNotice("검수 완료했습니다. 대기 목록에서 제외하고 처리 이력을 저장했습니다.");
+      await loadReports();
+    } catch (error) { setReviewFailure(reviewError(error)); }
+    finally { setReviewBusy(false); }
+  }
+
+  async function openEditor(report: IssueReport, code = report.qualification_code || "") {
+    setEditing(report); setReviewData(null); setQualificationCode(code); setReviewBusy(true); setReviewFailure(""); setReviewNotice("");
+    try {
+      const data = await callQuestionBankAdmin<ReviewData>({ action: "get_report_question", reportId: report.id, qualificationCode: code });
+      setReviewData(data); setQualificationCode(data.question.certId);
+    } catch (error) {
+      setReviewFailure(reviewError(error));
+      if (report.question_ref) { try { const catalog = await loadContentCatalog(); setQualifications(catalog.qualifications); } catch { setReviewFailure("종목 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."); } }
+    } finally { setReviewBusy(false); }
+  }
+
+  async function saveReview(patch: ReviewContent, reason: string, resolve: boolean) {
+    if (!editing || !reviewData) return;
+    setReviewBusy(true); setReviewFailure("");
+    try {
+      const result = await callQuestionBankAdmin<{ version: number }>({ action: "save_report_question", reportId: editing.id, qualificationCode: qualificationCode, patch, reason, resolve, expectedVersion: reviewData.version, sourceHash: reviewData.sourceHash });
+      if (resolve) { setReports((items) => items.filter((item) => item.id !== editing.id)); setEditing(null); setReviewData(null); }
+      else setReviewData({ ...reviewData, question: { ...reviewData.question, ...patch }, version: result.version });
+      setReviewNotice(resolve ? "문항 수정과 검수 완료를 저장했습니다." : "문항 수정을 저장했습니다. 다음 문항 조회부터 반영됩니다.");
+      await loadReports();
+    } catch (error) { setReviewFailure(reviewError(error)); }
+    finally { setReviewBusy(false); }
   }
 
   async function importFile(file?: File) {
@@ -201,12 +265,48 @@ export function QuestionBankAdmin() {
       {recentBatches.length ? recentBatches.map((item) => <div className="record-row" key={item.id}><span>{item.file_name}<small>{item.qualification_code} · {new Date(item.created_at).toLocaleString("ko-KR")}</small></span><strong>{item.row_count}문항</strong><small>{item.status}</small>{item.status === "needs_review" && <button className="button button-primary" onClick={() => void publish(item.id)} disabled={busy}>공개</button>}</div>) : <p className="admin-empty">아직 운영 DB에 저장한 배치가 없습니다.</p>}
     </section>
     <section className="admin-panel">
-      <div className="admin-panel-head"><div><span className="eyebrow">ISSUE REVIEW</span><h2>문제 오류 신고</h2><p>시험·결과 화면에서 접수된 검수 대기 항목입니다.</p></div><span className="admin-state">{reports.length}건</span></div>
-      {reports.length ? reports.map((report) => <div className="record-row" key={report.id}><span>{report.question_bank_questions?.no || "-"}번 · {report.question_bank_questions?.stem || report.question_ref || report.question_id}<small>{report.kind} · {new Date(report.created_at).toLocaleString("ko-KR")} · {report.memo || "메모 없음"}</small></span><button className="button button-ghost" onClick={() => void resolveReport(report.id)}>검수 완료</button></div>) : <p className="admin-empty">검수 대기 중인 오류 신고가 없습니다.</p>}
+      <div className="admin-panel-head"><div><span className="eyebrow">ISSUE REVIEW</span><h2>문제 오류 신고</h2><p>문항을 수정하거나 검수 완료로 처리할 수 있습니다. 완료한 신고와 처리 로그는 보존됩니다.</p></div><span className="admin-state">{reports.length}건 (최근 100건)</span></div>
+      <button className="button button-ghost" disabled={reviewBusy || reviewLoading} onClick={() => void loadReports()}>신고·이력 새로고침</button>
+      {reviewFailure && <p className="question-review-error" role="alert">{reviewFailure}</p>}
+      {reviewNotice && <p className="admin-help" role="status">{reviewNotice}</p>}
+      {reviewLoading ? <p role="status">신고·처리 이력을 불러오는 중…</p> : reports.length ? reports.map((report) => <div className="record-row question-review-row" key={report.id}><span>{report.question_bank_questions?.no || "-"}번 · {report.question_bank_questions?.stem || report.question_ref || report.question_id}<small>{reportKinds[report.kind] || report.kind} · {new Date(report.created_at).toLocaleString("ko-KR")} · {report.memo || "메모 없음"}</small></span><div className="admin-card-actions"><button className="button button-primary" disabled={reviewBusy} onClick={() => void openEditor(report)}>문항 수정</button><button className="button button-ghost" disabled={reviewBusy} onClick={() => void resolveReport(report.id)}>검수 완료</button></div></div>) : !reviewFailure && <p className="admin-empty">검수 대기 중인 오류 신고가 없습니다.</p>}
+      {editing && <div className="question-review-editor"><div className="admin-panel-head"><h3>신고 문항 수정</h3><button className="button button-ghost" disabled={reviewBusy} onClick={() => { setEditing(null); setReviewData(null); }}>편집 닫기</button></div><p className="admin-help">신고 내용: {editing.memo || reportKinds[editing.kind]}</p>{reviewData ? <ReviewEditor key={editing.id} data={reviewData} busy={reviewBusy} onSave={saveReview} onReload={() => void openEditor(editing, qualificationCode)} /> : reviewBusy ? <p role="status">원본 문항을 불러오는 중…</p> : <div className="admin-form-grid"><label>종목<select value={qualificationCode} onChange={(event) => setQualificationCode(event.target.value)}><option value="">신고한 종목 선택</option>{qualifications.map((item) => <option key={item.code} value={item.code}>{item.title} ({item.code})</option>)}</select></label><button className="button button-primary" disabled={!qualificationCode} onClick={() => void openEditor(editing, qualificationCode)}>문항 불러오기</button></div>}</div>}
+    </section>
+    <section className="admin-panel">
+      <div className="admin-panel-head"><div><span className="eyebrow">REVIEW HISTORY</span><h2>문항 수정·검수 로그</h2><p>최근 100건을 표시합니다. 전체 이력은 계속 보관됩니다.</p></div></div>
+      {events.length ? events.map((event) => <details className="question-review-log" key={event.id}><summary>{event.action === "edit_question" ? "문항 수정" : "검수 완료"} · {event.qualification_code || "종목 미지정"} · {new Date(event.created_at).toLocaleString("ko-KR")}</summary><p>문항 {event.question_ref} · 신고 {event.report_id}</p><p>처리자 계정 ID: {event.actor_user_id}</p><p>사유: {event.reason || "검수 완료"}</p><div className="question-review-diff"><div><h4>변경 전</h4><ReviewSnapshot value={event.before_content} /></div><div><h4>변경 후</h4><ReviewSnapshot value={event.after_content} /></div></div></details>) : !reviewLoading && !reviewFailure && <p className="admin-empty">아직 문항 수정·검수 이력이 없습니다.</p>}
     </section>
   </section>;
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
   return <div className="admin-metric"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function ReviewEditor({ data, busy, onSave, onReload }: { data: ReviewData; busy: boolean; onSave: (patch: ReviewContent, reason: string, resolve: boolean) => Promise<void>; onReload: () => void }) {
+  const [stem, setStem] = useState(data.question.stem);
+  const [choices, setChoices] = useState(data.question.choices.map((choice) => ({ ...choice })));
+  const [answer, setAnswer] = useState(data.question.answer);
+  const [explanation, setExplanation] = useState(data.question.explanation);
+  const [reason, setReason] = useState("");
+  const [validation, setValidation] = useState("");
+  function submit(resolve: boolean) {
+    if (!stem.trim() || choices.some((choice) => !choice.text.trim()) || !reason.trim()) { setValidation("문제·보기 4개·수정 사유를 입력해 주세요."); return; }
+    if (resolve && !window.confirm("문항 수정을 저장하고 이 신고를 검수 완료로 처리할까요?")) return;
+    setValidation(""); void onSave({ stem, choices, answer, explanation }, reason, resolve);
+  }
+  return <form onSubmit={(event) => { event.preventDefault(); submit(false); }}>
+    <p className="admin-help">{data.question.certId} · {data.question.no}번 · 수정 버전 {data.version}. 원본 이미지와 문항 ID는 유지됩니다.</p>
+    {data.question.images.length > 0 && <div className="question-review-images">{data.question.images.map((src, index) => <img key={src} src={src} alt={`원본 문항 이미지 ${index + 1}`} loading="lazy" />)}</div>}
+    <fieldset disabled={busy} className="question-review-fields"><label>문제 본문<textarea required maxLength={20000} rows={6} value={stem} onChange={(event) => setStem(event.target.value)} /></label>
+      {choices.map((choice, index) => <label key={index}>{choice.label} 보기<textarea required maxLength={10000} rows={3} value={choice.text} onChange={(event) => setChoices((items) => items.map((item, i) => i === index ? { ...item, text: event.target.value } : item))} /></label>)}
+      <label>정답<select value={answer} onChange={(event) => setAnswer(Number(event.target.value))}>{choices.map((choice, index) => <option key={index} value={index}>{choice.label}</option>)}</select></label>
+      <label>해설<textarea maxLength={20000} rows={4} value={explanation} onChange={(event) => setExplanation(event.target.value)} /></label>
+      <label>수정 사유 (로그에 저장)<textarea required maxLength={2000} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="예: 정답을 ②에서 ③으로 정정" /></label>
+    </fieldset>{validation && <p role="alert" className="question-review-error">{validation}</p>}<div className="admin-card-actions"><button type="submit" className="button button-primary" disabled={busy}>{busy ? "저장 중…" : "수정 저장"}</button><button type="button" className="button button-primary" disabled={busy} onClick={() => submit(true)}>저장 후 검수 완료</button><button type="button" className="button button-ghost" disabled={busy} onClick={() => { if (window.confirm("입력 내용을 버리고 최신 문항을 다시 불러올까요?")) onReload(); }}>최신 문항 다시 불러오기</button></div>
+  </form>;
+}
+function ReviewSnapshot({ value }: { value: ReviewEvent["before_content"] }) {
+  if ("status" in value) return <p>{value.status === "open" ? "검수 대기" : "검수 완료"}</p>;
+  return <div><p>{value.stem}</p>{value.choices.map((choice, index) => <p key={index}>{choice.label} {choice.text}</p>)}<p>정답: {value.choices[value.answer]?.label}</p>{value.explanation && <p>해설: {value.explanation}</p>}</div>;
 }

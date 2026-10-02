@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import ts from "typescript";
+const read = (path) => fs.readFileSync(new URL(path, import.meta.url), "utf8");
+const moduleFrom = (source) => import("data:text/javascript;base64," + Buffer.from(ts.transpile(source, { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 })).toString("base64"));
+const correctionSource = read("../lib/question-bank-corrections.ts").replace('import { getSupabaseBrowserClient } from "./supabase-browser";', 'const getSupabaseBrowserClient = () => globalThis.testSupabase;');
+const { applyCorrections, loadQuestionCorrections } = await moduleFrom(correctionSource);
+const question = { id: "a".repeat(20), certId: "kh", sourceHash: "original", stem: "문제", choices: ["가", "나", "다", "라"].map((text, i) => ({ label: String(i), text })), answer: 0, explanation: "", images: ["https://content.example.test/a.gif"] };
+const dataset = { questions: [question], certs: [], subjects: [], exams: [] };
+const patch = { stem: "정정 문제", choices: question.choices, answer: 2, explanation: "정정 해설", images: ["evil"] };
+const correction = { question_ref: question.id, source_hash: question.sourceHash, content: patch };
+assert.equal(applyCorrections(dataset, [correction]).questions[0].answer, 2);
+assert.deepEqual(applyCorrections(dataset, [correction]).questions[0].images, question.images);
+assert.equal(question.answer, 0, "source bundle must remain immutable");
+assert.equal(applyCorrections(dataset, [{ ...correction, source_hash: "changed" }]).questions[0].answer, 0);
+assert.throws(() => applyCorrections(dataset, [{ ...correction, content: { ...patch, answer: 4 } }]), /invalid/);
+let reads = 0; let fail = false;
+globalThis.testSupabase = { from(name) { assert.equal(name, "question_bank_question_corrections"); const query = { select() { return query; }, eq(_, code) { assert.equal(code, "kh"); return query; }, order() { return query; }, async range() { reads++; return { data: [correction], error: fail ? {} : null }; } }; return query; } };
+await loadQuestionCorrections(dataset); await loadQuestionCorrections(dataset); assert.equal(reads, 2, "corrections must refresh outside NAS cache");
+fail = true; await assert.rejects(loadQuestionCorrections(dataset), /load_failed/);
+const { validatePatch, editableContent, loadNasQuestion } = await moduleFrom(read("../supabase/functions/question-bank-admin/question-review.ts"));
+validatePatch(patch);
+for (const invalid of [{ ...patch, choices: [] }, { ...patch, answer: -1 }, { ...patch, answer: 4 }, { ...patch, stem: " " }, { ...patch, answer: 1.5 }]) assert.throws(() => validatePatch(invalid), /invalid/);
+assert.deepEqual(editableContent(patch).choices.map((item) => item.label), ["①", "②", "③", "④"]);
+const originalFetch = globalThis.fetch; const urls = [];
+globalThis.fetch = async (url) => {
+  urls.push(url); assert.ok(String(url).startsWith("https://content.mypassmate.com/"));
+  if (String(url).endsWith("catalog.json")) return Response.json({ releaseId: "test", qualifications: [{ code: "kh", bundle: "bundles/kh.json.gz", questions: 1 }] });
+  return Response.json({ schemaVersion: "passmate.question-bank.bundle.v1", releaseId: "test", qualification: { code: "kh" }, questions: [{ ...question, images: [] }] });
+};
+try { assert.equal((await loadNasQuestion("kh", question.id)).id, question.id); await assert.rejects(loadNasQuestion("http://192.168.0.48", question.id), /qualification_required/); await assert.rejects(loadNasQuestion("kh", "unknown"), /not_found/); } finally { globalThis.fetch = originalFetch; delete globalThis.testSupabase; }
+const client = read("../components/question-bank-client.tsx"); const edge = read("../supabase/functions/question-bank-admin/index.ts");
+assert.ok(client.includes("then(loadQuestionCorrections)")); assert.ok(client.includes("qualificationCode: question.certId"));
+assert.ok(!client.includes("submitIssueReport(report).catch(() => undefined)"));
+assert.ok(edge.includes('rpc("review_question_bank_report"')); assert.ok(edge.includes('rpc("authorize_question_bank_review"'));
+console.log("Question review OK: validated edits, answer bounds, source preservation, fresh corrections, private logs, safe source lookup and failure handling");

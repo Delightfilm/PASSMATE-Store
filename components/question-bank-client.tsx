@@ -10,6 +10,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { timeLeftSeconds } from "@/lib/exam-time";
 import { contentBase, loadContentDataset } from "@/lib/question-bank-content";
+import { loadQuestionCorrections } from "@/lib/question-bank-corrections";
 import {
   certCategory, certSlug, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
   loadPublishedDataset, makeId, mergeAccountStore, readLocalStore, submitIssueReport, syncAccountStore, writeLocalStore,
@@ -49,7 +50,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
       if (needsLegacy) { const legacy = await loadPublishedDataset(); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); } }
       return live;
     };
-    void load().then((live) => { if (version !== loadVersion.current) return; setDataset(live); setDataState("live"); }).catch((error) => {
+    void load().then(loadQuestionCorrections).then((live) => { if (version !== loadVersion.current) return; setDataset(live); setDataState("live"); }).catch((error) => {
       if (version !== loadVersion.current) return;
       console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
       setDataset(null); setDataState("error");
@@ -391,4 +392,15 @@ function CustomCheckbox({ checked, onChange, disabled = false }: { checked: bool
 function Modal({ title, children, onClose, initialFocus = false }: { title: string; children: React.ReactNode; onClose: () => void; initialFocus?: boolean }) { const ref = useRef<HTMLDialogElement>(null); useEffect(() => { const dialog = ref.current; if (!dialog) return; if (!dialog.open) dialog.showModal(); if (initialFocus) dialog.querySelector<HTMLElement>(".cbt-modal-actions .button, .cbt-menu-actions .button")?.focus(); }, [initialFocus]); return <dialog className="cbt-modal" aria-labelledby="cbt-modal-title" ref={ref} onClose={onClose}><div className="cbt-modal-head"><h2 id="cbt-modal-title">{title}</h2><button onClick={() => ref.current?.close()} aria-label="닫기">×</button></div>{children}</dialog>; }
 function EmptyState({ title, body, href, action, onAction }: { title: string; body: string; href?: string; action?: string; onAction?: () => void }) { return <div className="question-empty cbt-empty"><strong>{title}</strong><p>{body}</p>{href && action ? <Link className="button button-primary" href={href}>{action}</Link> : onAction && action ? <button onClick={onAction}>{action}</button> : null}</div>; }
 function Toast({ message, onDone }: { message: string; onDone: () => void }) { useEffect(() => { if (!message) return; const timer = window.setTimeout(onDone, 2200); return () => window.clearTimeout(timer); }, [message, onDone]); return message ? <div className="cbt-toast" role="status">{message}</div> : null; }
-function ReportModal({ question, attemptId, store, saveStore, onClose, onDone }: { question: Question; attemptId: string; store: LocalStore; saveStore: (store: LocalStore) => void; onClose: () => void; onDone: () => void }) { const [kind, setKind] = useState<IssueReport["kind"]>("wrong_answer"); const [memo, setMemo] = useState(""); function submit() { const report: IssueReport = { id: makeId("report"), questionId: question.id, attemptId, kind, memo, createdAt: new Date().toISOString(), status: "open" }; saveStore({ ...store, issueReports: [report, ...store.issueReports] }); void submitIssueReport(report).catch(() => undefined); onDone(); } return <Modal title="문제 오류 신고" onClose={onClose}><div className="builder-fields"><label>오류 유형<select value={kind} onChange={(event) => setKind(event.target.value as IssueReport["kind"])}><option value="wrong_answer">잘못된 정답</option><option value="broken_image">이미지 깨짐</option><option value="missing_choice">보기 누락</option><option value="other">기타</option></select></label><label>메모<textarea rows={4} value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="확인할 내용을 적어 주세요." /></label></div><div className="cbt-modal-actions"><button className="button button-ghost" onClick={onClose}>취소</button><button className="button button-primary" onClick={submit}>신고 접수</button></div></Modal>; }
+function ReportModal({ question, attemptId, store, saveStore, onClose, onDone }: { question: Question; attemptId: string; store: LocalStore; saveStore: (store: LocalStore) => void; onClose: () => void; onDone: () => void }) {
+  const [kind, setKind] = useState<IssueReport["kind"]>("wrong_answer"); const [memo, setMemo] = useState("");
+  const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  async function submit() {
+    setBusy(true); setError("");
+    const report: IssueReport = { id: makeId("report"), questionId: question.id, qualificationCode: question.certId, attemptId, kind, memo, createdAt: new Date().toISOString(), status: "open" };
+    try { await submitIssueReport(report); saveStore({ ...store, issueReports: [report, ...store.issueReports] }); onDone(); }
+    catch { setError("신고를 접수하지 못했습니다. 다시 시도해 주세요."); }
+    finally { setBusy(false); }
+  }
+  return <Modal title="문제 오류 신고" onClose={onClose}><div className="builder-fields"><label>오류 유형<select disabled={busy} value={kind} onChange={(event) => setKind(event.target.value as IssueReport["kind"])}><option value="wrong_answer">잘못된 정답</option><option value="broken_image">이미지 깨짐</option><option value="missing_choice">보기 누락</option><option value="other">기타</option></select></label><label>메모<textarea maxLength={4000} disabled={busy} rows={4} value={memo} onChange={(event) => setMemo(event.target.value)} placeholder="확인할 내용을 적어 주세요." /></label></div>{error && <p role="alert">{error}</p>}<div className="cbt-modal-actions"><button className="button button-ghost" disabled={busy} onClick={onClose}>취소</button><button className="button button-primary" disabled={busy} onClick={() => void submit()}>{busy ? "접수 중…" : "신고 접수"}</button></div></Modal>;
+}

@@ -1,4 +1,5 @@
 import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
+import { editableContent, loadNasQuestion, validatePatch } from "./question-review.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -345,7 +346,7 @@ Deno.serve(async (req: Request) => {
   if (action === "list_reports") {
     const { data, error } = await admin
       .from("question_bank_issue_reports")
-      .select("id,question_id,question_ref,attempt_id,kind,memo,status,created_at,question_bank_questions(no,stem)")
+      .select("id,question_id,question_ref,qualification_code,attempt_id,kind,memo,status,created_at,question_bank_questions(no,stem)")
       .eq("status", "open")
       .order("created_at", { ascending: false })
       .limit(100);
@@ -353,13 +354,66 @@ Deno.serve(async (req: Request) => {
     return json(200, { reports: data ?? [] });
   }
 
-  if (action === "resolve_report") {
+  if (action === "list_review_history") {
+    const authorization = await admin.rpc("authorize_question_bank_review", { p_actor: actorId });
+    if (authorization.error) return json(403, { error: "admin_access_required" });
+    const { data, error } = await admin.from("question_bank_review_events").select("id,report_id,question_ref,qualification_code,actor_user_id,action,reason,before_content,after_content,created_at").order("created_at", { ascending: false }).order("id", { ascending: false }).limit(100);
+    if (error) return json(500, { error: "review_history_failed" });
+    return json(200, { events: data ?? [] });
+  }
+
+  if (["get_report_question", "save_report_question", "resolve_report"].includes(action)) {
+    const authorization = await admin.rpc("authorize_question_bank_review", { p_actor: actorId });
+    if (authorization.error) return json(403, { error: "admin_access_required" });
     const reportId = text(body.reportId);
     if (!reportId) return json(400, { error: "invalid_report_id" });
-    const { error } = await admin.from("question_bank_issue_reports").update({ status: "resolved", resolved_at: new Date().toISOString(), resolved_by: actorId }).eq("id", reportId);
-    if (error) return json(500, { error: "report_resolve_failed" });
-    await audit(reportId, { status: "resolved" });
-    return json(200, { resolved: true });
+    if (action === "resolve_report") {
+      const { data, error } = await admin.rpc("review_question_bank_report", { p_actor: actorId, p_report_id: reportId, p_resolve: true, p_reason: text(body.reason) });
+      if (error) return json(error.code === "42501" ? 403 : 409, { error: error.message });
+      return json(200, data);
+    }
+    const { data: report, error: reportError } = await admin.from("question_bank_issue_reports").select("*").eq("id", reportId).maybeSingle();
+    if (reportError) return json(500, { error: "report_load_failed" });
+    if (!report) return json(404, { error: "report_not_found" });
+    if (report.status !== "open") return json(409, { error: "report_already_resolved" });
+    try {
+      let source: Record<string, unknown>;
+      let code = text(report.qualification_code) || text(body.qualificationCode);
+      if (report.question_ref) {
+        if (!code && report.user_id && report.attempt_id) {
+          const { data: attempt, error } = await admin.from("question_bank_attempts").select("config").eq("user_id", report.user_id).eq("client_id", report.attempt_id).maybeSingle();
+          if (error) throw new Error("question_context_failed");
+          code = text(attempt?.config?.certId);
+        }
+        if (!code) throw new Error("question_qualification_required");
+        source = await loadNasQuestion(code, report.question_ref);
+      } else {
+        const { data: question, error } = await admin.from("question_bank_questions").select("id,cert_id,no,stem,images,choices,answer,explanation,source_hash").eq("id", report.question_id).maybeSingle();
+        if (error || !question) throw new Error("question_not_found");
+        code = question.cert_id;
+        source = { ...question, sourceHash: question.source_hash };
+      }
+      const ref = report.question_ref || report.question_id;
+      const { data: correction, error: correctionError } = await admin.from("question_bank_question_corrections").select("content,version,source_hash").eq("question_ref", ref).maybeSingle();
+      if (correctionError) throw new Error("question_correction_load_failed");
+      const sourceHash = text(source.sourceHash);
+      if (correction && correction.source_hash !== sourceHash) throw new Error("question_source_changed");
+      if (action === "get_report_question") return json(200, { question: { id: ref, certId: code, no: source.no, images: source.images, ...editableContent(correction?.content || source) }, version: correction?.version || 0, sourceHash });
+      validatePatch(body.patch);
+      const patch = editableContent(body.patch as Record<string, unknown>);
+      if (!Number.isInteger(body.expectedVersion) || !text(body.reason) || text(body.reason).length > 2000) throw new Error("invalid_question_patch");
+      if (text(body.sourceHash) !== sourceHash) throw new Error("question_source_changed");
+      const { data, error } = await admin.rpc("review_question_bank_report", {
+        p_actor: actorId, p_report_id: reportId, p_resolve: body.resolve === true,
+        p_patch: patch, p_source: editableContent(source), p_qualification_code: code,
+        p_source_hash: sourceHash, p_expected_version: body.expectedVersion, p_reason: text(body.reason),
+      });
+      if (error) return json(error.code === "42501" ? 403 : 409, { error: error.message });
+      return json(200, data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "question_review_failed";
+      return json(message.includes("conflict") || message.includes("changed") ? 409 : 400, { error: message });
+    }
   }
 
   return json(400, { error: "invalid_action" });
