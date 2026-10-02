@@ -51,7 +51,7 @@ if (files.submitRoute.includes("function GET") || !files.submitRoute.includes("f
     !files.submitRoute.includes('.eq("status", "in_progress")') ||
     !files.submitRoute.includes('ignoreDuplicates: true') ||
     !files.reportsMigration.includes("question_bank_attempts_user_client_idx") ||
-    !files.library.includes('store.attempts.filter((item) => item.status === "in_progress")') ||
+    !files.library.includes('store.attempts.filter((item) => item.status === "in_progress" && !item.serverManaged)') ||
     files.client.includes("void syncAccountStore(next)")) {
   throw new Error("CBT attempt submission must be confirmation-only and idempotent per attempt ID.");
 }
