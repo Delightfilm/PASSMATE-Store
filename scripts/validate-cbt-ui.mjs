@@ -86,6 +86,14 @@ for (const [seconds, klass, text] of [[601, null, null],[600, "is-warning", "10�
   else assert.doesNotMatch(screen, /cbt-live-timer is-warning|cbt-live-timer is-urgent|cbt-time-warning/);
   assert.match(screen, /연습용 번호 –/); assert.doesNotMatch(screen, /응시 번호 attempt-/);
 }
+const pagePath = resolve("app/cbt/[certSlug]/page.tsx");
+const pageOutput = ts.transpileModule(readFileSync(pagePath, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
+const pageModule = { exports: {} }; let redirectedTo;
+new Script(`(function(require,module,exports){${pageOutput}\n})`).runInThisContext()(name => name === "next/navigation" ? { redirect: url => { redirectedTo = url; throw new Error("test redirect"); } } : name === "@/components/question-bank-client" ? {} : createRequire(pagePath)(name), pageModule, pageModule.exports);
+for (const slug of ["금속도장기능사", encodeURIComponent("금속도장기능사")]) {
+  await assert.rejects(pageModule.exports.default({ params: Promise.resolve({ certSlug: slug }), searchParams: Promise.resolve({ tab: "builder", filter: ["1", "2"] }) }), /test redirect/);
+  assert.equal(redirectedTo, `/cbt/${encodeURIComponent("금속도장기능사")}/?tab=custom&filter=1&filter=2`, "Canonical redirect must not double encode Korean paths");
+}
 const parsedClient = ts.createSourceFile("client.js", clientOutput, ts.ScriptTarget.Latest);
 let leaveCode;
 function findLeave(node) { if (ts.isFunctionDeclaration(node) && node.name?.text === "leave") leaveCode = node.getText(parsedClient); ts.forEachChild(node, findLeave); }

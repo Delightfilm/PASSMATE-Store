@@ -14,7 +14,7 @@ export default async function CertPage({ params, searchParams }: { params: Promi
     const canonical = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) canonical.append(key, item);
     canonical.set("tab", "custom");
-    redirect(`/cbt/${encodeURIComponent(certSlug)}/?${canonical}`);
+    redirect(`/cbt/${encodeURIComponent(decodeURIComponent(certSlug))}/?${canonical}`);
   }
   return <QuestionBankClient mode="cert" certParam={certSlug} />;
 }

@@ -56,7 +56,7 @@
 | 번호·이미지 | 확인한 원인 | 수정 | 실제 전/후 코드 위치 |
 |---|---|---|---|
 | 13 · 05-C,D,09-1②③ | status만 보고 만료도 진행 중으로 표시. 이력 이름/문항수/액션 위계 부족 | endAt으로 화면만 만료 표시, 최신 미만료1개만 이어서 풀기. 만료는 결과 저장하기→기존 만료 모달→확정POST. 유형·문항수·12px 날짜·44px 우측 버튼. 이 종목 기록 탭 | cbt-presentation.ts expiredAttempt/attemptLabel; question-bank-client.tsx CertRecords; auth-nav.tsx resume |
-| 14 · 05-B,09-4⑤ | 모든 선택 회차가 진한 파랑, 빠른 선택·수량 요약 없음 | 연한 선택 배경+체크, 전체/해제/최근5, n/총회차와 실제 필터 가용수. 카드 정렬. builder→custom 서버307 및 클라이언트 호환 | app/cbt/[certSlug]/page.tsx redirect; question-bank-client.tsx builder controls; globals.css |
+| 14 · 05-B,09-4⑤ | 모든 선택 회차가 진한 파랑, 빠른 선택·수량 요약 없음 | 연한 선택 배경+체크, 전체/해제/최근5, n/총회차와 실제 필터 가용수. 카드 정렬. builder→custom 서버307 및 클라이언트 호환. 한글 경로는 decode→encode로 정규화하여 이중 인코딩 방지 | app/cbt/[certSlug]/page.tsx redirect; question-bank-client.tsx builder controls; globals.css |
 | 15 · 06-B,09-6 | 텍스트 재시도가 테두리 ⋯보다 약하고 제목 중복 | 재시도 테두리 버튼, 해설 보조, ⋯ ghost. 카드에는 개수만, 체크박스44와10px 간격, filter border 통일 | question-bank-client.tsx WrongNotesScreen/QuestionRows; globals.css cbt-review-* |
 | 16 · 06-C | 실패 badge ↻, legacy number 내부ID, 카드 stretch | 실패 ×+합격 기준 미달, 번호 – fallback, 과목 카드 상단 정렬 | question-bank-client.tsx ResultScreen; globals.css stats align-items:start |
 | 17 · 05-A | 탭과 panel의 ARIA 연결/탭 내용 역할 없음, breadcrumb 작은 링크 | tabpanel/controls/labelledby. 방향키 자동 활성화: 내용 전환이 즉시 가능한 로컬 UI라 추가 확정키 불필요. Home/End, breadcrumb44, 모의시험 용어 | question-bank-client.tsx CertScreen tab/panel/HomeScreen; globals.css breadcrumb |
@@ -159,6 +159,7 @@ Preview 추가 점검에서 첫 로드는 정상이지만 데스크톱→모바�
 |⑨미응답번호복귀|모바일 점검35클릭→문제35,점검닫힘. 최종제출→확인modal→취소 확인. DBsubmit안함|hosted 저장 API까지 흐름|
 
 추가 코드 검사: 실제 leave 함수를 실행해 저장 대기 중 이동0, 저장 성공 후 이동, 저장 실패 때 가드 유지·이동0·오류 알림을 검증했다.
+최신 Preview에서 확정된 나가기 후 실제 종목 화면 이동을 확인했다. 한글/인코딩된 builder 경로와 반복 query 보존은 실제 route 함수 검사로 통과했다.
 Preview soft navigation에서 확인 후 응시 화면에 남는 현상이 발견돼 확정 후 document replace로 전환했다. 원인 세부는 기존 history 가드/SPA 이동 상호작용 후보이며 서버 상태 변경과 무관하다.
 
 추가 브라우저 확인: radio ←/→는 focus만 이동, Space 선택 후 문제카드/칩 같은 상태;
@@ -303,7 +304,7 @@ index 0000000..384d825
 +  } catch (error) { return cbtError(error); }
 +}
 diff --git a/app/cbt/[certSlug]/page.tsx b/app/cbt/[certSlug]/page.tsx
-index bd7217a..08e4bd7 100644
+index bd7217a..6326c6b 100644
 --- a/app/cbt/[certSlug]/page.tsx
 +++ b/app/cbt/[certSlug]/page.tsx
 @@ -1,13 +1,20 @@
@@ -326,7 +327,7 @@ index bd7217a..08e4bd7 100644
 +    const canonical = new URLSearchParams();
 +    for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) canonical.append(key, item);
 +    canonical.set("tab", "custom");
-+    redirect(`/cbt/${encodeURIComponent(certSlug)}/?${canonical}`);
++    redirect(`/cbt/${encodeURIComponent(decodeURIComponent(certSlug))}/?${canonical}`);
 +  }
    return <QuestionBankClient mode="cert" certParam={certSlug} />;
  }
@@ -1070,7 +1071,7 @@ index 9ea1a17..aa1c0c1 100644
  
  export default nextConfig;
 diff --git a/scripts/validate-cbt-ui.mjs b/scripts/validate-cbt-ui.mjs
-index 69ff8c6..e73b5d8 100644
+index 69ff8c6..7f73ca7 100644
 --- a/scripts/validate-cbt-ui.mjs
 +++ b/scripts/validate-cbt-ui.mjs
 @@ -29,24 +29,30 @@ assert.match(html, /aria-label="12번 문항 ③번 보기"/);
@@ -1107,7 +1108,7 @@ index 69ff8c6..e73b5d8 100644
  const questions = Array.from({ length: 25 }, (_, i) => ({ id: `q${i}`, certId: "test", subjectId: "test", no: i + 1, stem: `검증용 문항 ${i + 1}` }));
  const wrongNotes = Object.fromEntries(questions.map((question) => [question.id, { wrongCount: 3, lastWrongAt: "2026-10-01T00:00:00Z", memo: "", mastered: false }]));
  const list = renderToStaticMarkup(React.createElement(client.exports.LearningScreen, { mode: "wrong-notes", dataset: { certs: [{ id: "test", name: "검증용 종목" }], subjects: [{ id: "test", certId: "test", name: "검증용 과목" }], questions }, store: { attempts: [], bookmarks: [], wrongNotes }, user: {}, authReady: true, saveStore() { throw new Error("Rendering must not write data"); } }));
-@@ -55,4 +61,49 @@ assert.equal((list.match(/type="checkbox"/g) || []).length, 20);
+@@ -55,4 +61,57 @@ assert.equal((list.match(/type="checkbox"/g) || []).length, 20);
  assert.doesNotMatch(list, /<textarea/);
  assert.match(list, /많이 틀린 순/);
  assert.match(list, /20문항 풀기/);
@@ -1136,6 +1137,14 @@ index 69ff8c6..e73b5d8 100644
 +  if (klass) { assert.match(screen, new RegExp(`cbt-live-timer ${klass}`)); assert.match(screen, new RegExp(text)); }
 +  else assert.doesNotMatch(screen, /cbt-live-timer is-warning|cbt-live-timer is-urgent|cbt-time-warning/);
 +  assert.match(screen, /연습용 번호 –/); assert.doesNotMatch(screen, /응시 번호 attempt-/);
++}
++const pagePath = resolve("app/cbt/[certSlug]/page.tsx");
++const pageOutput = ts.transpileModule(readFileSync(pagePath, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
++const pageModule = { exports: {} }; let redirectedTo;
++new Script(`(function(require,module,exports){${pageOutput}\n})`).runInThisContext()(name => name === "next/navigation" ? { redirect: url => { redirectedTo = url; throw new Error("test redirect"); } } : name === "@/components/question-bank-client" ? {} : createRequire(pagePath)(name), pageModule, pageModule.exports);
++for (const slug of ["금속도장기능사", encodeURIComponent("금속도장기능사")]) {
++  await assert.rejects(pageModule.exports.default({ params: Promise.resolve({ certSlug: slug }), searchParams: Promise.resolve({ tab: "builder", filter: ["1", "2"] }) }), /test redirect/);
++  assert.equal(redirectedTo, `/cbt/${encodeURIComponent("금속도장기능사")}/?tab=custom&filter=1&filter=2`, "Canonical redirect must not double encode Korean paths");
 +}
 +const parsedClient = ts.createSourceFile("client.js", clientOutput, ts.ScriptTarget.Latest);
 +let leaveCode;
