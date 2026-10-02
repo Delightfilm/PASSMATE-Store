@@ -345,7 +345,7 @@ Deno.serve(async (req: Request) => {
   if (action === "list_reports") {
     const { data, error } = await admin
       .from("question_bank_issue_reports")
-      .select("id,question_id,attempt_id,kind,memo,status,created_at,question_bank_questions(no,stem)")
+      .select("id,question_id,question_ref,attempt_id,kind,memo,status,created_at,question_bank_questions(no,stem)")
       .eq("status", "open")
       .order("created_at", { ascending: false })
       .limit(100);

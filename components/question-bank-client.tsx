@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { timeLeftSeconds } from "@/lib/exam-time";
+import { contentBase, loadContentDataset } from "@/lib/question-bank-content";
 import {
   certCategory, certSlug, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
   loadPublishedDataset, makeId, mergeAccountStore, readLocalStore, submitIssueReport, syncAccountStore, writeLocalStore,
@@ -32,14 +33,27 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const syncTimer = useRef<number | null>(null);
+  const loadVersion = useRef(0);
 
   const retryDataset = useCallback(() => {
+    const version = ++loadVersion.current;
     setDataState("loading");
-    void loadPublishedDataset().then((live) => { setDataset(live); setDataState("live"); }).catch((error) => {
+    const load = async () => {
+      if (!contentBase()) return loadPublishedDataset();
+      let current = readLocalStore();
+      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); setStore(current); writeLocalStore(current); }
+      const live = await loadContentDataset(mode, certParam, attemptId, current);
+      // Preserve links to pre-NAS UUID-based exams and saved learning records.
+      const needsLegacy = (mode === "cert" && !findCert(live, certParam)) || (mode === "exam" && current.attempts.some((item) => item.id === attemptId && !live.certs.some((cert) => cert.id === item.config.certId))) || (["history", "bookmarks", "wrong-notes"].includes(mode) && current.attempts.some((item) => !live.certs.some((cert) => cert.id === item.config.certId)));
+      if (needsLegacy) { const legacy = await loadPublishedDataset(); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); } }
+      return live;
+    };
+    void load().then((live) => { if (version !== loadVersion.current) return; setDataset(live); setDataState("live"); }).catch((error) => {
+      if (version !== loadVersion.current) return;
       console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
       setDataset(null); setDataState("error");
     });
-  }, []);
+  }, [mode, certParam, attemptId]);
 
   useEffect(() => {
     setStore(readLocalStore()); setHydrated(true);
@@ -47,11 +61,21 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthReady(true); });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setAuthReady(true); });
-    return () => data.subscription.unsubscribe();
+    return () => { loadVersion.current++; data.subscription.unsubscribe(); };
   }, [retryDataset]);
   useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); writeLocalStore(next); }); }, [user]);
   useEffect(() => { const refresh = (event: StorageEvent) => { if (event.key === STORE_KEY) setStore(readLocalStore()); }; window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
-  const saveStore = useCallback((next: LocalStore) => { const current = readLocalStore(); const attempts = next.attempts.map((item) => item.status === "in_progress" ? current.attempts.find((saved) => saved.id === item.id && saved.status === "submitted") || item : item); const safe = { ...next, attempts }; const started = attempts.some((item) => item.status === "in_progress" && !current.attempts.some((saved) => saved.id === item.id)); setStore(safe); writeLocalStore(safe); if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); } }, [user]);
+  const saveStore = useCallback((next: LocalStore) => {
+    const current = readLocalStore();
+    const attempts = next.attempts.map((item) => item.status === "in_progress" ? current.attempts.find((saved) => saved.id === item.id && saved.status === "submitted") || item : item);
+    const questionCerts = { ...current.questionCerts, ...next.questionCerts };
+    const refs = new Set([...next.bookmarks, ...Object.keys(next.wrongNotes)]);
+    dataset?.questions.forEach((question) => { if (refs.has(question.id)) questionCerts[question.id] = question.certId; });
+    const safe = { ...next, attempts, questionCerts };
+    const started = attempts.some((item) => item.status === "in_progress" && !current.attempts.some((saved) => saved.id === item.id));
+    setStore(safe); writeLocalStore(safe);
+    if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); }
+  }, [user, dataset]);
 
   if (!hydrated || dataState === "loading") return <CbtSkeleton />;
   if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
@@ -75,10 +99,10 @@ function CbtHome({ dataset }: { dataset: Dataset }) {
   const groups = categories.filter((item) => item !== "전체").map((item) => ({ name: item, certs: filtered.filter((cert) => cert.category === item) })).filter((group) => group.certs.length);
   function chooseCategory(value: string) { setCategory(value); const url = new URL(window.location.href); if (value === "전체") url.searchParams.delete("cat"); else url.searchParams.set("cat", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
   return <PageShell>
-    <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">기출 {dataset.questions.length.toLocaleString()}문항</span></div>
+    <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">기출 {(dataset.totalQuestions ?? dataset.questions.length).toLocaleString()}문항</span></div>
     <label className="cbt-search"><span className="cbt-search-icon" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="종목명을 검색하세요 (예: 정보처리기사)" aria-label="종목 검색" /></label>
     {certs.length > 1 && <div className="cbt-category-chips" aria-label="종목 카테고리">{categories.map((item) => <button className={category === item ? "is-active" : ""} onClick={() => chooseCategory(item)} key={item}>{item}</button>)}</div>}
-    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong>{cert.name}</strong><span>회차 {dataset.exams.filter((exam) => exam.certId === cert.id).length.toLocaleString()}개 · 문제 {dataset.questions.filter((question) => question.certId === cert.id).length.toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
+    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong>{cert.name}</strong><span>회차 {(cert.examCount ?? dataset.exams.filter((exam) => exam.certId === cert.id).length).toLocaleString()}개 · 문제 {(cert.questionCount ?? dataset.questions.filter((question) => question.certId === cert.id).length).toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
   </PageShell>;
 }
 

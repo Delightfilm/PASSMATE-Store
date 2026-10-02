@@ -212,3 +212,12 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 운영 DB 저장 → 검수 대기 → 공개/되돌리기 배치 흐름 구현
 - 공개 문항을 \`/question-bank/\`가 Supabase에서 페이지 단위로 읽어 회차별·단원별·사용자 조합 모의고사에 사용
 - 이미지 URL 문항 표시 및 검증 오류 보고서 다운로드 구현
+
+## NAS 콘텐츠 연결 — 2026-10-03
+
+- 공개 원본: `https://content.mypassmate.com`, Cloudflare Tunnel → 읽기 전용 NAS 서버.
+- Vercel Production/Preview에 `NEXT_PUBLIC_QUESTION_BANK_CONTENT_URL` 설정. 최신 CBT UI를 유지하며 종목 목록 우선/선택 종목 번들 지연 로드 구현.
+- 727종목·15,767회차·979,863풀이 가능 문항·136,044이미지. 제외 21,068문항은 풀이 수에서 제외.
+- 응시 기록은 기존 테이블 유지, NAS 즐겨찾기/오답은 본인 전용 작은 상태 테이블 사용. 본문·이미지 DB 업로드 없음.
+- 개인 기록 RLS 본인 CRUD/타인 접근 차단 및 익명 접근 차단 확인, 테스트 기록은 롤백. 오류 신고 기존 검수 큐 연결.
+- 기존 계약 검사/타입 검사/운영 빌드와 NAS 캐시·재시도·종목별 로드 검증 통과. 실제 운영 화면 검증은 배포 후 확인한다.
