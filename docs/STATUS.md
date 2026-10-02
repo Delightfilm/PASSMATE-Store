@@ -251,3 +251,13 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 누락 문항 진단 SELECT에 실행 안내/해석표/원문·정답 배제와 감사/집계 provenance 추가. 현재 코드상 58은 공개 시 재집계 값이며 원본·수입 시점 수량 스냅샷은 아님. 운영 원본/로그 실행은 미확인.
 - 로컬 핸들러 더블클릭/응답 유실·재로드 UUID, PGlite 활성화·권한, native PostgreSQL 18.4 실제 두 연결 시작/제출 경합, 큐/UI/전체 빌드 검증 통과.
 - 별도 테스트 프로젝트가 없어 hosted Supabase Auth/REST·실제 Preview Slow 3G·브라우저 두 탭은 미실행. 운영 DB/허용 목록 활성화/main 병합은 하지 않음.
+- 작업 중 main의 NAS 콘텐츠 연결/재시도(#16/#17, bdaad6c)를 feature 브랜치에 통합. NAS 수치·개인 상태·legacy fallback과 서버 관리 응시 보호를 함께 유지. 새 UUID/기존 managed-*의 answer/submit 라우트 호환 검사 통과.
+- NAS qualification code/20자리 문항 ref와 UUID 서버 시험 구성은 서로 다른 식별자다. 이름 추측 매핑은 하지 않음. 구성 없는 NAS 종목은 준비 중; 운영 NAS 서버 출제 연결은 별도 검토/병합 게이트.
+## NAS 콘텐츠 연결 — 2026-10-03
+
+- 공개 원본: `https://content.mypassmate.com`, Cloudflare Tunnel → 읽기 전용 NAS 서버.
+- Vercel Production/Preview에 `NEXT_PUBLIC_QUESTION_BANK_CONTENT_URL` 설정. 최신 CBT UI를 유지하며 종목 목록 우선/선택 종목 번들 지연 로드 구현.
+- 727종목·15,767회차·979,863풀이 가능 문항·136,044이미지. 제외 21,068문항은 풀이 수에서 제외.
+- 응시 기록은 기존 테이블 유지, NAS 즐겨찾기/오답은 본인 전용 작은 상태 테이블 사용. 본문·이미지 DB 업로드 없음.
+- 개인 기록 RLS 본인 CRUD/타인 접근 차단 및 익명 접근 차단 확인, 테스트 기록은 롤백. 오류 신고 기존 검수 큐 연결.
+- 기존 계약 검사/타입 검사/운영 빌드와 NAS 캐시·재시도·종목별 로드 검증 통과. 검증 배포에서 727종목·979,863문항 표시, 회차/문항 선택, 북마크, NAS 이미지, 최종 제출/채점 확인. 모바일 390px 가로 넘침 없음, 새로고침 뒤 결과 복원 확인. 일시적 전송 오류는 1회 자동 재시도하며 HTTP 접근 제한 오류는 우회하지 않는다.

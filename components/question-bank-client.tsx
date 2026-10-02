@@ -12,6 +12,7 @@ import { timeLeftSeconds } from "@/lib/exam-time";
 import { serverExamMode, cbtPost, serverAttempt } from "@/lib/cbt-server-client";
 import { createAnswerQueue, type AnswerState } from "@/lib/cbt-answer-queue";
 import { MOCK_SUBJECTS, attemptLabel, centerInScroller, expiredAttempt, oldProgressAttempt, readAttemptVisits, markAttemptVisit, subjectName } from "@/lib/cbt-presentation";
+import { contentBase, loadContentDataset } from "@/lib/question-bank-content";
 import {
   CBT_PREVIEW_READ_ONLY, certCategory, certSlug, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
   loadPublishedDataset, makeId, mergeAccountStore, pendingManagedAnswers, readLocalStore, submitIssueReport, syncAccountStore, writeLocalStore,
@@ -36,14 +37,28 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const [authReady, setAuthReady] = useState(false);
   const [displayName, setDisplayName] = useState("수험자");
   const syncTimer = useRef<number | null>(null);
+  const loadVersion = useRef(0);
 
   const retryDataset = useCallback(() => {
+    const version = ++loadVersion.current;
     setDataState("loading");
-    void loadPublishedDataset().then((live) => { setDataset(live); setDataState("live"); }).catch((error) => {
+    const load = async () => {
+      if (!contentBase()) return loadPublishedDataset();
+      let current = readLocalStore();
+      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); setStore(current); writeLocalStore(current); }
+      const live = await loadContentDataset(mode, certParam, attemptId, current);
+      // Preserve links to pre-NAS UUID-based exams and saved learning records.
+      const hasLegacyRefs = [...current.bookmarks, ...Object.keys(current.wrongNotes)].some((id) => !/^[a-f0-9]{20}$/.test(id));
+      const needsLegacy = (mode === "cert" && !findCert(live, certParam)) || (mode === "exam" && current.attempts.some((item) => item.id === attemptId && !live.certs.some((cert) => cert.id === item.config.certId))) || (["history", "bookmarks", "wrong-notes"].includes(mode) && (hasLegacyRefs || current.attempts.some((item) => !live.certs.some((cert) => cert.id === item.config.certId))));
+      if (needsLegacy) { const legacy = await loadPublishedDataset(); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); live.mockConfigs = legacy.mockConfigs; } }
+      return live;
+    };
+    void load().then((live) => { if (version !== loadVersion.current) return; setDataset(live); setDataState("live"); }).catch((error) => {
+      if (version !== loadVersion.current) return;
       console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
       setDataset(null); setDataState("error");
     });
-  }, []);
+  }, [mode, certParam, attemptId]);
 
   useEffect(() => {
     setStore(readLocalStore()); setHydrated(true);
@@ -51,12 +66,22 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthReady(true); });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setAuthReady(true); });
-    return () => data.subscription.unsubscribe();
+    return () => { loadVersion.current++; data.subscription.unsubscribe(); };
   }, [retryDataset]);
   useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); writeLocalStore(next); }); }, [user]);
   useEffect(() => { let active = true; setDisplayName("수험자"); if (user) void getSupabaseBrowserClient().from("profiles").select("display_name").eq("id", user.id).maybeSingle().then(({ data }) => { if (active) setDisplayName(data?.display_name?.trim() || "수험자"); }); return () => { active = false; }; }, [user?.id]);
   useEffect(() => { const refresh = (event: StorageEvent) => { if (event.key === STORE_KEY) setStore(readLocalStore()); }; window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
-  const saveStore = useCallback((next: LocalStore) => { const current = readLocalStore(); const attempts = next.attempts.map((item) => item.status === "in_progress" ? current.attempts.find((saved) => saved.id === item.id && saved.status === "submitted") || item : item); const safe = { ...next, attempts }; const started = attempts.some((item) => item.status === "in_progress" && !current.attempts.some((saved) => saved.id === item.id)); setStore(safe); writeLocalStore(safe); if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); } }, [user]);
+  const saveStore = useCallback((next: LocalStore) => {
+    const current = readLocalStore();
+    const attempts = next.attempts.map((item) => item.status === "in_progress" ? current.attempts.find((saved) => saved.id === item.id && saved.status === "submitted") || item : item);
+    const questionCerts = { ...current.questionCerts, ...next.questionCerts };
+    const refs = new Set([...next.bookmarks, ...Object.keys(next.wrongNotes)]);
+    dataset?.questions.forEach((question) => { if (refs.has(question.id)) questionCerts[question.id] = question.certId; });
+    const safe = { ...next, attempts, questionCerts };
+    const started = attempts.some((item) => item.status === "in_progress" && !current.attempts.some((saved) => saved.id === item.id));
+    setStore(safe); writeLocalStore(safe);
+    if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); }
+  }, [user, dataset]);
 
   if (!hydrated || dataState === "loading") return <CbtSkeleton />;
   if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
@@ -81,10 +106,10 @@ function CbtHome({ dataset }: { dataset: Dataset }) {
   const groups = categories.filter((item) => item !== "전체").map((item) => ({ name: item, certs: filtered.filter((cert) => cert.category === item) })).filter((group) => group.certs.length);
   function chooseCategory(value: string) { setCategory(value); const url = new URL(window.location.href); if (value === "전체") url.searchParams.delete("cat"); else url.searchParams.set("cat", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
   return <PageShell>
-    <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의시험을 시작하세요.</p></div><span className="question-bank-status">기출 {dataset.questions.length.toLocaleString()}문항</span></div>
+    <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의시험을 시작하세요.</p></div><span className="question-bank-status">기출 {(dataset.totalQuestions ?? dataset.questions.length).toLocaleString()}문항</span></div>
     <label className="cbt-search"><span className="cbt-search-icon" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="종목명을 검색하세요 (예: 정보처리기사)" aria-label="종목 검색" /></label>
     {certs.length > 1 && <div className="cbt-category-chips" aria-label="종목 카테고리">{categories.map((item) => <button className={category === item ? "is-active" : ""} onClick={() => chooseCategory(item)} key={item}>{item}</button>)}</div>}
-    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=custom" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong>{cert.name}</strong><span>회차 {dataset.exams.filter((exam) => exam.certId === cert.id).length.toLocaleString()}개 · 문제 {dataset.questions.filter((question) => question.certId === cert.id).length.toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
+    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=custom" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong>{cert.name}</strong><span>회차 {(cert.examCount ?? dataset.exams.filter((exam) => exam.certId === cert.id).length).toLocaleString()}개 · 문제 {(cert.questionCount ?? dataset.questions.filter((question) => question.certId === cert.id).length).toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
   </PageShell>;
 }
 
@@ -180,7 +205,7 @@ function QuestionCountInput({ id, label, value, onChange }: { id: string; label:
 function StartModal({ exam, gradeMode, setGradeMode, onClose, onStart, busy = false }: { busy?: boolean; exam: Dataset["exams"][number]; gradeMode: GradeMode; setGradeMode: (mode: GradeMode) => void; onClose: () => void; onStart: () => void }) { return <Modal title="지금 시험을 시작할까요?" onClose={onClose}><p>{exam.questionCount.toLocaleString()}문항 · {exam.durationMinutes.toLocaleString()}분</p><p>시작하면 제한시간이 흐릅니다.</p>{exam.id !== "__mock__" && <fieldset className="cbt-mode-options"><legend>채점 방식 선택</legend><label><input type="radio" name="grade-mode" checked={gradeMode === "submit"} onChange={() => setGradeMode("submit")} />한번에 채점</label><label><input type="radio" name="grade-mode" checked={gradeMode === "instant"} onChange={() => setGradeMode("instant")} />즉시 채점</label></fieldset>}<div className="cbt-modal-actions"><button className="button button-ghost" onClick={onClose}>취소</button><button className="button button-primary" disabled={busy} onClick={onStart}>{busy ? "준비 중…" : "시작 확정"}</button></div></Modal>; }
 
 function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user, displayName: accountName }: { dataset: Dataset; store: LocalStore; saveStore: (store: LocalStore) => void; certParam: string; attemptId: string; user: User | null; displayName: string }) {
-  const router = useRouter(); const attempt = store.attempts.find((item) => item.id === attemptId); const cert = findCert(dataset, certParam) || dataset.certs.find((item) => item.id === attempt?.config.certId);
+  const router = useRouter(); const attempt = store.attempts.find((item) => item.id === attemptId); const cert = dataset.certs.find((item) => item.id === attempt?.config.certId) || findCert(dataset, certParam);
   const questions = attempt?.questionIds.map((id) => dataset.questions.find((question) => question.id === id)).filter((item): item is Question => !!item) || [];
   const [selected, setSelected] = useState(0); const [secondsLeft, setSecondsLeft] = useState<number | null>(null); const [modal, setModal] = useState<ModalName>(null); const [toast, setToast] = useState(""); const [submitting, setSubmitting] = useState(false); const [reportQuestion, setReportQuestion] = useState<Question | null>(null); const [reshuffle, setReshuffle] = useState(false); const [layoutMode, setLayoutMode] = useState<"a" | "b">("a"); const [fontSize, setFontSize] = useState<"base" | "large" | "xlarge">("base"); const [choiceLayout, setChoiceLayout] = useState<"one" | "two" | "focus">("one"); const [sheetOpen, setSheetOpen] = useState(false); const [reviewOpen, setReviewOpen] = useState(false); const finishedIds = useRef(new Set<string>()); const sheetOpener = useRef<HTMLElement | null>(null); const warned = useRef(false); const question = questions[selected];
   const [sheetFilter, setSheetFilter] = useState<"all" | "answered" | "unanswered" | "review">("all");

@@ -2,11 +2,14 @@
 
 기준: cbff750 이후, 2026-10-03. 실제 Next.js/API와 **테스트 DB 전용 DRAFT**를 수정했다. 운영 DB 적용·main 병합은 하지 않았다. 기존 9개 보고서의 시작 RPC/권한/롤아웃 지침은 이 문서와 CBT_MERGE_GATE.md로 대체한다. 현재 SQL 전문은 cbt-test-migration.DRAFT.sql이며 이전 보고서의 SQL은 당시 기록이다.
 
+작업 중 main에 NAS 콘텐츠 연결·전송 재시도(#16/#17, bdaad6c)가 추가되어 feature 브랜치에 통합하고 충돌을 해결했다. 운영 main을 변경한 것이 아니다. NAS ID와 UUID 구성표의 연결은 아래 별도 병합 조건을 따른다.
+
 ## 변경 파일
 
 | 파일 | 변경 |
 |---|---|
 | app/api/cbt/attempts/start/route.ts | clientId UUID 검증·RPC 전달 |
+| app/api/cbt/attempts/[attemptId]/answer/route.ts, submit/route.ts; lib/cbt-test-server.ts | 새 UUID client_id와 기존 managed-* 모두 같은 서버 RPC로 전달 |
 | components/question-bank-client.tsx | 즉시 중복 클릭 가드, sessionStorage 시작 UUID 재시도, 응시 목록 중복 제거, 다른 기기 안내 |
 | .env.example | 앱+DB 이중 활성화 조건 설명; 기본값 그대로 OFF |
 | docs/cbt-test-migration.DRAFT.sql | 시작 키/별칭·계정 잠금, DB 스위치, 구성표 SELECT 전용 |
@@ -18,6 +21,8 @@
 | scripts/validate-cbt-ui.mjs | 실제 시작 핸들러 더블클릭/응답 유실/재로드·중복 제거, 안내 문구 |
 | docs/CBT_7_REVIEW.md, docs/CBT_MERGE_GATE.md | 전후 코드·PR 분리 판단·병합/롤백 절차 |
 | docs/CBT_9_REVIEW.md, docs/STATUS.md | 역사 문서와 현재 상태 구분 |
+
+최신 main 통합으로 NAS의 카탈로그 수치/지연 로드/전송 재시도/개인 문항 상태 기능을 유지했다. lib/question-bank.ts는 NAS 필드와 serverManaged·낙관 답 병합을 함께 보존했고, UUID 카탈로그 fallback 시 mockConfigs를 전달하며 응시의 certId를 표시 우선 기준으로 쓴다. 이미 main의 NAS adapter/admin/상태 마이그레이션/검사 파일도 통합했지만 새 기능이나 운영 DB 적용을 추가한 것은 아니다.
 
 ## 1. cbt_start 멱등성
 
@@ -48,6 +53,17 @@ saveStore({ ...latest, attempts: [attempt, ...latest.attempts.filter(item => ite
 ```
 
 API는 certId/clientId 모두 문자열·UUID를 검증하고 `p_client_id`로 전달한다. 브라우저 clientId는 crypto.randomUUID()이며 내부 응시 UUID·수험자 번호와 구별한다.
+
+기존 answer/submit API가 managed-*만 서버 응시로 구분하던 부분도 같이 수정했다. 시작만 UUID로 바꾸면 이후 답 저장·제출이 실패하므로 두 호출 경로를 같은 판별 함수로 고쳤다. DB의 serverManaged/소유권 검사는 그대로 적용한다.
+
+```ts
+// 전: attemptId.startsWith('managed-') 또는 /^managed-...$/만 허용
+// 후: 새 UUID + 기존 managed-UUID 호환, attempt-* 로컬 경로 유지
+export function isServerAttemptId(value: string) {
+  return /^(?:managed-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+// answer/submit 실제 라우트를 실행한 제어 테스트로 두 ID 형태의 RPC 전달 확인
+```
 
 ```sql
 -- 기존 attempts.client_id TEXT는 로컬 호환 때문에 유지; 서버 키는 UUID 인자.
@@ -165,6 +181,8 @@ revoke insert,update,delete on public.question_bank_mock_configs,
 
 main의 실제 beginMock은 종목 전체 풀에서 무작위 최대 60개를 골라 **기존 로컬 begin(..., submit, 60, true)**으로 시작한다. 과목별 20개를 보장하지 않으며 config.mode도 없었다.
 
+추가 의존 확인: 최신 main의 NAS 카탈로그 cert.id는 qualification code 문자열, 문항 ID는 20자리 NAS ref다. PR2의 DB 구성/응시 RPC는 UUID catalog/UUID 문항 전용이다. **이 두 식별자를 이름으로 자동 매핑하지 않았다.** 구성표 없는 NAS 종목은 준비 중을 유지한다. UUID를 정확히 검증한 기존 DB 종목 경로는 fallback 구성표를 보존한다. 실제 운영 NAS 모의시험을 활성화하려면 code→UUID/문항 출처의 명시 매핑 또는 NAS 서버 출제 설계를 별도 검토해야 하며 [확인 필요]다. 현재 PR2 준비 완료라고 볼 수 없다. PR1의 UI·로컬 방식은 NAS 소스와 독립적으로 분리 가능하다.
+
 | 선택 | 장점 | 단점·사용자 영향 | 구현 범위 |
 |---|---|---|---|
 | A. 기존 로컬 시작 + 정직한 안내 | 현재 이용 기능 유지, UI 먼저 배포 가능 | 서버 고정 비율 시험과 구별해야 함. 안내: ‘자유 출제 연습입니다. 과목별 문항 비율은 보장되지 않습니다.’ 구성에 20/20/20 확정값·할당된 연습 번호를 표시하지 않음 | main 로컬 beginMock 유지, mode/라벨·구성 카드 설명 수정. 새 RPC/SQL/환경 의존 제거; 실제 공개 풀·총 문항 수로 표시 |
@@ -240,7 +258,7 @@ commit;
 
 코드에서 확인한 사실: `question-bank-admin`의 start_import는 exam.question_count를 넣지 않는다. `20260930003531_cbt_mate_question_bank_runtime.sql`의 question_bank_publish_batch는 **현재 published 문항을 회차별로 다시 세어** question_count/updated_at을 갱신하며 다른 batch 공개에도 영향을 줄 수 있다. 따라서 58은 불변 수입 스냅샷이 아니다. 실제 운영 함수가 같은지 확인하는 SELECT(boolean 결과), batch expected·finish/publish 감사 로그·exam timestamps를 추가했다. 원본 60개였는지와 12/43번의 누락 원인은 **[확인 필요]**다. 원본 스냅샷/감사 로그가 없으면 타임스탬프만으로 확정하지 않는다.
 
-총 1,138개의 공개 풀에서 각 과목 유효 문항이 20개 이상이면 무작위 20/20/20 모의시험은 이 두 회차 누락만으로 막히지 않는다. 해당 회차 기출은 58개라는 실제 수를 보여야 하며 가짜 문항을 채우지 않는다. 구성표 출제 풀 검증은 별도로 유지한다.
+앞서 확인한 기존 Supabase 금속도장기능사 공개 풀 1,138개에서 각 과목 유효 문항이 20개 이상이면 무작위 20/20/20 모의시험은 이 두 회차 누락만으로 막히지 않는다. 이는 새 NAS 전체 카탈로그의 수치를 뜻하지 않는다. 해당 기존 회차 기출은 58개라는 실제 수를 보여야 하며 가짜 문항을 채우지 않는다. 구성표 출제 풀 검증은 별도로 유지한다.
 
 ## 7. 병합 게이트 / 롤아웃 / 롤백
 
@@ -269,6 +287,7 @@ commit;
 | 기존 큐: 1→4 연타·문항별 병렬·ACK·롤백·flush / UI·7일·한국어 오류·허용 목록 | 통과 |
 | 읽기 전용 진단 SQL 문법·SELECT-only·원문/정답 컬럼 배제 | 통과 — 로컬 가상 catalog; 운영 결과는 미확인 |
 | npm run build (계약 검사·타입·Next 빌드) | 통과 |
+| 최신 main NAS 통합: 수치·지연 로드·이미지·캐시·재시도 + UUID/managed-* API 분기 | 통과 — 가상 adapter·라우트 검사; 실운영 NAS↔UUID 서버 출제는 미구현/준비 중 |
 | 별도 hosted Supabase Auth/REST·실제 Preview Slow 3G·브라우저 두 탭 | **미실행 — 테스트 프로젝트 없음** |
 | 운영 SQL·원본/수입 로그·누락 문항 복구·운영 허용 목록 활성화/main 병합 | **미실행** |
 

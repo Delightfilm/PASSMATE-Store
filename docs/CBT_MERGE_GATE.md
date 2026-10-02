@@ -6,7 +6,7 @@
 |---|---|---|---|
 | 1 | ☐ 별도 테스트 프로젝트·QA 사용자 생성 | 운영과 다른 ref/URL, QA 전용 사용자, 백업·키 범위 확인. cbt_private는 Data API exposed schemas에서 제외 | 미실행 |
 | 2 | ☐ DRAFT 적용 | 테스트 확인 SET, 확인한 종목 UUID SET 후 cbt-test-migration.DRAFT.sql. DB 스위치 기본 false. 로컬/RLS INSERT·UPDATE 호환 및 DELETE 거부 | 로컬 통과 / hosted 미실행 |
-| 3 | ☐ UUID 시드·구성 published | UUID FK, 공식 과목 매핑, 과목별 유효 풀 ≥20, 20/20/20·60분·overall 60점 확인. 관리자 트랜잭션으로 공개 후 DB 스위치 true | 로컬 통과 / hosted 미실행 |
+| 3 | ☐ UUID 시드·구성 published | UUID FK, 공식 과목 매핑, 과목별 유효 풀 ≥20, 20/20/20·60분·overall 60점 확인. 관리자 트랜잭션으로 공개 후 DB 스위치 true. 운영 NAS code/20자리 문항 ref와 UUID RPC 연결은 별도 검토 필요; 구성 없는 종목 준비 중 | 로컬 UUID 통과 / hosted·NAS 매핑 미실행 |
 | 4 | ☐ Preview 환경 | 정확한 테스트 URL·공개 키·서버 전용 secret, CBT_SERVER_PROJECT_REFS=테스트_ref, 시작 플래그=1, 재배포. 앱 허용+DB true 모두 필요 | 미실행 |
 | 5 | ☐ Slow 3G 8케이스 | 아래 모두 화면·요청·DB 결과를 함께 기록. 마지막 선택 유지·실패 복귀·제출 전 저장 대기 | 제어된 큐 테스트 통과 / 실제 Preview 미실행 |
 | 6 | ☐ 두 연결·두 탭/Auth·REST | 동일/상이 start 키 경합 한 응시, 최초 제출 유지, 소유자/타인/anon, 관리 행 INSERT·UPDATE·DELETE·승격·직접 RPC 차단. DB absent/false 차단 | 로컬 두 연결 통과 / hosted·브라우저 미실행 |

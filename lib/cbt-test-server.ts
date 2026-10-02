@@ -6,6 +6,10 @@ import { cbtProjectAllowed } from "./cbt-server-config";
 export class CbtRequestError extends Error {
   constructor(public status: number) { super("CBT request failed"); }
 }
+// New UUID start keys and already-existing managed-* records share the RPC path.
+export function isServerAttemptId(value: string) {
+  return /^(?:managed-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
 export function cbtRpcError(error: { code?: string }) {
   const code = error.code || "";
   return new CbtRequestError(code === "PT403" || code === "42501" || code === "P0002" ? 403 : code === "PT409" || code === "40001" || code === "23505" ? 409 : code === "PT422" || code === "P0001" || code.startsWith("22") || code.startsWith("23") ? 422 : 500);

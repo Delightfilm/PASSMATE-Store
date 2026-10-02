@@ -198,3 +198,24 @@ assert.equal(local.attempts.length,1,'Resumed row must not duplicate the local l
 assert.equal(startStorage.size,0,'Clear pending UUID only after successful local persistence');
 assert.equal(uuidCount,1);
 console.log('CBT start UI OK: synchronous double-click guard, lost response/reload UUID retry, local row deduplication; no network/DB writes.');
+
+// New UUID IDs must reach RPC answer/submit, not the legacy local submission.
+const uuid='00000000-0000-4000-8000-000000000001';
+for (const id of [uuid,`managed-${uuid}`]) assert.equal(serverModule.exports.isServerAttemptId(id),true);
+for (const id of ['attempt-local',`managed-${'-'.repeat(36)}`,uuid+'extra']) assert.equal(serverModule.exports.isServerAttemptId(id),false);
+const previousReadOnly=process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY;
+process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY='0';
+try {
+  for (const action of ['answer','submit']) {
+    const routePath=resolve(`app/api/cbt/attempts/[attemptId]/${action}/route.ts`),route={exports:{}},calls=[];
+    const compiled=ts.transpileModule(readFileSync(routePath,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+    new Script(`(function(require,module,exports){${compiled}\n})`).runInThisContext()(name=>name==='@/lib/cbt-test-server'?{
+      ...serverModule.exports,cbtTestServer:async()=>({userId:'QA',db:{rpc:async(fn,args)=>{calls.push({fn,args});return {data:{ok:true},error:null};}}})
+    }:name==='@supabase/supabase-js'?{createClient:()=>{throw new Error('Server UUID incorrectly entered legacy route');}}:{},route,route.exports);
+    for (const id of [uuid,`managed-${uuid}`]) {
+      const response=await route.exports.POST(new Request('https://example.test',{method:'POST',body:JSON.stringify({questionId:uuid,choice:3,review:null})}),{params:Promise.resolve({attemptId:id})});
+      assert.equal(response.status,200);assert.equal(calls.at(-1).fn,`cbt_${action}`);assert.equal(calls.at(-1).args.p_attempt,id);
+    }
+  }
+} finally { if(previousReadOnly===undefined) delete process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY;else process.env.NEXT_PUBLIC_CBT_PREVIEW_READ_ONLY=previousReadOnly; }
+console.log('CBT API ID OK: new UUID and previous managed-* answer/submit use RPC; no legacy dispatch/network.');
