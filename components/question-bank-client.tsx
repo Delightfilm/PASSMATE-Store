@@ -44,7 +44,8 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
       if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); setStore(current); writeLocalStore(current); }
       const live = await loadContentDataset(mode, certParam, attemptId, current);
       // Preserve links to pre-NAS UUID-based exams and saved learning records.
-      const needsLegacy = (mode === "cert" && !findCert(live, certParam)) || (mode === "exam" && current.attempts.some((item) => item.id === attemptId && !live.certs.some((cert) => cert.id === item.config.certId))) || (["history", "bookmarks", "wrong-notes"].includes(mode) && current.attempts.some((item) => !live.certs.some((cert) => cert.id === item.config.certId)));
+      const hasLegacyRefs = [...current.bookmarks, ...Object.keys(current.wrongNotes)].some((id) => !/^[a-f0-9]{20}$/.test(id));
+      const needsLegacy = (mode === "cert" && !findCert(live, certParam)) || (mode === "exam" && current.attempts.some((item) => item.id === attemptId && !live.certs.some((cert) => cert.id === item.config.certId))) || (["history", "bookmarks", "wrong-notes"].includes(mode) && (hasLegacyRefs || current.attempts.some((item) => !live.certs.some((cert) => cert.id === item.config.certId))));
       if (needsLegacy) { const legacy = await loadPublishedDataset(); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); } }
       return live;
     };

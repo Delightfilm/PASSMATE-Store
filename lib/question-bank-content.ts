@@ -8,10 +8,21 @@ export function contentBase() { return (process.env.NEXT_PUBLIC_QUESTION_BANK_CO
 const bundles = new Map<string, Promise<Dataset>>();
 let catalogCache: { expires: number; value: Promise<ContentCatalog> } | undefined;
 
+async function fetchContent(url: string, cache: RequestCache) {
+  try { return await fetch(url, { cache }); }
+  catch (error) {
+    // One retry for a transient transport failure only; HTTP/access errors are
+    // left to the normal error UI, and the existing dataset is never replaced by samples.
+    if (!(error instanceof TypeError)) throw error;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return fetch(url, { cache });
+  }
+}
+
 export async function loadContentCatalog(): Promise<ContentCatalog> {
   if (catalogCache && catalogCache.expires > Date.now()) return catalogCache.value;
   const value = (async () => {
-    const response = await fetch(`${contentBase()}/catalog.json`, { cache: "no-store" });
+    const response = await fetchContent(`${contentBase()}/catalog.json`, "no-store");
     if (!response.ok) throw new Error(`question_bank_catalog_${response.status}`);
     const catalog = await response.json() as ContentCatalog;
     if (catalog.schemaVersion !== "passmate.question-bank.catalog.v1" || !Array.isArray(catalog.qualifications)) throw new Error("question_bank_catalog_invalid");
@@ -28,7 +39,7 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string): 
   const cached = bundles.get(key);
   if (cached) { bundles.delete(key); bundles.set(key, cached); return cached; }
   const value = (async () => {
-    const response = await fetch(`${contentBase()}/${entry.bundle}`, { cache: "no-cache" });
+    const response = await fetchContent(`${contentBase()}/${entry.bundle}`, "no-cache");
     if (!response.ok) throw new Error(`question_bank_bundle_${response.status}`);
     const bundle = await response.json() as Bundle;
     if (bundle.schemaVersion !== "passmate.question-bank.bundle.v1" || bundle.releaseId !== catalog.releaseId || bundle.qualification.code !== code || bundle.questions.length !== entry.questions || bundle.exams.length !== entry.exams) throw new Error("question_bank_bundle_invalid");
