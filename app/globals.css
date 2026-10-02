@@ -382,16 +382,23 @@
 .builder-field-label{display:grid;gap:8px;margin-top:24px;color:var(--ink);font-size:12px;font-weight:750}
 .builder-field-label select{width:100%;min-height:46px;padding:0 13px;border:1px solid var(--line);border-radius:var(--radius-control);background:var(--white);color:var(--ink);font:inherit}
 .builder-subject-counts{display:grid;gap:10px;margin-top:20px}
-.builder-subject-counts label{display:grid;grid-template-columns:minmax(0,1fr) 86px;align-items:center;gap:10px;min-height:56px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius-control);background:var(--soft)}
-.builder-subject-counts label span{font-size:13px;font-weight:750}
-.builder-subject-counts label small{grid-column:1;font-size:11px}
-.builder-subject-counts input{grid-column:2;grid-row:1 / span 2;width:86px;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;text-align:center}
+.builder-subject-count{display:grid;grid-template-columns:minmax(0,1fr) 186px;align-items:center;gap:16px;min-width:0;padding:14px;border:1px solid var(--line);border-radius:var(--radius-control);background:var(--soft)}
+.builder-subject-count>div:first-child{min-width:0}
+.builder-subject-count label{display:block;color:var(--ink);font-size:13px;font-weight:750}
+.builder-subject-count small{display:block;margin-top:5px;color:var(--muted);font-size:12px}
+.number-stepper{display:grid;grid-template-columns:44px minmax(44px,1fr) 44px;align-items:center;gap:12px;min-width:0;min-height:58px;padding:6px;border:1px solid #6b7280;border-radius:var(--radius-control);background:#fff;box-shadow:var(--shadow)}
+.number-stepper button{width:44px;height:44px;padding:0;border:0;border-radius:10px;background:var(--blue-soft);color:var(--blue-dark);font:inherit;font-size:22px;font-weight:750;cursor:pointer}
+.number-stepper button:hover:not(:disabled){background:#dbeafe}
+.number-stepper button:disabled{opacity:.45;cursor:not-allowed}
+.number-stepper input{width:100%;min-width:0;height:44px;margin:0;padding:0 2px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:20px;font-weight:850;text-align:center;appearance:textfield;-moz-appearance:textfield}
+.number-stepper input::-webkit-inner-spin-button,.number-stepper input::-webkit-outer-spin-button{appearance:none;margin:0}
 .builder-total{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding:16px 0;border-block:1px solid var(--line)}
 .builder-total span{color:var(--muted);font-size:12px}.builder-total strong{font-size:20px}
 .builder-warning{margin:14px 0 0;padding:12px;border:1px solid #d0a15b;border-radius:var(--radius-control);background:var(--warning-soft);color:var(--warning);font-size:12px;font-weight:750}
 .builder-action-row{display:grid;gap:9px;margin-top:18px}.builder-action-row .button{width:100%}
 .mock-exam-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:22px;align-items:start}
 .mock-exam-card,.mock-exam-start{padding:30px;border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:var(--shadow)}
+.mock-exam-layout>*,.custom-builder>*{min-width:0;max-width:100%}
 .mock-exam-card{background:var(--ink);color:#fff}.mock-exam-card .eyebrow{color:#bceca9}.mock-exam-card h2,.mock-exam-start h2{margin:12px 0 8px;font-size:30px}.mock-exam-card p{color:#e5e7eb}.mock-exam-facts{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.mock-exam-facts span{display:grid;gap:2px;min-width:110px;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--radius-control)}.mock-exam-facts strong{color:#55c935;font-size:22px}.mock-exam-facts small{color:#e5e7eb;font-size:12px}.mock-subject-list{display:grid;gap:0}.mock-subject-list div{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid rgba(255,255,255,.2);font-size:13px}.mock-subject-list strong{color:#fff}.mock-exam-note{margin:22px 0 0!important;font-size:12px}.mock-exam-start{position:sticky;top:100px;background:#fff}.mock-exam-start p{line-height:1.7}.mock-exam-start .button{width:100%;margin-top:16px}.mock-exam-start small{display:block;margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
 
 .records-grid{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:22px}
@@ -954,6 +961,12 @@ body{word-break:keep-all}
   .cbt-review-grid{grid-template-columns:1fr}
 }
 @media(max-width:600px){
+  .builder-subject-count{grid-template-columns:minmax(0,1fr);gap:10px}
+  .number-stepper{width:100%}
+  .mock-exam-card,.mock-exam-start{padding:22px}
+  .mock-exam-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .mock-exam-facts span{min-width:0;padding:8px}
+  .mock-exam-facts strong{font-size:20px}
   .exam-redesign .result-page{width:calc(100% - 28px);margin:14px auto 100px}
   .exam-redesign .result-hero{padding:22px}
   .exam-redesign .result-hero .result-score{font-size:64px}
