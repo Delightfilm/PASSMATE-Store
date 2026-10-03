@@ -11,6 +11,7 @@ function publicResult(result: Omit<ExplanationReply, "status"> & { status: strin
 
 export async function POST(request: Request) {
   let key: string | undefined; let lease: string | undefined;
+  let stage = "request";
   try {
     if (Number(request.headers.get("content-length") || 0) > 2048) return reply({ error: "요청이 너무 큽니다." }, 413);
     const raw = await request.text();
@@ -37,12 +38,24 @@ export async function POST(request: Request) {
     if (claimed.status !== "claimed") return reply(publicResult(claimed, question.answer));
     lease = claimed.lease;
     if (!lease || !/^[a-f0-9]{64}$/.test(lease)) throw new Error("cache_lease_missing");
+    stage = "images";
     const images = await imageParts(question); // One downloader per job; still BEFORE any billable call.
+    stage = "generation";
     const result = await generateExplanation(question, images);
+    stage = "storage";
     await cacheRequest(key, "finish", { lease, payload: result });
     lease = undefined;
     return reply(publicResult(result, question.answer, false));
   } catch (error) {
+    // Only typed diagnostic metadata: never stringify an SDK error, message,
+    // request, provider response, account, question, or credential.
+    const diagnostic = error as { name?: unknown; statusCode?: unknown } | null;
+    const names = ["GatewayInvalidRequestError", "GatewayAuthenticationError", "GatewayRateLimitError", "GatewayInternalServerError", "GatewayResponseError", "AI_APICallError", "AI_NoOutputGeneratedError", "AI_NoObjectGeneratedError", "TimeoutError", "AbortError", "TypeError"];
+    console.error("ai_explanation_failed", {
+      stage,
+      kind: typeof diagnostic?.name === "string" && names.includes(diagnostic.name) ? diagnostic.name : "other",
+      status: typeof diagnostic?.statusCode === "number" && Number.isInteger(diagnostic.statusCode) && diagnostic.statusCode >= 400 && diagnostic.statusCode <= 599 ? diagnostic.statusCode : undefined,
+    });
     if (key && lease) {
       // Retain the claim even if NAS is temporarily unreachable. Never silently re-bill.
       await cacheRequest(key, "finish", { lease, payload: { status: "failed", message: "해설 생성 또는 저장에 실패했습니다. 중복 비용 방지를 위해 자동 재생성하지 않습니다." } }).catch(() => undefined);

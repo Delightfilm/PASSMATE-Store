@@ -6,12 +6,13 @@
 
 ## Current Focus
 
-### CBT AI explanations — 2026-10-03
+### CBT AI explanations — 2026-10-04
 
 - On-demand `해설보기`, shared NAS persistence, correction-aware key and distributed claim/lease implementation: `docs/AI_EXPLANATIONS.md`.
 - Cheapest eligible live Gateway model selected: `alibaba/qwen3.7-flash`; fixed registered answer, separate semantic check, bounded native-resolution image/GIF input, no automatic paid retries.
 - Isolated route/model concurrency tests, Python NAS persistence/auth/quotas tests, TypeScript and full production build passed. Local browser confirms the wrong-answer button and fail-closed “storage server preparing” response, with no automatic generation.
-- **Not enabled in production yet.** NAS private cache deployment/token authorization and Vercel server configuration, real text/vision generation + cache-hit cost verification remain pending. Existing public content and crawler work untouched.
+- NAS private cache and matching server-only Vercel configuration are deployed. Live text generation, durable NAS storage and identical cache reuse without new Gateway calls passed.
+- **Not enabled in production yet.** The live diagram test failed and was durably marked failed without automatic rebilling. Vision diagnosis and successful live concurrency verification remain pending; see `docs/AI_EXPLANATIONS.md`. Existing public content and crawler work untouched.
 
 **Content Factory 재확보/검증 → Stage Sound 실제 원고·속지 → V3 Payment E2E → V4 NAS → V5 download E2E → V8 launch**
 

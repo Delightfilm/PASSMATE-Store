@@ -1,6 +1,15 @@
 # On-demand AI explanations
 
-Status (2026-10-04, Asia/Seoul): the isolated NAS cache is deployed, HTTPS authentication is verified, and matching server-only Vercel variables are configured for Production and the `codex/ai-question-explanations` Preview branch. The application remains a draft preview: live paid text/vision/cache verification and production activation are still required. Do not describe the live feature as enabled before these pass.
+Status (2026-10-04, Asia/Seoul): the isolated NAS cache is deployed, HTTPS authentication is verified, and matching server-only Vercel variables are configured for Production and the `codex/ai-question-explanations` Preview branch. Live text generation and NAS reuse passed. A diagram request failed; image verification and production activation remain blocked pending diagnosis. Do not describe the live feature as enabled before these pass.
+
+## Live verification checkpoint (2026-10-04)
+
+- Logged-in Preview, information-processing engineer 2022 second exam: text question 1 generated an answer-locked explanation and reused identical NAS content as `저장된 해설`. The generation made draft/verifier calls; repeating the read added no Gateway request.
+- NAS SQLite `quick_check` returned `ok`; three ready entries were present (the owner also exercised two questions). No user-created explanations were deleted.
+- Image question 22 (`6dfe85175f11f060cb44`, binary search for 14) failed. Two near-simultaneous UI requests shared a single persisted failed state, with no automatic regeneration. This is not a successful vision/concurrency acceptance test.
+- Gateway UI showed no image request trace. Local reproduction with the real installed SDK and intercepted transport successfully encoded the PNG without a provider call. Therefore the exact live cause is not yet established.
+- Use current SDK `file`/`data` image parts; route diagnostics log only stage, allowlisted error class, and HTTP status. Never log raw errors/provider payloads, question content, account IDs, tokens, or credentials. The failed NAS row remains intact.
+- Owner reports paid credit purchased; text requests succeeded. Gateway still displayed an incomplete billing-address notice. Do not fill personal billing details or enable automatic top-up on the owner's behalf.
 
 ## Verified deployment checkpoint
 
