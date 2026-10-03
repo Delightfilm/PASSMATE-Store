@@ -108,7 +108,8 @@ export async function imageParts(question: Question): Promise<ImageContent> {
       if (!meta.width || !meta.height || (meta.pages || 1) > 1) throw new Error("image_animated_or_invalid");
       const png = await image.png().toBuffer();
       if (png.length > 4_000_000) throw new Error("image_too_large");
-      return { type: "file" as const, data: png, mediaType: "image/png" };
+      // A plain base64 string survives Next.js/SDK serialization unchanged.
+      return { type: "file" as const, data: png.toString("base64"), mediaType: "image/png" };
     } catch { throw new ExplanationError(422, "이미지를 읽지 못해 해설을 생성하지 않았습니다. 오류 신고를 이용해 주세요."); }
   }));
 }

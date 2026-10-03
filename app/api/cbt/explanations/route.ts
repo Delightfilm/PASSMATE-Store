@@ -50,10 +50,11 @@ export async function POST(request: Request) {
     // Only typed diagnostic metadata: never stringify an SDK error, message,
     // request, provider response, account, question, or credential.
     const diagnostic = error as { name?: unknown; statusCode?: unknown } | null;
-    const names = ["GatewayInvalidRequestError", "GatewayAuthenticationError", "GatewayRateLimitError", "GatewayInternalServerError", "GatewayResponseError", "AI_APICallError", "AI_NoOutputGeneratedError", "AI_NoObjectGeneratedError", "TimeoutError", "AbortError", "TypeError"];
+    const serializationName = "AI_SerializationError";
+    const names = ["GatewayInvalidRequestError", "GatewayAuthenticationError", "GatewayRateLimitError", "GatewayInternalServerError", "GatewayResponseError", "GatewayForbiddenError", "GatewayFailedDependencyError", "GatewayTimeoutError", "GatewayModelNotFoundError", "GatewayNotFoundError", "AI_APICallError", "AI_NoOutputGeneratedError", "AI_NoObjectGeneratedError", "AI_InvalidPromptError", "AI_InvalidArgumentError", "AI_TypeValidationError", "AI_InvalidDataContentError", "AI_DownloadError", "AI_UnsupportedFunctionalityError", "AI_LoadAPIKeyError", "AI_LoadSettingError", "AI_JSONParseError", "AI_InvalidResponseDataError", "AI_EmptyResponseBodyError", "TimeoutError", "AbortError", "TypeError", "ReferenceError", "RangeError", "SyntaxError", "Error"];
     console.error("ai_explanation_failed", {
       stage,
-      kind: typeof diagnostic?.name === "string" && names.includes(diagnostic.name) ? diagnostic.name : "other",
+      kind: typeof diagnostic?.name === "string" && (names.includes(diagnostic.name) || diagnostic.name === serializationName) ? diagnostic.name : "other",
       status: typeof diagnostic?.statusCode === "number" && Number.isInteger(diagnostic.statusCode) && diagnostic.statusCode >= 400 && diagnostic.statusCode <= 599 ? diagnostic.statusCode : undefined,
     });
     if (key && lease) {

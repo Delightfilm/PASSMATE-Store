@@ -53,7 +53,8 @@ const gif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA
 globalThis.fetch = async () => new Response(gif);
 try {
   const images = await server.imageParts({ ...question, images: ["https://content.mypassmate.com/images/aa/" + "a".repeat(64) + ".gif"] });
-  assert.equal(images[0].type, "file"); assert.equal(images[0].mediaType, "image/png"); assert.equal((await sharp(images[0].data).metadata()).format, "png");
+  assert.equal(images[0].type, "file"); assert.equal(images[0].mediaType, "image/png"); assert.equal(typeof images[0].data, "string");
+  assert.equal((await sharp(Buffer.from(images[0].data, "base64")).metadata()).format, "png");
   assert.equal((await server.imageParts({ ...question, images: ["https://img.comcbt.com/cbt/data/hp/hp20160124/hp20160124m1.gif"] }))[0].mediaType, "image/png");
   outputs = [{ ...good, supported: true, imagesReadable: true }, { approved: true }];
   await server.generateExplanation(question, images);
