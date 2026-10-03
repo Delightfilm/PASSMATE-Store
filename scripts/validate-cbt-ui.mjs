@@ -43,6 +43,7 @@ const clientRequire = (name) => {
   if (name === "@/components/cbt-exam-ui") return module.exports;
   if (name === "@/components/logo") return { CbtMateLogo: () => null };
   if (name === "@/components/site-header") return { SiteHeader: () => null };
+  if (name === "@/components/question-bank-loading") return { QuestionBankLoading: () => null };
   if (name.startsWith("@/lib/")) return { certSlug: (cert) => cert.name };
   return createRequire(clientPath)(name);
 };

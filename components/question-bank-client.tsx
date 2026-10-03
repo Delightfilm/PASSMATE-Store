@@ -11,6 +11,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { timeLeftSeconds } from "@/lib/exam-time";
 import { contentBase, loadContentDataset } from "@/lib/question-bank-content";
 import { loadQuestionCorrections } from "@/lib/question-bank-corrections";
+import { QuestionBankLoading } from "@/components/question-bank-loading";
+import type { LoadOptions, LoadProgress } from "@/lib/question-bank-download";
 import {
   certCategory, certSlug, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
   loadPublishedDataset, makeId, mergeAccountStore, readLocalStore, submitIssueReport, syncAccountStore, writeLocalStore,
@@ -30,32 +32,50 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [store, setStore] = useState<LocalStore>(EMPTY_STORE);
   const [hydrated, setHydrated] = useState(false);
-  const [dataState, setDataState] = useState<"loading" | "live" | "error">("loading");
+  const [dataState, setDataState] = useState<"loading" | "live" | "error" | "cancelled">("loading");
+  const [progress, setProgress] = useState<LoadProgress | null>(null);
+  const [loadSequence, setLoadSequence] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const syncTimer = useRef<number | null>(null);
   const loadVersion = useRef(0);
+  const loadController = useRef<AbortController | null>(null);
 
   const retryDataset = useCallback(() => {
     const version = ++loadVersion.current;
+    loadController.current?.abort();
+    const controller = new AbortController();
+    loadController.current = controller;
+    const options: LoadOptions = { signal: controller.signal, onProgress: (next) => {
+      if (version === loadVersion.current && !controller.signal.aborted) setProgress(next);
+    } };
+    setProgress(null);
+    setLoadSequence(version);
     setDataState("loading");
     const load = async () => {
-      if (!contentBase()) return loadPublishedDataset();
+      if (!contentBase()) return loadPublishedDataset(controller.signal);
       let current = readLocalStore();
-      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); setStore(current); writeLocalStore(current); }
-      const live = await loadContentDataset(mode, certParam, attemptId, current);
+      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); controller.signal.throwIfAborted(); setStore(current); writeLocalStore(current); }
+      const live = await loadContentDataset(mode, certParam, attemptId, current, options);
       // Preserve links to pre-NAS UUID-based exams and saved learning records.
       const hasLegacyRefs = [...current.bookmarks, ...Object.keys(current.wrongNotes)].some((id) => !/^[a-f0-9]{20}$/.test(id));
       const needsLegacy = (mode === "cert" && !findCert(live, certParam)) || (mode === "exam" && current.attempts.some((item) => item.id === attemptId && !live.certs.some((cert) => cert.id === item.config.certId))) || (["history", "bookmarks", "wrong-notes"].includes(mode) && (hasLegacyRefs || current.attempts.some((item) => !live.certs.some((cert) => cert.id === item.config.certId))));
-      if (needsLegacy) { const legacy = await loadPublishedDataset(); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); } }
+      if (needsLegacy) { const legacy = await loadPublishedDataset(controller.signal); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); } }
       return live;
     };
-    void load().then(loadQuestionCorrections).then((live) => { if (version !== loadVersion.current) return; setDataset(live); setDataState("live"); }).catch((error) => {
+    void load().then((live) => loadQuestionCorrections(live, options)).then((live) => { if (version !== loadVersion.current || controller.signal.aborted) return; setDataset(live); setDataState("live"); }).catch((error) => {
       if (version !== loadVersion.current) return;
       console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
       setDataset(null); setDataState("error");
     });
   }, [mode, certParam, attemptId]);
+
+  const cancelDataset = useCallback(() => {
+    loadVersion.current++;
+    loadController.current?.abort();
+    setDataset(null);
+    setDataState("cancelled");
+  }, []);
 
   useEffect(() => {
     setStore(readLocalStore()); setHydrated(true);
@@ -63,7 +83,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthReady(true); });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setAuthReady(true); });
-    return () => { loadVersion.current++; data.subscription.unsubscribe(); };
+    return () => { loadVersion.current++; loadController.current?.abort(); data.subscription.unsubscribe(); };
   }, [retryDataset]);
   useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); writeLocalStore(next); }); }, [user]);
   useEffect(() => { const refresh = (event: StorageEvent) => { if (event.key === STORE_KEY) setStore(readLocalStore()); }; window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
@@ -79,7 +99,9 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); }
   }, [user, dataset]);
 
-  if (!hydrated || dataState === "loading") return <CbtSkeleton />;
+  if (!hydrated) return <CbtSkeleton />;
+  if (dataState === "loading") return <PageShell><QuestionBankLoading key={loadSequence} progress={progress} onCancel={cancelDataset} onRetry={retryDataset} /></PageShell>;
+  if (dataState === "cancelled") return <PageShell><div className="cbt-load-error" role="status"><h1>데이터 불러오기를 취소했습니다.</h1><p>다시 시도하면 문제 데이터를 불러옵니다.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (mode === "home") return <CbtHome dataset={dataset} />;
   if (mode === "exam") return <ExamScreen dataset={dataset} store={store} saveStore={saveStore} certParam={certParam} attemptId={attemptId} user={user} />;

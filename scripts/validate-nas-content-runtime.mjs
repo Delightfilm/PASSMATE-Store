@@ -4,7 +4,9 @@ import ts from "typescript";
 
 // Exercise the adapter without needing Supabase or downloading the full corpus.
 const source = fs.readFileSync(new URL("../lib/question-bank-content.ts", import.meta.url), "utf8");
-const js = ts.transpile(source, { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 });
+const downloadSource = fs.readFileSync(new URL("../lib/question-bank-download.ts", import.meta.url), "utf8");
+const downloadUrl = "data:text/javascript;base64," + Buffer.from(ts.transpile(downloadSource, { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 })).toString("base64");
+const js = ts.transpile(source.replace('from "./question-bank-download"', `from "${downloadUrl}"`), { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 });
 process.env.NEXT_PUBLIC_QUESTION_BANK_CONTENT_URL = "https://content.example.test/";
 const catalog = { schemaVersion: "passmate.question-bank.catalog.v1", releaseId: "test", totals: { questions: 2, qualifications: 2 }, qualifications: ["aa", "bb"].map((code) => ({ code, title: `${code} 기사`, bundle: `bundles/${code}.json.gz`, sha256: code, questions: 1, exams: 1 })) };
 const requests = []; let failBundle = false; let transportFailures = 1;

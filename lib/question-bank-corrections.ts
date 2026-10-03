@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import type { Dataset, Question } from "./question-bank";
+import type { LoadOptions } from "./question-bank-download";
 
 export type Correction = { question_ref: string; source_hash: string; content: Pick<Question, "stem" | "choices" | "answer" | "explanation"> };
 export function applyCorrections(dataset: Dataset, corrections: Correction[]): Dataset {
@@ -14,14 +15,18 @@ export function applyCorrections(dataset: Dataset, corrections: Correction[]): D
   }) };
 }
 
-export async function loadQuestionCorrections(dataset: Dataset): Promise<Dataset> {
+export async function loadQuestionCorrections(dataset: Dataset, options: LoadOptions = {}): Promise<Dataset> {
+  options.signal?.throwIfAborted();
   if (!dataset.questions.length) return dataset;
+  options.onProgress?.({ stage: "corrections", resource: "corrections", loadedBytes: 0, status: "connecting", updatedAt: Date.now() });
   const supabase = getSupabaseBrowserClient();
   const corrections: Correction[] = [];
   // Fresh reads outside the NAS bundle cache ensure edits appear on the next load.
   for (const code of new Set(dataset.questions.map((question) => question.certId))) {
     for (let offset = 0; ; offset += 1000) {
-      const { data, error } = await supabase.from("question_bank_question_corrections").select("question_ref,source_hash,content").eq("qualification_code", code).order("question_ref").range(offset, offset + 999);
+      const query = supabase.from("question_bank_question_corrections").select("question_ref,source_hash,content").eq("qualification_code", code).order("question_ref").range(offset, offset + 999);
+      const { data, error } = await (options.signal ? query.abortSignal(options.signal) : query);
+      options.signal?.throwIfAborted();
       if (error) throw new Error("question_corrections_load_failed");
       corrections.push(...(data || []) as Correction[]);
       if (!data || data.length < 1000) break;
