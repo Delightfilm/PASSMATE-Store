@@ -2,6 +2,7 @@ import type { Question } from "./question-bank";
 
 export const EXPLANATION_MODEL = "alibaba/qwen3.7-flash";
 export const EXPLANATION_VERSION = "answer-locked-v1";
+export const VERIFICATION_VERSION = "answer-blind-v2";
 export type AiExplanation = {
   correctAnswer: number;
   summary: string;
@@ -12,7 +13,13 @@ export type ExplanationReply = {
   explanation?: AiExplanation;
   cached?: boolean;
   message?: string;
+  verification?: { version: string; solvedAnswer: number; explanationAnswer: number };
 };
+
+export function hasAnswerVerification(value: Pick<ExplanationReply, "verification">, answer: number) {
+  return value.verification?.version === VERIFICATION_VERSION &&
+    value.verification.solvedAnswer === answer && value.verification.explanationAnswer === answer;
+}
 
 // Identical for every selected wrong answer/user. An admin edit changes the key.
 export function explanationInput(question: Question) {

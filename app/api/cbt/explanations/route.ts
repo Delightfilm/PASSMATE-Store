@@ -1,11 +1,15 @@
 import { authenticatedUser, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } from "@/lib/ai-explanation-server";
-import { validateExplanation, type ExplanationReply } from "@/lib/ai-explanation-contract";
+import { validateExplanation, hasAnswerVerification, type ExplanationReply } from "@/lib/ai-explanation-contract";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
 const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 function publicResult(result: Omit<ExplanationReply, "status"> & { status: string }, answer: number, cached = true) {
   if (!["ready", "generating", "refused", "failed"].includes(result.status)) throw new Error("cache_result_invalid");
+  // Preserve old entries/key and billing claims, but never serve unchecked text
+  // or automatically regenerate it after strengthening the safety gate.
+  if (result.status === "ready" && !hasAnswerVerification(result, answer)) return { status: "refused", cached,
+    message: "정답·해설 일치 검사 기준이 강화되어 이 해설은 관리자 검수 대기 중입니다. 중복 비용 방지를 위해 자동 재생성하지 않습니다." };
   return { status: result.status, ...(result.status === "ready" ? { explanation: validateExplanation(result.explanation, answer) } : {}), message: result.message, cached };
 }
 
@@ -49,13 +53,14 @@ export async function POST(request: Request) {
   } catch (error) {
     // Only typed diagnostic metadata: never stringify an SDK error, message,
     // request, provider response, account, question, or credential.
-    const diagnostic = error as { name?: unknown; statusCode?: unknown } | null;
+    const diagnostic = error as { name?: unknown; statusCode?: unknown; message?: unknown } | null;
     const serializationName = "AI_SerializationError";
     const names = ["GatewayInvalidRequestError", "GatewayAuthenticationError", "GatewayRateLimitError", "GatewayInternalServerError", "GatewayResponseError", "GatewayForbiddenError", "GatewayFailedDependencyError", "GatewayTimeoutError", "GatewayModelNotFoundError", "GatewayNotFoundError", "AI_APICallError", "AI_NoOutputGeneratedError", "AI_NoObjectGeneratedError", "AI_InvalidPromptError", "AI_InvalidArgumentError", "AI_TypeValidationError", "AI_InvalidDataContentError", "AI_DownloadError", "AI_UnsupportedFunctionalityError", "AI_LoadAPIKeyError", "AI_LoadSettingError", "AI_JSONParseError", "AI_InvalidResponseDataError", "AI_EmptyResponseBodyError", "TimeoutError", "AbortError", "TypeError", "ReferenceError", "RangeError", "SyntaxError", "Error"];
     console.error("ai_explanation_failed", {
       stage,
       kind: typeof diagnostic?.name === "string" && (names.includes(diagnostic.name) || diagnostic.name === serializationName) ? diagnostic.name : "other",
       status: typeof diagnostic?.statusCode === "number" && Number.isInteger(diagnostic.statusCode) && diagnostic.statusCode >= 400 && diagnostic.statusCode <= 599 ? diagnostic.statusCode : undefined,
+      reason: typeof diagnostic?.message === "string" && ["explanation_invalid", "explanation_unsafe", "explanation_contradiction"].includes(diagnostic.message) ? diagnostic.message : undefined,
     });
     if (key && lease) {
       // Retain the claim even if NAS is temporarily unreachable. Never silently re-bill.

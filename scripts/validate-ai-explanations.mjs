@@ -11,6 +11,8 @@ assert.deepEqual(normalizeLiveChoices(["가", "나", "다", "라"]).map((item) =
 const { validateExplanation, explanationInput } = contract;
 const question = { id: "a".repeat(20), certId: "kh", sourceHash: "source", stem: "테스트: 옳지 않은 것은?", choices: ["가", "나", "다", "라"].map((text, i) => ({ label: ["①", "②", "③", "④"][i], text })), answer: 0, images: [], explanation: "" };
 const good = { correctAnswer: 0, summary: "등록 정답이 질문 조건에 맞는 원리를 설명합니다.", choiceReasons: ["질문 조건에 맞는 보기입니다.", "조건에 해당하지 않는 보기입니다.", "조건에 해당하지 않는 보기입니다.", "조건에 해당하지 않는 보기입니다."] };
+const approved = { approved: true, solvedAnswer: 0, explanationAnswer: 0 };
+const verification = { version: contract.VERIFICATION_VERSION, solvedAnswer: 0, explanationAnswer: 0 };
 validateExplanation(good, 0);
 for (const invalid of [{ ...good, correctAnswer: 2 }, { ...good, choiceReasons: [] }, { ...good, summary: "정답은 ③번입니다." }, { ...good, summary: "②가 정답입니다. 다른 문제를 봅시다." }, { ...good, summary: "<script>악성 내용</script>" }]) assert.throws(() => validateExplanation(invalid, 0));
 assert.deepEqual(explanationInput(question), explanationInput({ ...question, selectedAnswer: 3, userId: "another-user" }));
@@ -35,17 +37,24 @@ const serverSource = read("../lib/ai-explanation-server.ts")
   .replace(/import \{ getPublicSupabaseConfig \}[^;]+;/, 'const getPublicSupabaseConfig = () => ({});')
   .replace(/import \{ loadContentCatalog, loadContentBundle \}[^;]+;/, 'const loadContentCatalog = () => {}; const loadContentBundle = () => {};')
   .replace(/import \{ normalizeLiveChoices \}[^;]+;/, 'const normalizeLiveChoices = (value) => value;')
-  .replace(/import \{ EXPLANATION_MODEL, explanationInput, validateExplanation,[^;]+;/, 'const { EXPLANATION_MODEL, explanationInput, validateExplanation } = globalThis.explanationContract;');
+  .replace(/import \{ EXPLANATION_MODEL,[^;]+;/, 'const { EXPLANATION_MODEL, VERIFICATION_VERSION, explanationInput, validateExplanation } = globalThis.explanationContract;');
 const server = await moduleFrom(serverSource);
-outputs = [{ ...good, supported: true, imagesReadable: true }, { approved: true }];
+outputs = [{ ...good, supported: true, imagesReadable: true }, approved];
 assert.equal((await server.generateExplanation(question, [])).status, "ready"); assert.equal(calls.length, 2);
 assert.ok(calls[0].system.includes("옳지 않은 것")); assert.ok(calls[1].system.includes("거짓 원리"));
+const blindInput = JSON.parse(calls[1].messages[0].content[0].text);
+assert.ok(!("answer" in blindInput.question)); assert.ok(!("correctAnswer" in blindInput.proposedExplanation));
+assert.deepEqual(calls[1].output.schema.properties.solvedAnswer.enum, [-1, 0, 1, 2, 3]);
 outputs = [{ ...good, supported: false, imagesReadable: true }];
 assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 3);
 outputs = [{ ...good, supported: true, imagesReadable: false }];
 assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 4);
-outputs = [{ ...good, supported: true, imagesReadable: true }, { approved: false }];
+outputs = [{ ...good, supported: true, imagesReadable: true }, { ...approved, approved: false }];
 assert.equal((await server.generateExplanation(question, [])).status, "refused");
+for (const mismatch of [{ ...approved, solvedAnswer: 2 }, { ...approved, explanationAnswer: 2 }, { ...approved, explanationAnswer: -1 }]) {
+  outputs = [{ ...good, supported: true, imagesReadable: true }, mismatch];
+  assert.equal((await server.generateExplanation(question, [])).status, "refused");
+}
 outputs = [{ ...good, supported: true, imagesReadable: true, correctAnswer: 2 }];
 await assert.rejects(server.generateExplanation(question, []), /invalid/);
 const fetchOriginal = globalThis.fetch;
@@ -56,7 +65,7 @@ try {
   assert.equal(images[0].type, "file"); assert.equal(images[0].mediaType, "image/png"); assert.equal(typeof images[0].data, "string");
   assert.equal((await sharp(Buffer.from(images[0].data, "base64")).metadata()).format, "png");
   assert.equal((await server.imageParts({ ...question, images: ["https://img.comcbt.com/cbt/data/hp/hp20160124/hp20160124m1.gif"] }))[0].mediaType, "image/png");
-  outputs = [{ ...good, supported: true, imagesReadable: true }, { approved: true }];
+  outputs = [{ ...good, supported: true, imagesReadable: true }, approved];
   await server.generateExplanation(question, images);
   assert.equal(calls.at(-1).messages[0].content[1].mediaType, "image/png");
   // Exercise the real installed SDK's PNG encoding, but intercept transport:
@@ -88,15 +97,20 @@ globalThis.routeDependencies = { ...server, cacheConfig: () => ({}), trustedQues
     if (action === "claim") { if (cacheState.status !== "missing") return cacheState; cacheState = { status: "generating" }; return { status: "claimed", lease: "c".repeat(64) }; }
     if (action === "finish") { cacheState = body.payload; return { ok: true }; }
     return cacheState;
-  }, generateExplanation: async () => { billed++; await new Promise((resolve) => setTimeout(resolve, 10)); return { status: "ready", explanation: good }; },
+  }, generateExplanation: async () => { billed++; await new Promise((resolve) => setTimeout(resolve, 10)); return { status: "ready", explanation: good, verification }; },
 };
 const route = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
   .replace(/import \{ authenticatedUser,[^;]+;/, 'const { authenticatedUser, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
-  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation } = globalThis.explanationContract;'));
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;'));
 const request = (readOnly = false, extra = {}) => new Request("https://www.mypassmate.com/api/cbt/explanations/", { method: "POST", body: JSON.stringify({ questionId: question.id, qualificationCode: "kh", revision: server.fingerprint(question), readOnly, ...extra }) });
 const responses = await Promise.all(Array.from({ length: 12 }, () => route.POST(request())));
 assert.ok(responses.every((response) => response.status === 200)); assert.equal(billed, 1);
 assert.equal((await (await route.POST(request())).json()).cached, true); assert.equal(billed, 1);
+for (const legacy of [{ status: "ready", explanation: good }, { status: "ready", explanation: good, verification: { ...verification, explanationAnswer: 2 } }]) {
+  cacheState = legacy;
+  assert.equal((await (await route.POST(request())).json()).status, "refused");
+  assert.equal(billed, 1); assert.equal(cacheState, legacy);
+}
 cacheState = { status: "missing" };
 assert.equal((await (await route.POST(request(true))).json()).status, "missing"); assert.equal(billed, 1);
 assert.equal((await route.POST(request(false, { revision: "d".repeat(64) }))).status, 409);
@@ -110,12 +124,12 @@ const generateOriginal = globalThis.routeDependencies.generateExplanation;
 globalThis.routeDependencies.generateExplanation = async () => { throw Object.assign(new Error("SECRET_PROVIDER_RESPONSE"), { name: "GatewayInvalidRequestError", statusCode: 400 }); };
 const failingRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
   .replace(/import \{ authenticatedUser,[^;]+;/, 'const { authenticatedUser, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
-  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation } = globalThis.explanationContract;') + "\n// diagnostic fixture");
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;') + "\n// diagnostic fixture");
 try {
   console.error = (...args) => diagnostics.push(args);
   assert.equal((await failingRoute.POST(request())).status, 503);
   assert.equal(cacheState.status, "failed");
-  assert.deepEqual(diagnostics, [["ai_explanation_failed", { stage: "generation", kind: "GatewayInvalidRequestError", status: 400 }]]);
+  assert.deepEqual(diagnostics, [["ai_explanation_failed", { stage: "generation", kind: "GatewayInvalidRequestError", status: 400, reason: undefined }]]);
   assert.ok(!JSON.stringify(diagnostics).includes("SECRET_PROVIDER_RESPONSE"));
 } finally { console.error = consoleError; globalThis.routeDependencies.generateExplanation = generateOriginal; }
 const component = read("../components/ai-question-explanation.tsx");
