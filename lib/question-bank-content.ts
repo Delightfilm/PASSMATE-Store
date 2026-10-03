@@ -26,10 +26,9 @@ export async function loadContentCatalog(options: LoadOptions = {}): Promise<Con
   if (catalogCache && catalogCache.expires > Date.now() && !catalogCache.value.controller.signal.aborted) return watchContentRequest(catalogCache.value, options);
   const value = createContentRequest(async (requestOptions) => {
     const url = `${contentBase()}/catalog.json`;
-    requestOptions.onProgress?.({ stage: "catalog", resource: url, loadedBytes: 0, status: "connecting", updatedAt: Date.now() });
     const response = await fetchContent(url, "no-store", requestOptions.signal);
     if (!response.ok) throw new Error(`question_bank_catalog_${response.status}`);
-    const catalog = await readContentJson<ContentCatalog>(response, "catalog", url, requestOptions);
+    const catalog = await readContentJson<ContentCatalog>(response, requestOptions);
     if (catalog.schemaVersion !== "passmate.question-bank.catalog.v1" || !Array.isArray(catalog.qualifications)) throw new Error("question_bank_catalog_invalid");
     return catalog;
   });
@@ -47,10 +46,9 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string, o
   if (cached && !cached.controller.signal.aborted) { bundles.delete(key); bundles.set(key, cached); return watchContentRequest(cached, options); }
   const value = createContentRequest(async (requestOptions) => {
     const url = `${contentBase()}/${entry.bundle}`;
-    requestOptions.onProgress?.({ stage: "bundle", resource: entry.title, loadedBytes: 0, status: "connecting", updatedAt: Date.now() });
     const response = await fetchContent(url, "no-cache", requestOptions.signal);
     if (!response.ok) throw new Error(`question_bank_bundle_${response.status}`);
-    const bundle = await readContentJson<Bundle>(response, "bundle", entry.title, requestOptions, entry.uncompressedBytes);
+    const bundle = await readContentJson<Bundle>(response, requestOptions);
     if (bundle.schemaVersion !== "passmate.question-bank.bundle.v1" || bundle.releaseId !== catalog.releaseId || bundle.qualification.code !== code || bundle.questions.length !== entry.questions || bundle.exams.length !== entry.exams) throw new Error("question_bank_bundle_invalid");
     return { certs: [{ id: code, name: entry.title, questionCount: entry.questions, examCount: entry.exams }], subjects: bundle.subjects, exams: bundle.exams, questions: bundle.questions.map((question) => ({ ...question, status: "published" as const, images: question.images.map((image) => {
       if (!/^images\/[a-f0-9]{2}\/[a-f0-9]{64}\.[a-z0-9]+$/i.test(image)) throw new Error("question_bank_image_invalid");

@@ -18,7 +18,6 @@ export function applyCorrections(dataset: Dataset, corrections: Correction[]): D
 export async function loadQuestionCorrections(dataset: Dataset, options: LoadOptions = {}): Promise<Dataset> {
   options.signal?.throwIfAborted();
   if (!dataset.questions.length) return dataset;
-  options.onProgress?.({ stage: "corrections", resource: "corrections", loadedBytes: 0, status: "connecting", updatedAt: Date.now() });
   const supabase = getSupabaseBrowserClient();
   const corrections: Correction[] = [];
   // Fresh reads outside the NAS bundle cache ensure edits appear on the next load.

@@ -39,63 +39,46 @@ Reported-question corrections are sparse public patches in Supabase, not a corpu
 import. The source NAS bundles remain immutable. Private audit events and report
 memos are never included in public patches. See [QUESTION_REVIEW.md](QUESTION_REVIEW.md).
 
-## Download progress (local implementation, not deployed)
+## Loading presentation — spinner and rotating guidance
 
-`question-bank-download.ts` counts decoded bytes from `response.body.getReader()`.
-The UI uses the current file's progress, not artificial weights for the three
-stages: catalog → qualification bundle → fresh corrections. Corrections remain
-uncached and their lookup has no byte-based percentage or ETA.
+The dataset flow stays catalog → selected qualification bundles → fresh
+corrections. Catalog TTL is 60 seconds; the four-bundle LRU remains keyed by
+content base/release/SHA. Corrections are read fresh outside those caches.
 
-An optional catalog entry field `uncompressedBytes` is the UTF-8 byte length of
-the exact JSON before gzip, tied to the same release/hash as that bundle. This
-field is supported by the client but has **not** been added to NAS data. Existing
-`compressedBytes` is deliberately not used as a denominator: Fetch decodes gzip
-and Brotli before yielding stream chunks. With no trustworthy size, the client
-shows received capacity and stage only, with no percentage/ETA.
+The loader shows a decorative 44px CSS spinner after 300ms, alongside guidance
+that changes every 3.5 seconds with a 0.3-second fade. It displays no percentage,
+received capacity or ETA. At 15 seconds the guidance becomes a fixed long-wait
+notice and shows cancel/retry. All loader timers are disposed on unmount.
+Reduced-motion disables the spinner animation and text fade.
 
-Fallback to Content-Length is allowed only for an uncompressed response. When
-Content-Encoding is CORS-hidden, missing does not mean uncompressed; the client
-uses capacity-only display. For a CORS response, explicit exposed `identity`
-encoding can safely enable the uncompressed Content-Length fallback.
+Display names come from the signed-in user's profiles.display_name, then the
+explicit display_name/nickname/name/full_name metadata fields. Missing names
+use 수험자. Email/phone fields and email prefixes are never used; email-like or
+phone-like name values are rejected. Names are truncated at 10 graphemes and
+rendered as escaped React text. The value is frozen when the loader first
+appears; a late auth/profile response cannot change the visible first phrase.
 
-Header audit on 2026-10-03, GET with Origin `https://www.mypassmate.com`:
+The visual rotating messages are aria-hidden. The status region uses polite
+announcements and aria-busy, with only the initial message and the 15-second
+notice in its screen-reader text. Cancel/retry remain accessible outside that
+live region. Text uses existing typography/colour tokens and reserved height.
 
-| Header | catalog.json | bundles/wc.json.gz |
-|---|---|---|
-| Content-Length | absent | 96030 (compressed) |
-| Content-Encoding | br | gzip |
-| Access-Control-Expose-Headers | absent | absent |
-| Access-Control-Allow-Origin | * | * |
-| Cache-Control | no-cache, max-age=0, must-revalidate | same |
+qualifications[].uncompressedBytes remains supported as an optional catalog
+field, but is not used by the current screen. Existing SHA/count/release/image
+validation is retained; streaming UTF-8 reading and AbortSignal reader
+cancellation remain. Presentation-only byte counting, Content-Length size
+estimation, percentage/rolling-rate/EMA/ETA calculation and progress listeners
+were removed.
 
-NAS/proxy proposals only; no server settings or data files were changed:
-
-- Add `qualifications[].uncompressedBytes` when publishing bundles, using
-  `len(json_bytes)` **before** gzip of those same bytes. Do not re-serialize JSON
-  differently for this measurement. Continue to retain `compressedBytes`.
-- Expose `Content-Encoding, Content-Length, ETag` via
-  `Access-Control-Expose-Headers` on catalog/bundle responses, including error
-  responses. Content-Length is already a CORS-safelisted response header, while
-  Content-Encoding is not. Exposing headers alone does not make compressed
-  Content-Length usable for decoded progress.
-- Preserve existing Cache-Control in this change. For the compressed catalog,
-  capacity-only progress remains appropriate; do not disable compression merely
-  to create a percentage. A same-origin proxy with verified uncompressed length
-  is another future option, not part of this implementation.
-
-UI details: wait 300ms before showing the loader; announce at roughly 5-second
-intervals; after 15 seconds offer cancel/retry. The transfer meter uses a rolling
-5-second rate and EMA (0.25), gated by 1 second of data and 5% received. Stale ETA
-is hidden after 5 seconds without new data. There is no simulated bar animation.
-
-Cache behavior is preserved: catalog TTL 60 seconds; four-bundle LRU by content
-base/release/SHA; completed cache hits emit no transfer progress. In-flight
-requests are shared with per-caller AbortSignal subscriptions; the last caller
+In-flight requests still coalesce with per-caller AbortSignal subscriptions.
+Cancelling one subscriber leaves other subscribers running; the last subscriber
 leaving aborts the actual request. Cancelled/failed entries can be retried, and
 an older failed request cannot clear a newer cache entry. HTTP failure UI and
-the existing single transport retry remain in place.
+the existing single transport retry stay in place.
 
-Validation: `npm run check:question-bank` now includes deterministic stream,
-size/ETA, abort, freshness, and cache tests. Slow browser fixtures and viewport
-results are documented separately in the local verification report. No exam
-answering, grading, saving or submission handlers were changed.
+Validation: npm run check:question-bank includes deterministic name/privacy,
+message schedule/announcements/timer disposal, UTF-8, abort, shared cancellation,
+fresh corrections and cache tests. Browser checks cover slow transfer/cancel/
+retry, motion preference, cache hit, responsive layout and the exam flow.
+No answering, grading, saving or submission handlers or NAS/proxy/CDN settings
+are modified by this presentation change.

@@ -1,51 +1,55 @@
 .card {
   width: 100%;
   max-width: 640px;
+  margin-inline: auto;
   padding: var(--space-5);
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--white);
   color: var(--ink);
+  text-align: center;
 }
-.title {
+.spinner {
   display: block;
-  font-size: var(--text-button);
-  line-height: var(--leading-title);
-  letter-spacing: var(--tracking-title);
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  margin-inline: auto;
+  border: 4px solid var(--blue-soft);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
-.resource, .detail, .slow p {
+.messageArea {
+  display: grid;
+  align-items: center;
+  min-height: 96px;
+  margin-top: var(--space-3);
+}
+.message {
+  margin: 0;
+  font-size: var(--text-choice);
+  font-weight: 600;
+  line-height: var(--leading-subtitle);
+  letter-spacing: var(--tracking-body);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  animation: messageFade 0.3s ease-out;
+}
+.helper {
   margin: var(--space-2) 0 0;
+  color: var(--muted);
   font-size: var(--text-small);
   line-height: var(--leading-small);
   letter-spacing: var(--tracking-body);
-  text-wrap: pretty;
-  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
-.resource, .detail { color: var(--muted); }
-.detail { font-variant-numeric: tabular-nums; }
-.track {
-  height: var(--space-2);
-  margin-top: var(--space-4);
-  border-radius: var(--radius-pill);
-  background: var(--blue-soft);
-  overflow: hidden;
-}
-.fill {
-  display: block;
-  height: 100%;
-  background: var(--blue);
-}
-.slow {
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--line);
-}
-.slow p { color: var(--muted); }
 .actions {
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
 }
 .actions button {
   min-height: var(--control-min-height);
@@ -59,6 +63,10 @@
   line-height: var(--leading-subtitle);
   cursor: pointer;
 }
+.actions button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
 .live {
   position: absolute;
   width: 1px;
@@ -69,4 +77,9 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes messageFade { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 620px) { .card { padding: var(--space-4); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner, .message { animation: none; }
+}

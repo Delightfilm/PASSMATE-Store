@@ -1,64 +1,100 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), "utf8");
 const urlFor = (source) => "data:text/javascript;base64," + Buffer.from(ts.transpile(source, { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 })).toString("base64");
 const downloadUrl = urlFor(read("../lib/question-bank-download.ts"));
-const { transferSize, createTransferMeter, readContentJson, createContentRequest, watchContentRequest } = await import(downloadUrl);
+const { readContentJson, createContentRequest, watchContentRequest } = await import(downloadUrl);
 
-const plain = new Response("{}", { headers: { "Content-Length": "200" } });
-const gzip = new Response("{}", { headers: { "Content-Length": "20", "Content-Encoding": "gzip" } });
-assert.equal(transferSize(plain), 200);
-assert.equal(transferSize(gzip), undefined, "encoded Content-Length must not be used");
-assert.equal(transferSize(gzip, 200), 200, "original-byte metadata wins");
-assert.equal(transferSize(gzip, -1), undefined);
-assert.equal(transferSize(new Response("{}")), undefined);
-const cors = new Response("{}", { headers: { "Content-Length": "20" } });
-Object.defineProperty(cors, "type", { value: "cors" });
-assert.equal(transferSize(cors), undefined, "CORS may hide an encoding header");
-const identity = new Response("{}", { headers: { "Content-Length": "200", "Content-Encoding": "identity" } });
-Object.defineProperty(identity, "type", { value: "cors" });
-assert.equal(transferSize(identity), 200);
+const { loadingDisplayName, loadingMessages, startLoadingMessages, SLOW_LOADING_MESSAGE } = await import(urlFor(read("../lib/question-bank-loading.ts")));
+assert.equal(loadingDisplayName(), "수험자");
+assert.equal(loadingDisplayName(undefined, { email: "private@example.test", phone: "010-1234-5678" }), "수험자");
+assert.equal(loadingDisplayName("프로필 이름", { display_name: "메타 이름" }), "프로필 이름");
+assert.equal(loadingDisplayName(" ", { nickname: "별명" }), "별명");
+assert.equal(loadingDisplayName("private@example.test"), "수험자");
+assert.equal(loadingDisplayName("+82 (10) 1234-5678"), "수험자");
+assert.equal(loadingDisplayName("가나다라마바사아자차카타파하거너"), "가나다라마바사아자차…");
+assert.equal(loadingDisplayName("😀".repeat(15)), "😀".repeat(10) + "…");
+assert.equal(loadingDisplayName("가나다라마바사아자차"), "가나다라마바사아자차");
+const taggedName = loadingDisplayName("<b>민수</b>");
+const markup = renderToStaticMarkup(React.createElement("p", null, loadingMessages(taggedName)[0]));
+assert.ok(markup.includes("&lt;b&gt;민수&lt;/b&gt;"), "names are plain escaped React text");
+assert.ok(!markup.includes("<b>"), "tags cannot become DOM markup");
+assert.equal(loadingMessages("수험자")[0], "수험자님의 시험지를 준비하고 있어요");
+assert.equal(loadingMessages("별명").length, 7);
 
-let time = 0;
-const meter = createTransferMeter(10_000, () => time);
-assert.equal(meter(100).etaSeconds, undefined);
-time = 900; assert.equal(meter(1000).etaSeconds, undefined, "wait for 1 second of data");
-time = 1000; const firstEta = meter(2000); assert.equal(firstEta.etaSeconds, 5, "exclude the first instantaneous chunk from throughput");
-time = 2000; const secondEta = meter(3000); assert.ok(secondEta.etaSeconds > 0);
-time = 2200; const backwards = meter(2500); assert.equal(backwards.loadedBytes, 3000); assert.equal(backwards.percent, 30);
-time = 7000; assert.ok(meter(6000).etaSeconds > 0, "rolling window must retain a usable boundary sample");
-time = 8000; assert.equal(meter(20_000).percent, 100);
-assert.equal(meter(20_000, true).etaSeconds, undefined);
-const underFive = createTransferMeter(100_000, () => time);
-underFive(100); time += 2000; assert.equal(underFive(4000).etaSeconds, undefined);
-const unknown = createTransferMeter(undefined, () => time);
-assert.equal(unknown(500).percent, undefined); time += 2000; assert.equal(unknown(1000).etaSeconds, undefined);
+function fakeTimers() {
+  let now = 0, sequence = 0;
+  const jobs = new Map();
+  const add = (callback, delay, interval = 0) => { const id = ++sequence; jobs.set(id, { id, callback, at: now + delay, interval }); return id; };
+  return {
+    setTimeout: (callback, delay) => add(callback, delay),
+    clearTimeout: (id) => jobs.delete(id),
+    setInterval: (callback, delay) => add(callback, delay, delay),
+    clearInterval: (id) => jobs.delete(id),
+    get count() { return jobs.size; },
+    advance(ms) {
+      const target = now + ms;
+      while (true) {
+        const job = [...jobs.values()].filter((job) => job.at <= target).sort((a, b) => a.at - b.at || a.id - b.id)[0];
+        if (!job) break;
+        now = job.at;
+        if (job.interval) job.at += job.interval; else jobs.delete(job.id);
+        job.callback();
+      }
+      now = target;
+    },
+  };
+}
+let name = "첫 이름";
+const timers = fakeTimers(), seen = [], announcements = [];
+const callbacks = {
+  getName: () => name,
+  onShow: (message) => { seen.push(message); announcements.push(message); },
+  onMessage: (message) => seen.push(message),
+  onSlow: (message) => { seen.push(message); announcements.push(message); },
+};
+const dispose = startLoadingMessages(callbacks, timers);
+timers.advance(299); assert.equal(seen.length, 0, "do not flash below 300ms");
+name = "등장 이름"; timers.advance(1); assert.equal(seen[0], loadingMessages(name)[0]);
+name = "뒤늦은 이름";
+timers.advance(3499); assert.equal(seen.length, 1);
+timers.advance(1); assert.equal(seen[1], loadingMessages("등장 이름")[1], "rotate after 3.5 seconds");
+timers.advance(3500); assert.equal(seen[2], loadingMessages("등장 이름")[2]);
+assert.equal(announcements.length, 1, "rotating text does not announce");
+timers.advance(7699); assert.notEqual(seen.at(-1), SLOW_LOADING_MESSAGE);
+timers.advance(1); assert.equal(seen.at(-1), SLOW_LOADING_MESSAGE);
+assert.equal(announcements.length, 2, "announce only initial and 15-second warning");
+const stoppedLength = seen.length; timers.advance(20000); assert.equal(seen.length, stoppedLength);
+dispose(); assert.equal(timers.count, 0, "all timers are cleaned up");
+
+const quick = fakeTimers(), quickSeen = [];
+const quickDispose = startLoadingMessages({ ...callbacks, onShow: (message) => quickSeen.push(message) }, quick);
+quick.advance(200); quickDispose(); quick.advance(20000);
+assert.equal(quickSeen.length, 0, "cache hits never display");
+assert.equal(quick.count, 0);
+const remount = fakeTimers();
+const firstMount = startLoadingMessages(callbacks, remount); firstMount();
+const secondMount = startLoadingMessages(callbacks, remount);
+assert.equal(remount.count, 2, "Strict Mode remount must not double timers");
+remount.advance(4000); secondMount(); assert.equal(remount.count, 0);
 
 const object = { text: "한글 · 숫자 2027".repeat(1000) };
 const bytes = new TextEncoder().encode(JSON.stringify(object));
-const updates = [];
 let position = 0;
-const stream = new ReadableStream({ async pull(controller) {
+const stream = new ReadableStream({ pull(controller) {
   if (position >= bytes.length) { controller.close(); return; }
-  await new Promise((resolve) => setTimeout(resolve, 270));
-  const end = Math.min(position + Math.ceil(bytes.length / 6), bytes.length);
+  const end = Math.min(position + 17, bytes.length);
   controller.enqueue(bytes.slice(position, end)); position = end;
 } });
-const decoded = await readContentJson(new Response(stream), "bundle", "test", { onProgress: (p) => updates.push(p) }, bytes.length);
-assert.deepEqual(decoded, object, "UTF-8 boundaries must not corrupt JSON");
-assert.equal(updates.at(-1).loadedBytes, bytes.length);
-assert.equal(updates.at(-1).percent, 100);
-assert.ok(updates.some((p) => p.etaSeconds !== undefined));
-assert.ok(updates.every((p, i) => i === 0 || p.loadedBytes >= updates[i - 1].loadedBytes));
-const noSize = [];
-await readContentJson(Response.json(object), "catalog", "test", { onProgress: (p) => noSize.push(p) });
-assert.ok(noSize.every((p) => p.percent === undefined && p.etaSeconds === undefined));
-assert.equal(noSize.at(-1).loadedBytes, bytes.length);
+assert.deepEqual(await readContentJson(new Response(stream)), object, "UTF-8 split boundaries must not corrupt JSON");
+assert.deepEqual(await readContentJson(Response.json(object)), object);
 
 const ac = new AbortController(); let cancelled = false;
-const pending = readContentJson(new Response(new ReadableStream({ cancel() { cancelled = true; } })), "bundle", "test", { signal: ac.signal });
+const pending = readContentJson(new Response(new ReadableStream({ cancel() { cancelled = true; } })), { signal: ac.signal });
 ac.abort(); await assert.rejects(pending, { name: "AbortError" }); assert.equal(cancelled, true);
 let finish; const shared = createContentRequest(() => new Promise((resolve) => { finish = resolve; }));
 const one = new AbortController(); const two = new AbortController();
@@ -86,10 +122,10 @@ globalThis.fetch = async (url, init) => {
 };
 try {
   const loaded = await adapter.loadContentCatalog();
-  const hitUpdates = []; await adapter.loadContentCatalog({ onProgress: (p) => hitUpdates.push(p) });
-  assert.equal(requests, 1); assert.equal(hitUpdates.length, 0, "completed catalog cache emits no progress");
-  await adapter.loadContentBundle(loaded, "aa"); await adapter.loadContentBundle(loaded, "aa", { onProgress: (p) => hitUpdates.push(p) });
-  assert.equal(requests, 2); assert.equal(hitUpdates.length, 0, "completed bundle cache emits no progress");
+  await adapter.loadContentCatalog();
+  assert.equal(requests, 1, "completed catalog cache makes no request");
+  await adapter.loadContentBundle(loaded, "aa"); await adapter.loadContentBundle(loaded, "aa");
+  assert.equal(requests, 2, "completed bundle cache makes no request");
   for (const code of ["bb", "cc", "dd", "ee"]) await adapter.loadContentBundle(loaded, code);
   await adapter.loadContentBundle(loaded, "aa"); assert.equal(requests, 7, "four-bundle bound still evicts LRU");
   clock += 60_001; await adapter.loadContentCatalog(); assert.equal(requests, 8, "catalog expires at 60 seconds");
@@ -119,4 +155,63 @@ try {
   assert.equal(signalSeen, correctionAbort.signal);
   correctionAbort.abort(); await assert.rejects(request, { name: "AbortError" });
 } finally { delete globalThis.loadingTestSupabase; }
-console.log("CBT loading OK: exact decoded bytes, UTF-8, known/unknown sizes, compressed/CORS headers, gated smoothed ETA, monotonic progress, abort/coalescing, cache hit/expiry/LRU/retry");
+const component = read("../components/question-bank-loading.tsx");
+const clientSource = read("../components/question-bank-client.tsx");
+const clientAst = ts.createSourceFile("client.tsx", clientSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+let profileBody;
+function findProfileEffect(node) {
+  if (ts.isCallExpression(node) && node.expression.getText(clientAst) === "useEffect") {
+    const callback = node.arguments[0];
+    if (callback && ts.isArrowFunction(callback) && callback.body.getText(clientAst).includes('.from("profiles")')) profileBody = callback.body.getText(clientAst).slice(1, -1);
+  }
+  ts.forEachChild(node, findProfileEffect);
+}
+findProfileEffect(clientAst);
+assert.ok(profileBody && !profileBody.includes("await") && !profileBody.includes("setDataState") && !profileBody.includes("setDataset"), "profile lookup cannot block or fail the dataset pipeline");
+const runProfileEffect = new Function("loadingUserId", "setLoadingProfile", "getSupabaseBrowserClient", "AbortController", ts.transpile(profileBody, { target: ts.ScriptTarget.ES2022 }));
+let profileCalls = 0, finishProfile, profileValue;
+const profileApi = () => ({
+  from(table) {
+    profileCalls++;
+    assert.equal(table, "profiles");
+    const query = {
+      select(fields) { assert.equal(fields, "display_name"); return query; },
+      eq(field, id) { assert.equal(field, "id"); assert.equal(id, "local-test-user"); return query; },
+      abortSignal(signal) { assert.ok(signal instanceof AbortSignal); return query; },
+      maybeSingle() { return new Promise((resolve, reject) => { finishProfile = { resolve, reject }; }); },
+    };
+    return query;
+  },
+});
+runProfileEffect(undefined, (value) => { profileValue = value; }, profileApi, AbortController);
+assert.equal(profileCalls, 0, "guests must send no profiles request");
+const stopProfile = runProfileEffect("local-test-user", (value) => { profileValue = value; }, profileApi, AbortController);
+assert.equal(typeof stopProfile, "function", "effect returns cleanup immediately, not a profile promise");
+assert.equal(loadingDisplayName(profileValue?.name), "수험자", "pending profile does not delay guest fallback");
+finishProfile.reject(new Error("local profile lookup failed"));
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(loadingDisplayName(profileValue?.name), "수험자", "lookup failure is ignored");
+stopProfile();
+const lateTimers = fakeTimers(), lateMessages = [];
+const stopLateProfile = runProfileEffect("local-test-user", (value) => { profileValue = value; }, profileApi, AbortController);
+const stopLateLoader = startLoadingMessages({
+  getName: () => loadingDisplayName(profileValue?.name),
+  onShow: (message) => lateMessages.push(message),
+  onMessage: (message) => lateMessages.push(message),
+  onSlow: (message) => lateMessages.push(message),
+}, lateTimers);
+lateTimers.advance(300);
+assert.equal(lateMessages[0], "수험자님의 시험지를 준비하고 있어요");
+finishProfile.resolve({ data: { display_name: "늦은 닉네임" } });
+await new Promise((resolve) => setImmediate(resolve));
+assert.equal(profileValue.name, "늦은 닉네임");
+assert.equal(lateMessages[0], "수험자님의 시험지를 준비하고 있어요", "late profile cannot replace first message");
+stopLateLoader(); stopLateProfile();
+const css = read("../components/question-bank-loading.module.css");
+assert.ok(component.includes('role="status"') && component.includes('aria-live="polite"') && component.includes('aria-busy="true"'));
+assert.ok(component.includes('aria-hidden="true"'));
+assert.equal((component.match(/setAnnouncement\(/g) || []).length, 2);
+assert.ok(!component.includes("dangerouslySetInnerHTML") && !component.includes("progressbar"));
+assert.ok(css.includes("prefers-reduced-motion: reduce") && css.includes("animation: none"));
+assert.ok(css.includes("min-height: 96px") && css.includes("0.3s"));
+console.log("CBT loading OK: rotating text, private name rules/freeze, 300ms/15s, accessible announcements, timer cleanup, UTF-8 streaming, abort/coalescing, cache hit/expiry/LRU/retry, fresh corrections");

@@ -12,7 +12,8 @@ import { timeLeftSeconds } from "@/lib/exam-time";
 import { contentBase, loadContentDataset } from "@/lib/question-bank-content";
 import { loadQuestionCorrections } from "@/lib/question-bank-corrections";
 import { QuestionBankLoading } from "@/components/question-bank-loading";
-import type { LoadOptions, LoadProgress } from "@/lib/question-bank-download";
+import type { LoadOptions } from "@/lib/question-bank-download";
+import { loadingDisplayName } from "@/lib/question-bank-loading";
 import {
   certCategory, certSlug, EMPTY_STORE, findCert, hangulInitials, STORE_KEY,
   loadPublishedDataset, makeId, mergeAccountStore, readLocalStore, submitIssueReport, syncAccountStore, writeLocalStore,
@@ -33,9 +34,10 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const [store, setStore] = useState<LocalStore>(EMPTY_STORE);
   const [hydrated, setHydrated] = useState(false);
   const [dataState, setDataState] = useState<"loading" | "live" | "error" | "cancelled">("loading");
-  const [progress, setProgress] = useState<LoadProgress | null>(null);
   const [loadSequence, setLoadSequence] = useState(0);
   const [user, setUser] = useState<User | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState<{ id: string; name: unknown } | null>(null);
+  const loadingUserId = user?.id;
   const [authReady, setAuthReady] = useState(false);
   const syncTimer = useRef<number | null>(null);
   const loadVersion = useRef(0);
@@ -46,10 +48,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     loadController.current?.abort();
     const controller = new AbortController();
     loadController.current = controller;
-    const options: LoadOptions = { signal: controller.signal, onProgress: (next) => {
-      if (version === loadVersion.current && !controller.signal.aborted) setProgress(next);
-    } };
-    setProgress(null);
+    const options: LoadOptions = { signal: controller.signal };
     setLoadSequence(version);
     setDataState("loading");
     const load = async () => {
@@ -85,6 +84,14 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setAuthReady(true); });
     return () => { loadVersion.current++; loadController.current?.abort(); data.subscription.unsubscribe(); };
   }, [retryDataset]);
+  useEffect(() => {
+    if (!loadingUserId) { setLoadingProfile(null); return; }
+    const controller = new AbortController();
+    void getSupabaseBrowserClient().from("profiles").select("display_name").eq("id", loadingUserId).abortSignal(controller.signal).maybeSingle().then(({ data }) => {
+      if (!controller.signal.aborted) setLoadingProfile({ id: loadingUserId, name: data?.display_name });
+    }, () => { /* Name lookup is optional and never blocks data loading. */ });
+    return () => controller.abort();
+  }, [loadingUserId]);
   useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); writeLocalStore(next); }); }, [user]);
   useEffect(() => { const refresh = (event: StorageEvent) => { if (event.key === STORE_KEY) setStore(readLocalStore()); }; window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
   const saveStore = useCallback((next: LocalStore) => {
@@ -100,7 +107,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   }, [user, dataset]);
 
   if (!hydrated) return <CbtSkeleton />;
-  if (dataState === "loading") return <PageShell><QuestionBankLoading key={loadSequence} progress={progress} onCancel={cancelDataset} onRetry={retryDataset} /></PageShell>;
+  if (dataState === "loading") return <PageShell><QuestionBankLoading key={loadSequence} displayName={loadingDisplayName(loadingProfile?.id === user?.id ? loadingProfile?.name : undefined, user?.user_metadata)} onCancel={cancelDataset} onRetry={retryDataset} /></PageShell>;
   if (dataState === "cancelled") return <PageShell><div className="cbt-load-error" role="status"><h1>데이터 불러오기를 취소했습니다.</h1><p>다시 시도하면 문제 데이터를 불러옵니다.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (mode === "home") return <CbtHome dataset={dataset} />;
