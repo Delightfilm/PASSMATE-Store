@@ -1,0 +1,32 @@
+:root {
+  --font-ui: var(--font-pretendard, Pretendard, system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif);
+  --text-small: 13px;
+  --text-button: 14px;
+  --text-explanation: 15px;
+  --text-choice: 16px;
+  --text-subtitle: 18px;
+  --tracking-h1: -0.025em;
+  --tracking-h2: -0.02em;
+  --tracking-title: -0.015em;
+  --tracking-body: 0;
+  --tracking-label: 0.01em;
+  --tracking-latin: 0.12em;
+  --tracking-question: -0.01em;
+  --tracking-score: -0.02em;
+  --leading-h1: 1.28;
+  --leading-h2: 1.3;
+  --leading-title: 1.4;
+  --leading-subtitle: 1.5;
+  --leading-body: 1.6;
+  --leading-small: 1.55;
+  --leading-question: 1.5;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --control-min-height: 44px;
+  --choice-badge-size: 22px;
+  --toast-clearance: 216px;
+}

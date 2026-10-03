@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import localFont from "next/font/local";
 import "./globals.css";
+import "./ui-refinements.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageTransition } from "@/components/page-transition";
+
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.woff2",
+  variable: "--font-pretendard",
+  display: "swap",
+  weight: "45 920",
+  adjustFontFallback: false,
+  fallback: ["system-ui", "-apple-system", "Apple SD Gothic Neo", "Noto Sans KR", "sans-serif"],
+});
 
 export const metadata: Metadata = {
   title: "PASSMATE | 합격까지 함께하는 요약노트",
@@ -12,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko" data-scroll-behavior="smooth">
+    <html lang="ko" className={pretendard.variable} data-scroll-behavior="smooth">
       <body>
         <Suspense><SiteHeader /></Suspense>
         <main><PageTransition>{children}</PageTransition></main>

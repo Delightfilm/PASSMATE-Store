@@ -55,7 +55,7 @@ export default async function ProductPage({
         <div className="product-info">
           <span className="pill">PASSMATE 핵심노트</span>
           <h1>{product.year}<br/>{displayTitle}</h1>
-          <p className="product-subtitle">{getCustomerCopy(product.subtitle)}</p>
+          <p className="product-subtitle">{getCustomerCopy(product.subtitle).replaceAll("시험직전", "시험 직전")}</p>
           <p>{getCustomerCopy(product.description)}</p>
           <ul className="check-list">
             {displayFeatures.map((feature) => (
@@ -63,7 +63,7 @@ export default async function ProductPage({
             ))}
           </ul>
           <div className="price-row">
-            <strong>패키지 선택</strong>
+            <h2>패키지 선택</h2>
             <span>현재 판매가는 아래 옵션에서 확인 · 디지털 PDF</span>
           </div>
           <ProductPurchaseOptions slug={product.slug} title={displayTitle} />
