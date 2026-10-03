@@ -1,6 +1,16 @@
 # On-demand AI explanations
 
-Status (2026-10-03): implementation and isolated tests complete; NAS/Vercel deployment and live paid text/vision/cache verification still required. Do not describe the live feature as enabled before these pass.
+Status (2026-10-04, Asia/Seoul): the isolated NAS cache is deployed, HTTPS authentication is verified, and matching server-only Vercel variables are configured for Production and the `codex/ai-question-explanations` Preview branch. The application remains a draft preview: live paid text/vision/cache verification and production activation are still required. Do not describe the live feature as enabled before these pass.
+
+## Verified deployment checkpoint
+
+- NAS `passmate-ai-cache` runs as UID 1000/GID 10, with no published ports and no source-release mount. Its persistent SQLite `quick_check` returned `ok`.
+- `https://content.mypassmate.com/ai-cache/health` returned 200. A private `/v1/<key>` request without authorization returned 401; the matching private token returned 200 with `status: missing` without creating a job.
+- The original nginx configuration is preserved at `question-bank/default.conf.pre-ai.template` and `PASSMATE/04_BACKUP/default.conf.template`. `default.conf.with-ai.template` contains the verified complete public configuration plus the private proxy location.
+- The candidate passed `nginx -t` inside the existing nginx container before activation. Only `passmate-question-bank` was restarted to remount the replaced config; the tunnel, source releases and COMCBT were not changed.
+- The public catalog returned 200 before and after the change with identical SHA-256 `c6e3439930511704593398183b3363b63ae14e58e13ec9b0508b618dd747e1a1`. The `wc` bundle and one referenced image both returned 200; the image bytes matched its SHA-256 filename.
+- Vercel project `cueits-projects/passmate-store` has `PASSMATE_AI_CACHE_TOKEN` stored as a sensitive server-only secret and matching `PASSMATE_AI_CACHE_URL`. Preview scope is limited to the AI branch; environment changes apply to new deployments only.
+- AI Gateway onboarding showed paid credit `$0.00`, free-credit onboarding not completed, and `Auto-reload is disabled`. No credit purchase, card verification, provider key creation, or billable model request was made. The owner must resolve Gateway credit availability before live generation tests. No fake explanations were seeded.
 
 ## User flow
 
