@@ -9,7 +9,8 @@ const urlFor = (source) => "data:text/javascript;base64," + Buffer.from(ts.trans
 const downloadUrl = urlFor(read("../lib/question-bank-download.ts"));
 const { readContentJson, createContentRequest, watchContentRequest } = await import(downloadUrl);
 
-const { loadingDisplayName, loadingMessages, startLoadingMessages, SLOW_LOADING_MESSAGE } = await import(urlFor(read("../lib/question-bank-loading.ts")));
+const { loadingDisplayName, loadingMessages, startLoadingMessages, SLOW_LOADING_MESSAGE, LOADING_MESSAGE_INTERVAL_MS, LOADING_MESSAGE_FADE_MS, LOADING_SHOW_DELAY_MS, LOADING_SLOW_DELAY_MS } = await import(urlFor(read("../lib/question-bank-loading.ts")));
+assert.equal(LOADING_MESSAGE_INTERVAL_MS, 5_000);
 assert.equal(loadingDisplayName(), "수험자");
 assert.equal(loadingDisplayName(undefined, { email: "private@example.test", phone: "010-1234-5678" }), "수험자");
 assert.equal(loadingDisplayName("프로필 이름", { display_name: "메타 이름" }), "프로필 이름");
@@ -50,26 +51,40 @@ function fakeTimers() {
   };
 }
 let name = "첫 이름";
-const timers = fakeTimers(), seen = [], announcements = [];
+const timers = fakeTimers(), seen = [], announcements = [], fades = [];
 const callbacks = {
   getName: () => name,
   onShow: (message) => { seen.push(message); announcements.push(message); },
   onMessage: (message) => seen.push(message),
+  onFadeOut: () => fades.push(seen.at(-1)),
   onSlow: (message) => { seen.push(message); announcements.push(message); },
 };
 const dispose = startLoadingMessages(callbacks, timers);
-timers.advance(299); assert.equal(seen.length, 0, "do not flash below 300ms");
+timers.advance(LOADING_SHOW_DELAY_MS - 1); assert.equal(seen.length, 0, "do not flash below 300ms");
 name = "등장 이름"; timers.advance(1); assert.equal(seen[0], loadingMessages(name)[0]);
 name = "뒤늦은 이름";
-timers.advance(3499); assert.equal(seen.length, 1);
-timers.advance(1); assert.equal(seen[1], loadingMessages("등장 이름")[1], "rotate after 3.5 seconds");
-timers.advance(3500); assert.equal(seen[2], loadingMessages("등장 이름")[2]);
+timers.advance(LOADING_MESSAGE_INTERVAL_MS - LOADING_MESSAGE_FADE_MS - 1);
+assert.equal(fades.length, 0);
+timers.advance(1); assert.equal(fades.length, 1, "fade out before replacing text");
+timers.advance(LOADING_MESSAGE_FADE_MS - 1); assert.equal(seen.length, 1);
+timers.advance(1); assert.equal(seen[1], loadingMessages("등장 이름")[1], "replace at the shared interval boundary");
+timers.advance(LOADING_MESSAGE_INTERVAL_MS); assert.equal(seen[2], loadingMessages("등장 이름")[2]);
 assert.equal(announcements.length, 1, "rotating text does not announce");
-timers.advance(7699); assert.notEqual(seen.at(-1), SLOW_LOADING_MESSAGE);
+timers.advance(LOADING_SLOW_DELAY_MS - LOADING_SHOW_DELAY_MS - LOADING_MESSAGE_INTERVAL_MS * 2 - 1); assert.notEqual(seen.at(-1), SLOW_LOADING_MESSAGE);
 timers.advance(1); assert.equal(seen.at(-1), SLOW_LOADING_MESSAGE);
 assert.equal(announcements.length, 2, "announce only initial and 15-second warning");
+assert.equal(fades.length, 2, "the pending next rotation must not fade before the 15-second notice");
+assert.equal(seen.length, 4, "only first three messages, then the fixed notice");
 const stoppedLength = seen.length; timers.advance(20000); assert.equal(seen.length, stoppedLength);
 dispose(); assert.equal(timers.count, 0, "all timers are cleaned up");
+const interrupted = fakeTimers();
+const stopInterrupted = startLoadingMessages(callbacks, interrupted);
+interrupted.advance(LOADING_SHOW_DELAY_MS + LOADING_MESSAGE_INTERVAL_MS - LOADING_MESSAGE_FADE_MS);
+stopInterrupted(); assert.equal(interrupted.count, 0, "dispose cleans up during a fade");
+const restarted = fakeTimers(), restartMessages = [];
+const stopRestart = startLoadingMessages({ ...callbacks, onShow: (message) => restartMessages.push(message) }, restarted);
+restarted.advance(LOADING_SHOW_DELAY_MS); assert.equal(restartMessages[0], loadingMessages(name)[0], "retry starts at first message");
+stopRestart();
 
 const quick = fakeTimers(), quickSeen = [];
 const quickDispose = startLoadingMessages({ ...callbacks, onShow: (message) => quickSeen.push(message) }, quick);
@@ -213,5 +228,8 @@ assert.ok(component.includes('aria-hidden="true"'));
 assert.equal((component.match(/setAnnouncement\(/g) || []).length, 2);
 assert.ok(!component.includes("dangerouslySetInnerHTML") && !component.includes("progressbar"));
 assert.ok(css.includes("prefers-reduced-motion: reduce") && css.includes("animation: none"));
-assert.ok(css.includes("min-height: 96px") && css.includes("0.3s"));
-console.log("CBT loading OK: rotating text, private name rules/freeze, 300ms/15s, accessible announcements, timer cleanup, UTF-8 streaming, abort/coalescing, cache hit/expiry/LRU/retry, fresh corrections");
+assert.ok(css.includes("min-height: 48px") && css.includes("transition: opacity var(--message-fade-duration)") && css.includes("transition: none"));
+assert.ok(component.includes("LOADING_MESSAGE_FADE_MS") && component.includes("--message-fade-duration"));
+assert.ok(!component.includes("styles.helper") && !css.includes(".helper"));
+assert.ok(!component.includes("key={message}"), "text transitions must not remount the spinner or paragraph");
+console.log("CBT loading OK: 5s guidance, sequential fade/no helper, private name rules/freeze, 300ms/15s, accessible announcements, timer cleanup, UTF-8 streaming, abort/coalescing, cache hit/expiry/LRU/retry, fresh corrections");

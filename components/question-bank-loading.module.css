@@ -23,7 +23,7 @@
 .messageArea {
   display: grid;
   align-items: center;
-  min-height: 96px;
+  min-height: 48px;
   margin-top: var(--space-3);
 }
 .message {
@@ -34,16 +34,10 @@
   letter-spacing: var(--tracking-body);
   text-wrap: balance;
   overflow-wrap: anywhere;
-  animation: messageFade 0.3s ease-out;
+  opacity: 1;
+  transition: opacity var(--message-fade-duration) ease-in-out;
 }
-.helper {
-  margin: var(--space-2) 0 0;
-  color: var(--muted);
-  font-size: var(--text-small);
-  line-height: var(--leading-small);
-  letter-spacing: var(--tracking-body);
-  text-wrap: balance;
-}
+.messageFading { opacity: 0; }
 .actions {
   display: flex;
   justify-content: center;
@@ -78,8 +72,9 @@
   white-space: nowrap;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes messageFade { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 620px) { .card { padding: var(--space-4); } }
 @media (prefers-reduced-motion: reduce) {
-  .spinner, .message { animation: none; }
+  .spinner { animation: none; }
+  .message { transition: none; }
+  .messageFading { opacity: 1; }
 }

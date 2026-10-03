@@ -1,4 +1,8 @@
 // Loading presentation only: it neither reads nor modifies the dataset.
+export const LOADING_MESSAGE_INTERVAL_MS = 5_000;
+export const LOADING_MESSAGE_FADE_MS = 350;
+export const LOADING_SHOW_DELAY_MS = 300;
+export const LOADING_SLOW_DELAY_MS = 15_000;
 export const SLOW_LOADING_MESSAGE = "평소보다 오래 걸리고 있어요. 계속 준비 중이니 조금만 더 기다려 주세요.";
 
 export function loadingDisplayName(profileName?: unknown, metadata?: Record<string, unknown> | null): string {
@@ -29,34 +33,48 @@ export function loadingMessages(name: string) {
 type LoadingTimers = {
   setTimeout: (callback: () => void, delay: number) => number;
   clearTimeout: (handle: number) => void;
-  setInterval: (callback: () => void, delay: number) => number;
-  clearInterval: (handle: number) => void;
 };
 
 export function startLoadingMessages(callbacks: {
   getName: () => string;
   onShow: (message: string) => void;
   onMessage: (message: string) => void;
+  onFadeOut?: () => void;
   onSlow: (message: string) => void;
 }, timers: LoadingTimers = window) {
   let rotation: number | undefined;
+  let fade: number | undefined;
+  const clearRotation = () => {
+    if (rotation !== undefined) timers.clearTimeout(rotation);
+    if (fade !== undefined) timers.clearTimeout(fade);
+  };
   const show = timers.setTimeout(() => {
     // Freeze the name at first appearance; late profile/auth responses stay out.
     const messages = loadingMessages(callbacks.getName());
     let index = 0;
     callbacks.onShow(messages[0]);
-    rotation = timers.setInterval(() => {
-      index = (index + 1) % messages.length;
-      callbacks.onMessage(messages[index]);
-    }, 3500);
-  }, 300);
+    let elapsed = LOADING_SHOW_DELAY_MS;
+    const scheduleNext = () => {
+      const nextElapsed = elapsed + LOADING_MESSAGE_INTERVAL_MS;
+      // The fixed notice takes over before the next message; do not fade it out.
+      if (nextElapsed >= LOADING_SLOW_DELAY_MS) return;
+      fade = timers.setTimeout(() => callbacks.onFadeOut?.(), LOADING_MESSAGE_INTERVAL_MS - LOADING_MESSAGE_FADE_MS);
+      rotation = timers.setTimeout(() => {
+        index = (index + 1) % messages.length;
+        elapsed = nextElapsed;
+        callbacks.onMessage(messages[index]);
+        scheduleNext();
+      }, LOADING_MESSAGE_INTERVAL_MS);
+    };
+    scheduleNext();
+  }, LOADING_SHOW_DELAY_MS);
   const slow = timers.setTimeout(() => {
-    if (rotation !== undefined) timers.clearInterval(rotation);
+    clearRotation();
     callbacks.onSlow(SLOW_LOADING_MESSAGE);
-  }, 15_000);
+  }, LOADING_SLOW_DELAY_MS);
   return () => {
     timers.clearTimeout(show);
     timers.clearTimeout(slow);
-    if (rotation !== undefined) timers.clearInterval(rotation);
+    clearRotation();
   };
 }

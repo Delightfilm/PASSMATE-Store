@@ -46,10 +46,20 @@ corrections. Catalog TTL is 60 seconds; the four-bundle LRU remains keyed by
 content base/release/SHA. Corrections are read fresh outside those caches.
 
 The loader shows a decorative 44px CSS spinner after 300ms, alongside guidance
-that changes every 3.5 seconds with a 0.3-second fade. It displays no percentage,
+that changes every 5 seconds, measured from first appearance. The interval is
+defined once by LOADING_MESSAGE_INTERVAL_MS. Within the last 350ms of each
+interval the current message fades out; at the boundary it is replaced in the
+same text element and the next message fades in over 350ms. Messages never
+overlap, and the spinner element/animation stays mounted across text changes.
+There is no auxiliary guidance line. The message area reserves 48px: the longest
+notice and a truncated long-name message each measured two 24px lines at a
+360px viewport (294px text width). It displays no percentage,
 received capacity or ETA. At 15 seconds the guidance becomes a fixed long-wait
 notice and shows cancel/retry. All loader timers are disposed on unmount.
-Reduced-motion disables the spinner animation and text fade.
+Reduced-motion disables the spinner animation and text fade; text changes
+immediately at the same 5-second boundaries. The first three of the seven
+messages appear before the fixed notice; the remaining four stay in the list.
+Cancel/retry starts a new loader from the first message after its 300ms delay.
 
 Display names come from the signed-in user's profiles.display_name, then the
 explicit display_name/nickname/name/full_name metadata fields. Missing names
