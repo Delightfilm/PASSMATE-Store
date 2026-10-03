@@ -6,3 +6,7 @@ node_modules/
 .vercel/
 .DS_Store
 *.tsbuildinfo
+nas/ai-explanations/.env
+nas/ai-explanations/data/
+__pycache__/
+*.pyc

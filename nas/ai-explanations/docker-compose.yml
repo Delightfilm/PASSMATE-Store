@@ -1,0 +1,31 @@
+services:
+  passmate-ai-cache:
+    image: python:3.13-alpine
+    container_name: passmate-ai-cache
+    restart: unless-stopped
+    user: "1000:10"
+    read_only: true
+    command: ["python", "-B", "/app/server.py"]
+    environment:
+      PASSMATE_AI_CACHE_TOKEN: ${PASSMATE_AI_CACHE_TOKEN:?private token required}
+      PASSMATE_AI_DAILY_LIMIT: "200"
+      PASSMATE_AI_MONTHLY_LIMIT: "500"
+      PASSMATE_AI_USER_DAILY_LIMIT: "30"
+    volumes:
+      - /volume2/PASSMATE/question-bank/ai-explanations/server.py:/app/server.py:ro
+      - /volume2/PASSMATE/question-bank/ai-explanations/data:/data:rw
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=8m,uid=1000,gid=10
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [question-bank]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # No published LAN/public port. Only the existing nginx may reach this service.
+networks:
+  question-bank:
+    external: true
+    name: passmate-question-bank

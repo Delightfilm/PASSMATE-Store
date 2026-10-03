@@ -19,13 +19,16 @@
     "check:server-keys": "node scripts/validate-server-key-migration.mjs",
     "check:cart": "node scripts/validate-cart-contract.mjs",
     "check:admin-price": "node scripts/validate-admin-price-flow.mjs",
-    "check:question-bank": "node scripts/validate-question-bank-contract.mjs && node scripts/validate-cbt-ui.mjs && node scripts/validate-nas-content-runtime.mjs && node scripts/validate-question-review.mjs"
+    "check:question-bank": "node scripts/validate-question-bank-contract.mjs && node scripts/validate-cbt-ui.mjs && node scripts/validate-nas-content-runtime.mjs && node scripts/validate-question-review.mjs && node scripts/validate-ai-explanations.mjs",
+    "check:ai-nas": "python -B -m unittest discover -s nas/ai-explanations -p test_server.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",
+    "ai": "7.0.127",
     "next": "15.5.24",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "sharp": "0.35.4"
   },
   "devDependencies": {
     "@types/node": "22.10.0",

@@ -1,4 +1,5 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { normalizeLiveChoices } from "./question-bank-choices";
 
 export type QuestionStatus = "draft" | "needs_review" | "published";
 export type GradeMode = "submit" | "instant";
@@ -106,15 +107,6 @@ export async function parseImportFile(file: File): Promise<ParsedImport> {
     if (context && !String(row.exam_id || "").trim()) errors.push({ row: index + 2, message: "시험 회차 ID(exam_id)가 없습니다." });
   });
   return { rows, errors, context };
-}
-
-function normalizeLiveChoices(value: unknown): Choice[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((item, index) => {
-    if (typeof item === "string") return { label: ["①", "②", "③", "④", "⑤"][index] ?? String(index + 1), text: item };
-    const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
-    return { label: String(record.label || index + 1), text: String(record.text || "") };
-  }).filter((item) => item.text);
 }
 
 export async function loadPublishedDataset(): Promise<Dataset> {
