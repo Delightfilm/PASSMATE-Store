@@ -30,7 +30,7 @@ globalThis.testGenerateText = async (options) => {
   return { output: outputs.shift(), usage: { inputTokens: 100, outputTokens: 100 } };
 };
 const serverSource = read("../lib/ai-explanation-server.ts")
-  .replace(/import \{ createClient \} from "@supabase\/supabase-js";/, "const createClient = () => { throw new Error('not used'); };")
+  .replace(/import \{ createClient \} from "@supabase\/supabase-js";/, "const createClient = () => ({ auth: { getUser: async () => globalThis.testAuthUser } });")
   .replace(/import \{ generateText, gateway, jsonSchema, Output, type UserContent \} from "ai";/,
     "const generateText = globalThis.testGenerateText; const gateway = (id) => id; const jsonSchema = (s) => s; const Output = { object: (s) => s };")
   .replace('import sharp from "sharp";', 'const sharp = globalThis.testSharp;')
@@ -39,6 +39,42 @@ const serverSource = read("../lib/ai-explanation-server.ts")
   .replace(/import \{ normalizeLiveChoices \}[^;]+;/, 'const normalizeLiveChoices = (value) => value;')
   .replace(/import \{ EXPLANATION_MODEL,[^;]+;/, 'const { EXPLANATION_MODEL, VERIFICATION_VERSION, explanationInput, validateExplanation } = globalThis.explanationContract;');
 const server = await moduleFrom(serverSource);
+process.env.PASSMATE_AI_CACHE_TOKEN = "test-only-cache-token-not-a-secret";
+process.env.PASSMATE_AI_CACHE_URL = "https://content.mypassmate.com/ai-cache";
+const guestRequest = (headers = {}) => new Request("https://www.mypassmate.com/api/cbt/explanations/", { headers });
+const guestIdentity = await server.generationIdentity(guestRequest());
+assert.match(guestIdentity.userHash, /^[a-f0-9]{64}$/);
+assert.ok(guestIdentity.cookie.includes("HttpOnly; SameSite=Lax; Secure"));
+assert.ok(!guestIdentity.cookie.includes(process.env.PASSMATE_AI_CACHE_TOKEN));
+const guestCookie = guestIdentity.cookie.split(";")[0];
+assert.deepEqual(await server.generationIdentity(guestRequest({ cookie: guestCookie })), { userHash: guestIdentity.userHash });
+assert.notEqual((await server.generationIdentity(guestRequest())).userHash, guestIdentity.userHash);
+assert.notEqual((await server.generationIdentity(guestRequest({ cookie: guestCookie.slice(0, -1) + (guestCookie.endsWith("0") ? "1" : "0") }))).userHash, guestIdentity.userHash);
+assert.ok((await server.generationIdentity(guestRequest({ cookie: "passmate_ai_guest=bad" }))).cookie);
+globalThis.testAuthUser = { data: { user: { id: "fixture-user" } }, error: null };
+assert.equal((await server.generationIdentity(guestRequest({ authorization: "Bearer fixture-token" }))).cookie, undefined);
+assert.equal((await server.generationIdentity(guestRequest({ authorization: "Bearer fixture-token" }))).userHash,
+  await server.authenticatedUser(guestRequest({ authorization: "Bearer fixture-token" })));
+globalThis.testAuthUser = { data: { user: null }, error: new Error("invalid") };
+await assert.rejects(server.generationIdentity(guestRequest({ authorization: "Bearer invalid" })), /로그인/);
+
+const device = await moduleFrom(read("../lib/ai-explanation-device.ts"));
+const deviceData = new Map();
+const deviceStorage = { getItem: (key) => deviceData.get(key) ?? null, setItem: (key, value) => deviceData.set(key, value) };
+assert.equal(device.deviceGenerationCount(deviceStorage), 0);
+for (const result of [{ status: "ready", cached: true }, { status: "generating", cached: false }, { status: "refused", cached: false }, { status: "failed", cached: false }]) {
+  assert.equal(device.recordDeviceGeneration(deviceStorage, "a".repeat(64), result), 0);
+}
+for (let i = 1; i <= 10; i++) {
+  const revision = i.toString(16).padStart(64, "0");
+  assert.equal(device.recordDeviceGeneration(deviceStorage, revision, { status: "ready", cached: false }), i);
+  assert.equal(device.recordDeviceGeneration(deviceStorage, revision, { status: "ready", cached: false }), i);
+  assert.equal(device.deviceGenerationCount(deviceStorage) >= device.AI_SIGNUP_THRESHOLD, i >= 10);
+}
+// Reload/module remount uses the persisted keys, not component state.
+const reloadedDevice = await moduleFrom(read("../lib/ai-explanation-device.ts") + "\n// reloaded browser fixture");
+assert.equal(reloadedDevice.deviceGenerationCount(deviceStorage), 10);
+assert.equal(device.recordDeviceGeneration(deviceStorage, "f".repeat(64), { status: "ready", cached: false }), 10);
 outputs = [{ ...good, supported: true, imagesReadable: true }, approved];
 assert.equal((await server.generateExplanation(question, [])).status, "ready"); assert.equal(calls.length, 2);
 assert.ok(calls[0].system.includes("옳지 않은 것")); assert.ok(calls[1].system.includes("거짓 원리"));
@@ -90,22 +126,25 @@ try {
 } finally { globalThis.fetch = fetchOriginal; }
 
 // Route-level dependency injection: all model/network writes are mocks.
-let cacheState = { status: "missing" }; let billed = 0; let authenticated = 0;
+let cacheState = { status: "missing" }; let billed = 0; let identities = 0; let limitClaims = false;
 globalThis.routeDependencies = { ...server, cacheConfig: () => ({}), trustedQuestion: async () => question,
-  authenticatedUser: async () => { authenticated++; return "b".repeat(64); }, imageParts: async () => [],
+  generationIdentity: async (request) => { identities++; return server.generationIdentity(request); }, imageParts: async () => [],
   cacheRequest: async (_key, action, body) => {
-    if (action === "claim") { if (cacheState.status !== "missing") return cacheState; cacheState = { status: "generating" }; return { status: "claimed", lease: "c".repeat(64) }; }
+    if (action === "claim") { if (limitClaims) return { status: "limited" }; if (cacheState.status !== "missing") return cacheState; cacheState = { status: "generating" }; return { status: "claimed", lease: "c".repeat(64) }; }
     if (action === "finish") { cacheState = body.payload; return { ok: true }; }
     return cacheState;
   }, generateExplanation: async () => { billed++; await new Promise((resolve) => setTimeout(resolve, 10)); return { status: "ready", explanation: good, verification }; },
 };
 const route = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
-  .replace(/import \{ authenticatedUser,[^;]+;/, 'const { authenticatedUser, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
+  .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
   .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;'));
-const request = (readOnly = false, extra = {}) => new Request("https://www.mypassmate.com/api/cbt/explanations/", { method: "POST", body: JSON.stringify({ questionId: question.id, qualificationCode: "kh", revision: server.fingerprint(question), readOnly, ...extra }) });
+const request = (readOnly = false, extra = {}, headers = {}) => new Request("https://www.mypassmate.com/api/cbt/explanations/", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ questionId: question.id, qualificationCode: "kh", revision: server.fingerprint(question), readOnly, ...extra }) });
 const responses = await Promise.all(Array.from({ length: 12 }, () => route.POST(request())));
 assert.ok(responses.every((response) => response.status === 200)); assert.equal(billed, 1);
+assert.ok(responses.some((response) => response.headers.get("set-cookie")?.includes("passmate_ai_guest=")));
+const identitiesBeforeCacheRead = identities;
 assert.equal((await (await route.POST(request())).json()).cached, true); assert.equal(billed, 1);
+assert.equal(identities, identitiesBeforeCacheRead);
 for (const legacy of [{ status: "ready", explanation: good }, { status: "ready", explanation: good, verification: { ...verification, explanationAnswer: 2 } }]) {
   cacheState = legacy;
   assert.equal((await (await route.POST(request())).json()).status, "refused");
@@ -114,7 +153,16 @@ for (const legacy of [{ status: "ready", explanation: good }, { status: "ready",
 cacheState = { status: "missing" };
 assert.equal((await (await route.POST(request(true))).json()).status, "missing"); assert.equal(billed, 1);
 assert.equal((await route.POST(request(false, { revision: "d".repeat(64) }))).status, 409);
-assert.equal((await route.POST(new Request("https://example.test/", { method: "POST", body: "null" }))).status, 400);
+assert.equal((await route.POST(new Request("https://example.test/", { method: "POST", headers: { "Content-Type": "application/json" }, body: "null" }))).status, 400);
+assert.equal((await route.POST(request(false, {}, { Origin: "https://evil.example" }))).status, 403);
+assert.equal((await route.POST(request(false, {}, { "Sec-Fetch-Site": "cross-site" }))).status, 403);
+assert.equal((await route.POST(request(false, {}, { "Content-Type": "text/plain" }))).status, 415);
+assert.equal(billed, 1);
+limitClaims = true;
+const limitedResponse = await route.POST(request());
+assert.equal(limitedResponse.status, 429);
+assert.ok(limitedResponse.headers.get("set-cookie")?.includes("passmate_ai_guest="));
+assert.equal(billed, 1); limitClaims = false;
 cacheState = { status: "failed", message: "재생성 금지" };
 await route.POST(request()); assert.equal(billed, 1);
 cacheState = { status: "missing" };
@@ -123,7 +171,7 @@ const generateOriginal = globalThis.routeDependencies.generateExplanation;
 // The injected binding is captured on import, so create a fresh route module.
 globalThis.routeDependencies.generateExplanation = async () => { throw Object.assign(new Error("SECRET_PROVIDER_RESPONSE"), { name: "GatewayInvalidRequestError", statusCode: 400 }); };
 const failingRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
-  .replace(/import \{ authenticatedUser,[^;]+;/, 'const { authenticatedUser, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
+  .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
   .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;') + "\n// diagnostic fixture");
 try {
   console.error = (...args) => diagnostics.push(args);
@@ -139,6 +187,10 @@ assert.ok(component.indexOf(notice) < component.indexOf('{!explanation &&'));
 assert.ok(!component.includes("관리자 검수 전"));
 assert.ok(component.includes('onClick={showExplanation}')); assert.ok(component.includes('readOnly = true'));
 assert.ok(!component.includes('dangerouslySetInnerHTML')); assert.ok(!component.includes('AI_GATEWAY_API_KEY'));
+assert.ok(component.includes('createdCount >= AI_SIGNUP_THRESHOLD'));
+assert.ok(component.includes('guest &&'));
+assert.ok(component.includes('/account/signup/?next='));
+assert.ok(component.includes('가입하지 않아도 해설은 계속 이용할 수 있습니다.'));
 const api = read("../app/api/cbt/explanations/route.ts");
 assert.ok(api.indexOf('"claim", { userHash }') < api.indexOf('await generateExplanation'));
-console.log("AI explanations OK: explicit click, immutable answer, correction-aware key, independent verifier, safe GIF/image input, cache hit/no billing, concurrent claim, read-only polls, failed-job no rebilling");
+console.log("AI explanations OK: explicit click, immutable answer, independent verifier, image safety, cache/no rebilling, concurrent claims, guest signed-cookie quota, cross-site denial, validated login, persisted 9/10 signup threshold, cache/failure exclusion");

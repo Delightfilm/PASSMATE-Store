@@ -1166,4 +1166,7 @@ body{word-break:keep-all}
 .ai-explanation-choices li{padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff}
 .ai-explanation-choices li.is-selected-wrong{border-color:#2563eb;background:#eff6ff}
 .ai-question-explanation .ai-explanation-error{color:#b91c1c}
+.ai-explanation-signup{margin:16px 0;padding:16px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff;color:#1e3a8a}
+.ai-explanation-signup p{color:#1f2937}
+.ai-explanation-signup .button{margin:4px 8px 4px 0;white-space:normal}
 .ai-question-explanation .cbt-report-link{min-height:44px;margin-top:8px}
