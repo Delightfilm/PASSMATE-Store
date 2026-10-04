@@ -13,7 +13,7 @@
 - Isolated route/model concurrency tests, Python NAS persistence/auth/quotas tests, TypeScript and full production build passed. Local browser confirms the wrong-answer button and fail-closed “storage server preparing” response, with no automatic generation.
 - NAS private cache and matching server-only Vercel configuration are deployed. Live text generation, durable NAS storage and identical cache reuse without new Gateway calls passed.
 - Live concurrent image generation made one shared draft/verifier pair, but independent factual QA found a contradiction that the original verifier approved. The strengthened Preview-only blind-answer guard withholds old unverified cache text without deleting entries or automatically rebilling.
-- **Not enabled in production yet.** Fresh text/vision factual safety verification is still required; see `docs/AI_EXPLANATIONS.md`. Existing public content and crawler work untouched.
+- Owner authorized production rollout with the exact AI-inaccuracy notice and no mandatory human approval. Fresh strengthened-verifier text generation and NAS reuse passed; two fresh image questions were safely refused and are not positive vision acceptance tests. Production rollout is pending live confirmation. Existing public content and crawler work untouched.
 
 **Content Factory 재확보/검증 → Stage Sound 실제 원고·속지 → V3 Payment E2E → V4 NAS → V5 download E2E → V8 launch**
 

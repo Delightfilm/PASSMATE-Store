@@ -10,3 +10,6 @@ nas/ai-explanations/.env
 nas/ai-explanations/data/
 __pycache__/
 *.pyc
+
+.vercel/
+.env.local
