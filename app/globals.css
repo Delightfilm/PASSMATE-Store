@@ -1154,3 +1154,16 @@ body{word-break:keep-all}
 .question-review-diff p{white-space:pre-wrap;overflow-wrap:anywhere}
 .question-review-row .admin-card-actions{flex-shrink:0}
 @media(max-width:680px){.question-review-editor{padding:16px}.question-review-diff{grid-template-columns:1fr}.question-review-row{flex-wrap:wrap}.question-review-row .admin-card-actions{width:100%}}
+
+.ai-question-explanation{margin-top:12px;color:var(--ink);overflow-wrap:anywhere}
+.ai-question-explanation>.button{min-height:44px;margin:4px 0 12px}
+.ai-question-explanation small{display:block;color:#526174;font-size:12px;line-height:1.6}
+.ai-explanation-heading{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ai-explanation-heading span{font-size:12px;padding:4px 8px;border-radius:6px;background:#eaf0ff;color:#1e40af}
+.ai-question-explanation .ai-explanation-answer{color:#166534;font-weight:600}
+.ai-question-explanation .ai-explanation-text,.ai-explanation-choices p{white-space:pre-wrap;line-height:1.8;color:#1f2937}
+.ai-explanation-choices{display:grid;gap:12px;list-style:none;padding:0;margin:16px 0}
+.ai-explanation-choices li{padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.ai-explanation-choices li.is-selected-wrong{border-color:#2563eb;background:#eff6ff}
+.ai-question-explanation .ai-explanation-error{color:#b91c1c}
+.ai-question-explanation .cbt-report-link{min-height:44px;margin-top:8px}
