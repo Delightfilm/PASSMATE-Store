@@ -1,6 +1,6 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } from "@/lib/ai-explanation-server";
-import { validateExplanation, hasAnswerVerification, type ExplanationReply } from "@/lib/ai-explanation-contract";
+import { validateExplanation, hasAnswerVerification, REPAIR_VERSION, type ExplanationReply } from "@/lib/ai-explanation-contract";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -11,7 +11,7 @@ function publicResult(result: Omit<ExplanationReply, "status"> & { status: strin
   if (result.status === "ready" && !hasAnswerVerification(result, answer)) return { status: "refused", cached,
     message: "정답 일치 여부가 확인되지 않아 이 해설은 표시하지 않습니다. 중복 비용 방지를 위해 자동 재생성하지 않습니다." };
   return { status: result.status, ...(result.status === "ready" ? { explanation: validateExplanation(result.explanation, answer) } : {}), message: result.message, cached,
-    ...(result.status === "failed" && result.retryable === true ? { retryable: true } : {}) };
+    ...(["failed", "refused"].includes(result.status) && result.retryable === true ? { retryable: true } : {}) };
 }
 
 export async function POST(request: Request) {
@@ -47,7 +47,16 @@ export async function POST(request: Request) {
     if (revision !== key) return reply({ error: "문제가 수정되었습니다. 페이지를 새로고침한 뒤 해설을 확인해 주세요." }, 409);
     if (question.explanation.trim()) return reply({ error: "등록된 해설이 있습니다. 페이지를 새로고침해 주세요." }, 409);
     stage = "cache";
-    const existing = await cacheRequest(key);
+    let existing = await cacheRequest(key);
+    // Keep the old paid refusal intact. A deterministic second job permits ONE
+    // explicit upgrade to the repair pipeline; reads/polls never invoke AI.
+    if (existing.status === "refused" && existing.repairVersion !== REPAIR_VERSION) {
+      key = createHash("sha256").update(`${key}:${REPAIR_VERSION}`).digest("hex");
+      const repaired = await cacheRequest(key);
+      if (repaired.status === "missing" && readOnly) return reply(publicResult({ ...existing, retryable: true,
+        message: "이전에 보류된 해설입니다. 해설 보완 생성을 누르면 등록 정답의 근거를 다시 작성하고 검사합니다." }, question.answer));
+      existing = repaired;
+    }
     if (existing.status !== "missing" && !(existing.status === "failed" && existing.retryable === true && !readOnly)) return reply(publicResult(existing, question.answer));
     if (readOnly) return reply({ status: "missing" });
     stage = "identity";
