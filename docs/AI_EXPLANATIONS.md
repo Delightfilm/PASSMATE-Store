@@ -1,5 +1,11 @@
 # On-demand AI explanations
 
+## Verification labels and diagnostics — 2026-10-05
+
+Production acceptance of PR #23 (`7844213`, `dpl_5j2NXvAy4ykt5RrH7qxhkFJzjTwN`, READY) exercised rolling-master question 1 and building-planning 2025 question 2. Both persisted a final refusal after one revision; neither is a successful explanation acceptance test. Gateway showed four calls for the rolling job and three for the hotel job, with successful transport. The cache retained the original paid refusals and repeated reads reused the upgrade refusals.
+
+`answer-repair-v2` supplies the writer with both the registered choice label/text and its storage index. The blind verifier returns visible choice labels (①–④ or uncertain), which the server converts to indices; it never receives the answer key. Draft JSON schema now enforces the same text-length bounds as the local validator. Refused jobs retain private diagnostic reason/last check in NAS, while runtime logs include only an allowlisted reason, round count and check numbers, never text/feedback/credentials. Existing ready entries are reused; old refusals may explicitly claim one separate upgrade for this version. Local regressions include all four label/index mappings and private-feedback log exclusion. Live acceptance of this follow-up is pending.
+
 ## Bounded answer-grounded repair — 2026-10-05
 
 - Owner requested a revision when answer/evidence verification refuses an explanation. Drafts still use the immutable registered answer. The blind verifier now returns concrete factual/consistency feedback. On rejection, the writer can revise once using that feedback, then a fresh blind check must approve and independently support the registered answer. Unsupported drafts and local format/contradiction failures can also use this single revision. Unreadable images stop immediately.
