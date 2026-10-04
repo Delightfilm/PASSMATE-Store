@@ -13,6 +13,7 @@ export type ExplanationReply = {
   explanation?: AiExplanation;
   cached?: boolean;
   message?: string;
+  retryable?: boolean;
   verification?: { version: string; solvedAnswer: number; explanationAnswer: number };
 };
 

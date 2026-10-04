@@ -58,7 +58,7 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
       let readOnly = false;
       while (!abort.signal.aborted) {
         const response = await fetch("/api/cbt/explanations/", { method: "POST", headers, cache: "no-store",
-          signal: AbortSignal.any([abort.signal, AbortSignal.timeout(160_000)]),
+          signal: AbortSignal.any([abort.signal, AbortSignal.timeout(290_000)]),
           body: JSON.stringify({ questionId: question.id, qualificationCode: question.certId, revision, readOnly }) });
         const body = await response.json();
         if (!response.ok) { setLoginRequired(response.status === 401); throw new Error(body.error || "해설을 불러오지 못했습니다."); }
@@ -93,8 +93,8 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
   return <div className="ai-question-explanation" aria-busy={loading}>
     <small className="ai-explanation-notice">AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.</small>
     {!explanation && <><p>등록된 해설이 없습니다. AI 해설로 복습할 수 있습니다.</p>
-      {(!result || result.status === "generating") && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
-        {loading ? "해설을 준비하고 있습니다…" : result ? "해설 상태 확인" : "해설보기"}
+      {(!result || result.status === "generating" || (result.status === "failed" && result.retryable)) && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
+        {loading ? "해설을 준비하고 있습니다…" : result?.retryable ? "해설 다시 생성" : result ? "해설 상태 확인" : "해설보기"}
       </button>}
       <small>등록 정답 기준 · 처음 생성할 때만 AI를 사용하며 저장 후 함께 재사용합니다.</small></>}
     {error && <p className="ai-explanation-error" role="alert">{error}</p>}

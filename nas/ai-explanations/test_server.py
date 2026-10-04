@@ -46,6 +46,33 @@ class CacheTests(unittest.TestCase):
         self.cache.finish(self.key, owner["lease"], {"status": "refused", "message": "검수 보류"})
         self.assertEqual(self.cache.claim(self.key, self.user)["status"], "refused")
 
+    def test_lost_claim_and_finish_responses_are_idempotent(self):
+        lease = "d" * 64
+        owner = self.cache.claim(self.key, self.user, lease)
+        self.assertEqual(self.cache.claim(self.key, self.user, lease), owner)
+        self.assertEqual(self.cache.claim(self.key, self.user, "e" * 64)["status"], "generating")
+        self.assertEqual(self.cache.claim(self.key, "f" * 64, lease)["status"], "generating")
+        payload = {"status": "failed", "message": "provider may have billed"}
+        self.cache.finish(self.key, lease, payload)
+        self.assertEqual(self.cache.finish(self.key, lease, payload), {"ok": True})
+        self.assertEqual(self.cache.claim(self.key, self.user, "e" * 64), payload)
+        with self.assertRaises(ValueError):
+            self.cache.finish(self.key, lease, {**payload, "retryable": True})
+
+    def test_only_confirmed_pre_model_failure_can_be_reclaimed(self):
+        lease = "d" * 64
+        owner = self.cache.claim(self.key, self.user, lease)
+        self.cache.finish(self.key, owner["lease"], {"status": "failed", "retryable": True})
+        self.assertEqual(self.cache.get(self.key), {"status": "failed", "retryable": True})
+        reclaimed = self.cache.claim(self.key, self.user, "e" * 64)
+        self.assertEqual(reclaimed, {"status": "claimed", "lease": "e" * 64})
+        with closing(self.cache.connect()) as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM explanations").fetchone()[0], 1)
+        with self.assertRaises(ValueError):
+            self.cache.finish(self.key, lease, {"status": "failed"})
+        with self.assertRaises(ValueError):
+            self.cache.claim(self.key, self.user, "bad-lease")
+
     def test_limits_are_persistent_and_hits_are_free(self):
         cache = Cache(self.path, daily=2, monthly=2, user_daily=1)
         owner = cache.claim(self.key, self.user)
