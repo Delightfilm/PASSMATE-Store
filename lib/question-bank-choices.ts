@@ -6,6 +6,14 @@ export function normalizeLiveChoices(value: unknown): Choice[] {
   return value.map((item, index) => {
     if (typeof item === "string") return { label: ["①", "②", "③", "④", "⑤"][index] ?? String(index + 1), text: item };
     const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
-    return { label: String(record.label || index + 1), text: String(record.text || "") };
-  }).filter((item) => item.text);
+    return { label: String(record.label || index + 1), text: String(record.text || ""),
+      ...(Array.isArray(record.images) ? { images: record.images.filter((image): image is string => typeof image === "string") } : {}) };
+  }); // Never compact choices: the registered answer refers to the source position.
+}
+
+// Corrections edit text/answer only. Original image associations cannot be removed
+// or replaced by a sparse patch, including patches saved before image recovery.
+export function correctedChoices(original: Choice[], edited: Choice[]): Choice[] {
+  return edited.map((choice, index) => ({ label: choice.label, text: choice.text,
+    ...(original[index]?.images?.length ? { images: original[index].images } : {}) }));
 }

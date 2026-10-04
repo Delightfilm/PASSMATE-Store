@@ -10,18 +10,18 @@ export function toggleAnswerSelection(answers: Record<string, number>, questionI
   return next;
 }
 
-export function AnswerChoices({ number, selected, disabled, onSelect }: { number: number; selected?: number; disabled: boolean; onSelect: (choice: number) => void }) {
+export function AnswerChoices({ number, selected, disabled, onSelect, count = 4 }: { number: number; selected?: number; disabled: boolean; onSelect: (choice: number) => void; count?: number }) {
   const [focus, setFocus] = useState(selected ?? 0);
   useEffect(() => { setFocus(selected ?? 0); }, [selected]);
   return <div className="cbt-answer-choices" role="radiogroup" aria-label={`${number}번 문항 답안`} onKeyDown={(event) => {
     event.stopPropagation();
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
     event.preventDefault();
-    const next = (focus + (event.key === "ArrowRight" ? 1 : 3)) % 4;
+    const next = (focus + (event.key === "ArrowRight" ? 1 : count - 1)) % count;
     setFocus(next);
     event.currentTarget.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
   }}>
-    {[0, 1, 2, 3].map((choice) => <button type="button" role="radio" className={`cbt-answer-choice${selected === choice ? " is-chosen" : ""}`} aria-checked={selected === choice} aria-label={`${number}번 문항 ${"①②③④"[choice]}번 보기`} disabled={disabled} tabIndex={choice === focus ? 0 : -1} onFocus={() => setFocus(choice)} onClick={() => onSelect(choice)} key={choice}>{"①②③④"[choice]}</button>)}
+    {Array.from({ length: count }, (_, choice) => <button type="button" role="radio" className={`cbt-answer-choice${selected === choice ? " is-chosen" : ""}`} aria-checked={selected === choice} aria-label={`${number}번 문항 ${"①②③④⑤⑥⑦⑧⑨⑩"[choice]}번 보기`} disabled={disabled} tabIndex={choice === focus ? 0 : -1} onFocus={() => setFocus(choice)} onClick={() => onSelect(choice)} key={choice}>{"①②③④⑤⑥⑦⑧⑨⑩"[choice]}</button>)}
   </div>;
 }
 

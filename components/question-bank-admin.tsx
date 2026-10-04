@@ -1,5 +1,7 @@
 "use client";
 
+import { QuestionChoiceContent } from "@/components/question-choice-content";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
@@ -291,7 +293,7 @@ function ReviewEditor({ data, busy, onSave, onReload }: { data: ReviewData; busy
   const [reason, setReason] = useState("");
   const [validation, setValidation] = useState("");
   function submit(resolve: boolean) {
-    if (!stem.trim() || choices.some((choice) => !choice.text.trim()) || !reason.trim()) { setValidation("문제·보기 4개·수정 사유를 입력해 주세요."); return; }
+    if (!stem.trim() || choices.some((choice) => !choice.text.trim() && !choice.images?.length) || !reason.trim()) { setValidation("문제·보기 4개·수정 사유를 입력해 주세요."); return; }
     if (resolve && !window.confirm("문항 수정을 저장하고 이 신고를 검수 완료로 처리할까요?")) return;
     setValidation(""); void onSave({ stem, choices, answer, explanation }, reason, resolve);
   }
@@ -299,7 +301,7 @@ function ReviewEditor({ data, busy, onSave, onReload }: { data: ReviewData; busy
     <p className="admin-help">{data.question.certId} · {data.question.no}번 · 수정 버전 {data.version}. 원본 이미지와 문항 ID는 유지됩니다.</p>
     {data.question.images.length > 0 && <div className="question-review-images">{data.question.images.map((src, index) => <img key={src} src={src} alt={`원본 문항 이미지 ${index + 1}`} loading="lazy" />)}</div>}
     <fieldset disabled={busy} className="question-review-fields"><label>문제 본문<textarea required maxLength={20000} rows={6} value={stem} onChange={(event) => setStem(event.target.value)} /></label>
-      {choices.map((choice, index) => <label key={index}>{choice.label} 보기<textarea required maxLength={10000} rows={3} value={choice.text} onChange={(event) => setChoices((items) => items.map((item, i) => i === index ? { ...item, text: event.target.value } : item))} /></label>)}
+      {choices.map((choice, index) => <label key={index}>{choice.label} 보기<QuestionChoiceContent choice={{ ...choice, text: "" }} /><textarea required={!choice.images?.length} maxLength={10000} rows={3} value={choice.text} onChange={(event) => setChoices((items) => items.map((item, i) => i === index ? { ...item, text: event.target.value } : item))} /></label>)}
       <label>정답<select value={answer} onChange={(event) => setAnswer(Number(event.target.value))}>{choices.map((choice, index) => <option key={index} value={index}>{choice.label}</option>)}</select></label>
       <label>해설<textarea maxLength={20000} rows={4} value={explanation} onChange={(event) => setExplanation(event.target.value)} /></label>
       <label>수정 사유 (로그에 저장)<textarea required maxLength={2000} rows={2} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="예: 정답을 ②에서 ③으로 정정" /></label>
@@ -308,5 +310,5 @@ function ReviewEditor({ data, busy, onSave, onReload }: { data: ReviewData; busy
 }
 function ReviewSnapshot({ value }: { value: ReviewEvent["before_content"] }) {
   if ("status" in value) return <p>{value.status === "open" ? "검수 대기" : "검수 완료"}</p>;
-  return <div><p>{value.stem}</p>{value.choices.map((choice, index) => <p key={index}>{choice.label} {choice.text}</p>)}<p>정답: {value.choices[value.answer]?.label}</p>{value.explanation && <p>해설: {value.explanation}</p>}</div>;
+  return <div><p>{value.stem}</p>{value.choices.map((choice, index) => <p key={index}>{choice.label} <QuestionChoiceContent choice={choice} /></p>)}<p>정답: {value.choices[value.answer]?.label}</p>{value.explanation && <p>해설: {value.explanation}</p>}</div>;
 }

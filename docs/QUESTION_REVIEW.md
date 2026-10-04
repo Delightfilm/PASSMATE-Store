@@ -36,3 +36,11 @@ idempotent completion, designated admin and anonymous access rejection.
 
 Rollback: keep the additive tables/reports/history, revert UI/runtime/Edge together.
 Reverting the runtime hides corrections but does not destroy their history.
+
+Image-choice repair (prepared, not deployed): original choice images are copied
+from the server-loaded source, never from submitted edit URLs. Image-only choices
+can retain empty text; invalid/private URLs are rejected. Sparse corrections saved
+before recovery retain the newly recovered original images by source position.
+Migration `20261004012604_image_choice_review.sql` preserves service-only execute,
+admin assertion, version checks and atomic audit events. Live validation and
+deployment remain pending database connectivity; existing reports are untouched.

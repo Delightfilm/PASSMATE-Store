@@ -15,7 +15,7 @@
 - Live concurrent image generation made one shared draft/verifier pair, but independent factual QA found a contradiction that the original verifier approved. The strengthened Preview-only blind-answer guard withholds old unverified cache text without deleting entries or automatically rebilling.
 - Production verified: PR #19 merged as `9704f5c`, Vercel `passmate-store-80ztd9lxv` Production READY, aliases `mypassmate.com`/`www.mypassmate.com`. Live wrong-answer UI showed the exact AI-inaccuracy notice and the NAS-stored text explanation; no mandatory human approval. Fresh strengthened-verifier text generation and NAS reuse passed; two fresh image questions were safely refused and are not positive vision acceptance tests. Existing public content and crawler work untouched.
 - Application build passed and sampled production error logs had no error rows. Supabase Preview check separately failed with remote migration versions missing locally. No production migration/data mutation was made; investigate that history mismatch separately.
-- Guest-generation update (2026-10-04): login no longer mandatory for new explanations; signed HttpOnly guest cookie retains the existing NAS/global quotas. Same-browser fresh-success counter invites signup at 10 without blocking explanations; cache reads/failures excluded. Route/counter tests, TypeScript and full build passed; localhost UI confirmed 9/10 boundary and reload persistence with no paid calls. Production rollout verification pending.
+- Guest-generation update (2026-10-04): PR #20 merged as `12f1c28`; Vercel `passmate-store-8dwgtm4st` Production READY on both public domains. Login no longer mandatory for new explanations; signed HttpOnly guest cookie retains existing NAS/global quotas. Same-browser fresh-success counter invites signup at 10 without blocking explanations; cache reads/failures excluded. Route/counter tests, TypeScript/full build and five NAS tests passed; mock-only localhost UI confirmed 9/10 boundary and reload persistence. Actual logged-out Preview question 3 and Production question 4 both generated new text and reused identical NAS entries. Zero sampled production error rows; no source-content/COMCBT/NAS service/production DB mutation.
 
 **Content Factory 재확보/검증 → Stage Sound 실제 원고·속지 → V3 Payment E2E → V4 NAS → V5 download E2E → V8 launch**
 
@@ -225,6 +225,14 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 이미지 URL 문항 표시 및 검증 오류 보고서 다운로드 구현
 
 ## NAS 콘텐츠 연결 — 2026-10-03
+
+### 이미지 보기 복구 — 2026-10-04 진행 중
+
+- 제외 21,068문항을 단순 원본 누락으로 간주할 수 없음: 이미지 보기 수집 누락과 빈 텍스트 보기 제거에 따른 정답 위치 이동을 확인.
+- CBTBANK MASTER 백업 검증 후, 완료 HTML을 재파싱하여 이미지 참조만 추가하는 별도 복구 파이프라인 실행 중. COMCBT·운영 NAS·AI 캐시는 변경하지 않음.
+- 보기 이미지 표시, 위치 보존, 기존 검수 패치의 이미지 유지, AI 입력 위치 표식, 5지선다 OMR 지원 수정. 웹 검사 7종·크롤러 테스트 25개·운영 빌드 통과. 실제 원본 3문항의 이미지 10개와 정답 위치를 독립 대조하고 360px 화면 확인.
+- 전체 재파싱·누락 이미지 보충·새 번들·전체 QA가 남아 있음. 최종 복구 수치는 QA 완료 후 확정. 기존 979,863문항 운영 릴리스 유지.
+- 관리자 DB 사전 확인 연결 시간 초과로 원격 SQL/Edge 반영은 보류. NAS 업로드·운영 배포는 아직 하지 않음. 상세 절차는 `NAS_QUESTION_BANK.md` 참조.
 
 - 공개 원본: `https://content.mypassmate.com`, Cloudflare Tunnel → 읽기 전용 NAS 서버.
 - Vercel Production/Preview에 `NEXT_PUBLIC_QUESTION_BANK_CONTENT_URL` 설정. 최신 CBT UI를 유지하며 종목 목록 우선/선택 종목 번들 지연 로드 구현.
