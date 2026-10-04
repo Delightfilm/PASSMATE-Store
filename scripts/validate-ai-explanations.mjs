@@ -94,6 +94,21 @@ for (const mismatch of [{ ...approved, solvedAnswer: 2 }, { ...approved, explana
 outputs = [{ ...good, supported: true, imagesReadable: true, correctAnswer: 2 }];
 await assert.rejects(server.generateExplanation(question, []), /invalid/);
 const fetchOriginal = globalThis.fetch;
+// NAS committed a claim, but its first HTTP response was lost. Retry only
+// the identical lease-bearing request; this is separate from paid generation.
+let claimRequests = 0; let claimBody;
+globalThis.fetch = async (_url, init) => {
+  claimRequests++;
+  if (!claimBody) claimBody = init.body;
+  assert.equal(init.body, claimBody);
+  if (claimRequests === 1) throw new DOMException("transport timeout", "TimeoutError");
+  return Response.json({ status: "claimed", lease: JSON.parse(init.body).lease });
+};
+try {
+  const lease = "e".repeat(64);
+  assert.deepEqual(await server.cacheRequest("a".repeat(64), "claim", { userHash: "b".repeat(64), lease }), { status: "claimed", lease });
+  assert.equal(claimRequests, 2);
+} finally { globalThis.fetch = fetchOriginal; }
 const gif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
 globalThis.fetch = async () => new Response(gif);
 try {
@@ -130,7 +145,7 @@ let cacheState = { status: "missing" }; let billed = 0; let identities = 0; let 
 globalThis.routeDependencies = { ...server, cacheConfig: () => ({}), trustedQuestion: async () => question,
   generationIdentity: async (request) => { identities++; return server.generationIdentity(request); }, imageParts: async () => [],
   cacheRequest: async (_key, action, body) => {
-    if (action === "claim") { if (limitClaims) return { status: "limited" }; if (cacheState.status !== "missing") return cacheState; cacheState = { status: "generating" }; return { status: "claimed", lease: "c".repeat(64) }; }
+    if (action === "claim") { if (limitClaims) return { status: "limited" }; if (cacheState.status !== "missing" && !(cacheState.status === "failed" && cacheState.retryable)) return cacheState; cacheState = { status: "generating" }; return { status: "claimed", lease: body.lease }; }
     if (action === "finish") { cacheState = body.payload; return { ok: true }; }
     return cacheState;
   }, generateExplanation: async () => { billed++; await new Promise((resolve) => setTimeout(resolve, 10)); return { status: "ready", explanation: good, verification }; },
@@ -180,6 +195,33 @@ try {
   assert.deepEqual(diagnostics, [["ai_explanation_failed", { stage: "generation", kind: "GatewayInvalidRequestError", status: 400, reason: undefined }]]);
   assert.ok(!JSON.stringify(diagnostics).includes("SECRET_PROVIDER_RESPONSE"));
 } finally { console.error = consoleError; globalThis.routeDependencies.generateExplanation = generateOriginal; }
+const cacheRequestOriginal = globalThis.routeDependencies.cacheRequest;
+let loseClaim = true;
+globalThis.routeDependencies.cacheRequest = async (key, action, body) => {
+  if (action === "claim" && loseClaim) {
+    loseClaim = false;
+    await cacheRequestOriginal(key, action, body);
+    throw new DOMException("transport timeout", "TimeoutError");
+  }
+  return cacheRequestOriginal(key, action, body);
+};
+const recoveryRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
+  .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;') + "\n// recovery fixture");
+cacheState = { status: "missing" };
+const billedBeforeRecovery = billed;
+try {
+  console.error = () => {};
+  const failed = await recoveryRoute.POST(request());
+  assert.equal(failed.status, 503);
+  assert.match((await failed.json()).error, /AI는 호출하지 않았습니다/);
+  assert.equal(cacheState.retryable, true);
+  assert.equal(billed, billedBeforeRecovery);
+  assert.equal((await (await recoveryRoute.POST(request(true))).json()).retryable, true);
+  assert.equal(billed, billedBeforeRecovery);
+  assert.equal((await (await recoveryRoute.POST(request())).json()).status, "ready");
+  assert.equal(billed, billedBeforeRecovery + 1);
+} finally { console.error = consoleError; globalThis.routeDependencies.cacheRequest = cacheRequestOriginal; }
 const component = read("../components/ai-question-explanation.tsx");
 const notice = "AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.";
 assert.equal(component.split(notice).length - 1, 1);
@@ -192,5 +234,5 @@ assert.ok(component.includes('guest &&'));
 assert.ok(component.includes('/account/signup/?next='));
 assert.ok(component.includes('가입하지 않아도 해설은 계속 이용할 수 있습니다.'));
 const api = read("../app/api/cbt/explanations/route.ts");
-assert.ok(api.indexOf('"claim", { userHash }') < api.indexOf('await generateExplanation'));
+assert.ok(api.indexOf('"claim", { userHash, lease: requestedLease }') < api.indexOf('await generateExplanation'));
 console.log("AI explanations OK: explicit click, immutable answer, independent verifier, image safety, cache/no rebilling, concurrent claims, guest signed-cookie quota, cross-site denial, validated login, persisted 9/10 signup threshold, cache/failure exclusion");
