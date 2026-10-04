@@ -88,8 +88,17 @@ NAS stores summary, four reasons, state, timestamps, token usage and a token-sal
 
 ## Tests
 
+Prepared image-choice support (not deployed): trusted choice images join stem
+images in both draft and verifier input, each labelled by its original choice
+position. The existing four-image overall cap and four-choice verification gate
+remain; oversized inputs are refused before billing. Original image associations
+survive sparse text corrections and participate in the existing question
+fingerprint, so changed image content cannot reuse an old explanation key.
+
 `npm run build` runs existing regression contracts plus `scripts/validate-ai-explanations.mjs` (mocked model/route, no API spend). `npm run check:ai-nas` uses temporary SQLite and a localhost HTTP server: concurrency, restart persistence, quotas, leases, stale claims, authentication and traversal denial. Production code must not contain a test/model bypass.
 
-Guest rollout verification (2026-10-04): mocked route tests exercised anonymous signed-cookie identity, cookie reuse/tamper denial, verified bearer identity, JSON/same-origin restrictions, global quota refusal, cache hits without identity/billing, and concurrent claims. Browser-local counter tests covered fresh-success-only counting, duplicate exclusion, reload persistence and the 9/10 boundary. A temporary localhost-only UI harness confirmed no invitation at 9, invitation at 10, persistence after reload, working signup links back to the current route, and continued explanation rendering without signup. All harness responses were mock-only (no paid calls, NAS writes or fake production entries); the harness was removed before Git push. Full regression build passed before this harness was added. Live guest generation must be checked separately after deployment.
+Guest rollout verification (2026-10-04): mocked route tests exercised anonymous signed-cookie identity, cookie reuse/tamper denial, verified bearer identity, JSON/same-origin restrictions, global quota refusal, cache hits without identity/billing, and concurrent claims. Browser-local counter tests covered fresh-success-only counting, duplicate exclusion, reload persistence and the 9/10 boundary. A temporary localhost-only UI harness confirmed no invitation at 9, invitation at 10, persistence after reload, signup/login actions and continued explanation rendering without signup. All harness responses were mock-only (no paid calls, NAS writes or fake production entries); the harness was removed before Git push. Full regression build passed before this harness was added.
+
+Live guest release: PR #20 merged as `12f1c28`; Vercel `passmate-store-8dwgtm4st` Production READY serves `mypassmate.com`/`www.mypassmate.com`. Logged-out Preview generated question 3 (XP) and reused its NAS entry. Logged-out Production generated question 4 (use-case relations), displayed the fixed registered answer ③ and then identical stored text after revisiting. Two bounded fresh text jobs total, with no paid retry, fake NAS seed, database migration or NAS service deployment. The 10-item invitation boundary was tested locally with mocks rather than incurring 10 live generations. Sampled production error logs had zero error rows. Post-release evidence is retained locally and in PR #20's worklog to avoid another application deployment solely for documentation.
 
 Rollback: remove the two Vercel cache env vars to stop generation safely; revert the site commit if needed. Leave the NAS SQLite/complete explanations intact. Removing the nginx AI-only location and stopping only `passmate-ai-cache` does not affect public questions or existing crawler processes.

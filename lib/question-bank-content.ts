@@ -50,10 +50,13 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string, o
     if (!response.ok) throw new Error(`question_bank_bundle_${response.status}`);
     const bundle = await readContentJson<Bundle>(response, requestOptions);
     if (bundle.schemaVersion !== "passmate.question-bank.bundle.v1" || bundle.releaseId !== catalog.releaseId || bundle.qualification.code !== code || bundle.questions.length !== entry.questions || bundle.exams.length !== entry.exams) throw new Error("question_bank_bundle_invalid");
-    return { certs: [{ id: code, name: entry.title, questionCount: entry.questions, examCount: entry.exams }], subjects: bundle.subjects, exams: bundle.exams, questions: bundle.questions.map((question) => ({ ...question, status: "published" as const, images: question.images.map((image) => {
+    const imageUrl = (image: string) => {
       if (!/^images\/[a-f0-9]{2}\/[a-f0-9]{64}\.[a-z0-9]+$/i.test(image)) throw new Error("question_bank_image_invalid");
       return `${contentBase()}/${image}`;
-    }) })) };
+    };
+    return { certs: [{ id: code, name: entry.title, questionCount: entry.questions, examCount: entry.exams }], subjects: bundle.subjects, exams: bundle.exams, questions: bundle.questions.map((question) => ({ ...question, status: "published" as const,
+      images: question.images.map(imageUrl), choices: (question.choices || []).map((choice) => ({ ...choice,
+        ...(choice.images ? { images: choice.images.map(imageUrl) } : {}) })) })) };
   });
   bundles.set(key, value);
   if (bundles.size > 4) bundles.delete(bundles.keys().next().value!);
