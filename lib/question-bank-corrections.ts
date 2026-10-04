@@ -1,6 +1,7 @@
 import { getSupabaseBrowserClient } from "./supabase-browser";
 import type { Dataset, Question } from "./question-bank";
 import type { LoadOptions } from "./question-bank-download";
+import { correctedChoices } from "./question-bank-choices";
 
 export type Correction = { question_ref: string; source_hash: string; content: Pick<Question, "stem" | "choices" | "answer" | "explanation"> };
 export function applyCorrections(dataset: Dataset, corrections: Correction[]): Dataset {
@@ -11,7 +12,7 @@ export function applyCorrections(dataset: Dataset, corrections: Correction[]): D
     const content = correction.content;
     if (!content || typeof content.stem !== "string" || !Array.isArray(content.choices) || content.choices.length !== 4 || !Number.isInteger(content.answer) || content.answer < 0 || content.answer > 3 || typeof content.explanation !== "string") throw new Error("question_correction_invalid");
     // Never overwrite IDs, source hash, images or exam/qualification metadata.
-    return { ...question, stem: content.stem, choices: content.choices, answer: content.answer, explanation: content.explanation };
+    return { ...question, stem: content.stem, choices: correctedChoices(question.choices, content.choices), answer: content.answer, explanation: content.explanation };
   }) };
 }
 

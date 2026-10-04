@@ -5,7 +5,7 @@ export type QuestionStatus = "draft" | "needs_review" | "published";
 export type GradeMode = "submit" | "instant";
 export type QuestionTarget = "all" | "unanswered" | "wrong" | "bookmark";
 
-export type Choice = { label: string; text: string };
+export type Choice = { label: string; text: string; images?: string[] };
 export type Question = {
   id: string; examId: string; certId: string; no: number; subjectId: string;
   stem: string; images: string[]; choices: Choice[]; answer: number;

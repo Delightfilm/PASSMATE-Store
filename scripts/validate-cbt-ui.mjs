@@ -29,6 +29,9 @@ assert.match(html, /aria-label="12번 문항 ③번 보기"/);
 assert.equal((html.match(/tabindex="0"/g) || []).length, 1);
 const disabled = renderToStaticMarkup(React.createElement(AnswerChoices, { number: 12, selected: 2, disabled: true, onSelect() {} }));
 assert.equal((disabled.match(/disabled=""/g) || []).length, 4);
+const five = renderToStaticMarkup(React.createElement(AnswerChoices, { number: 5, count: 5, selected: 4, disabled: false, onSelect() {} }));
+assert.equal((five.match(/role="radio"/g) || []).length, 5);
+assert.match(five, /aria-label="5번 문항 ⑤번 보기"/);
 const guide = renderToStaticMarkup(React.createElement(MockExamGuide, { name: "수험자", onStart() {} }));
 assert.match(guide, /1\/4/);
 assert.doesNotMatch(guide, /20261001-12345|@/);
@@ -45,6 +48,7 @@ const clientRequire = (name) => {
   if (name === "@/components/site-header") return { SiteHeader: () => null };
   if (name === "@/components/ai-question-explanation") return { AiQuestionExplanation: () => null };
   if (name === "@/components/question-bank-loading") return { QuestionBankLoading: () => null };
+  if (name === "@/components/question-choice-content") return { QuestionChoiceContent: ({ choice }) => React.createElement("span", null, choice.text) };
   if (name.startsWith("@/lib/")) return { certSlug: (cert) => cert.name };
   return createRequire(clientPath)(name);
 };

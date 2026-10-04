@@ -398,9 +398,10 @@ Deno.serve(async (req: Request) => {
       if (correctionError) throw new Error("question_correction_load_failed");
       const sourceHash = text(source.sourceHash);
       if (correction && correction.source_hash !== sourceHash) throw new Error("question_source_changed");
-      if (action === "get_report_question") return json(200, { question: { id: ref, certId: code, no: source.no, images: source.images, ...editableContent(correction?.content || source) }, version: correction?.version || 0, sourceHash });
-      validatePatch(body.patch);
-      const patch = editableContent(body.patch as Record<string, unknown>);
+      if (action === "get_report_question") return json(200, { question: { id: ref, certId: code, no: source.no, images: source.images, ...editableContent(correction?.content || source, source) }, version: correction?.version || 0, sourceHash });
+      // Image associations always come from trusted source lookup, never the browser.
+      const patch = editableContent(body.patch as Record<string, unknown>, source);
+      validatePatch(patch);
       if (!Number.isInteger(body.expectedVersion) || !text(body.reason) || text(body.reason).length > 2000) throw new Error("invalid_question_patch");
       if (text(body.sourceHash) !== sourceHash) throw new Error("question_source_changed");
       const { data, error } = await admin.rpc("review_question_bank_report", {
