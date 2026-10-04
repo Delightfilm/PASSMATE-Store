@@ -30,7 +30,7 @@ globalThis.fetch = async (url) => {
 };
 try { assert.equal((await loadNasQuestion("kh", question.id)).id, question.id); await assert.rejects(loadNasQuestion("http://192.168.0.48", question.id), /qualification_required/); await assert.rejects(loadNasQuestion("kh", "unknown"), /not_found/); } finally { globalThis.fetch = originalFetch; delete globalThis.testSupabase; }
 const client = read("../components/question-bank-client.tsx"); const edge = read("../supabase/functions/question-bank-admin/index.ts");
-assert.ok(client.includes("then(loadQuestionCorrections)")); assert.ok(client.includes("qualificationCode: question.certId"));
+assert.ok(client.includes("then((live) => loadQuestionCorrections(live, options))")); assert.ok(client.includes("qualificationCode: question.certId"));
 assert.ok(!client.includes("submitIssueReport(report).catch(() => undefined)"));
 assert.ok(edge.includes('rpc("review_question_bank_report"')); assert.ok(edge.includes('rpc("authorize_question_bank_review"'));
 console.log("Question review OK: validated edits, answer bounds, source preservation, fresh corrections, private logs, safe source lookup and failure handling");

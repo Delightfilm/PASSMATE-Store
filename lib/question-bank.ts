@@ -109,13 +109,18 @@ export async function parseImportFile(file: File): Promise<ParsedImport> {
   return { rows, errors, context };
 }
 
-export async function loadPublishedDataset(): Promise<Dataset> {
+export async function loadPublishedDataset(signal?: AbortSignal): Promise<Dataset> {
+  signal?.throwIfAborted();
   const supabase = getSupabaseBrowserClient();
+  const certQuery = supabase.from("question_bank_certs").select("id,name").order("name");
+  const subjectQuery = supabase.from("question_bank_subjects").select("id,cert_id,name").order("part_number");
+  const examQuery = supabase.from("question_bank_exams").select("id,cert_id,year,round,title,duration_minutes,pass_score,question_count").order("exam_date", { ascending: false });
   const [certResult, subjectResult, examResult] = await Promise.all([
-    supabase.from("question_bank_certs").select("id,name").order("name"),
-    supabase.from("question_bank_subjects").select("id,cert_id,name").order("part_number"),
-    supabase.from("question_bank_exams").select("id,cert_id,year,round,title,duration_minutes,pass_score,question_count").order("exam_date", { ascending: false }),
+    signal ? certQuery.abortSignal(signal) : certQuery,
+    signal ? subjectQuery.abortSignal(signal) : subjectQuery,
+    signal ? examQuery.abortSignal(signal) : examQuery,
   ]);
+  signal?.throwIfAborted();
   if (certResult.error || subjectResult.error || examResult.error) {
     throw new Error(`CBT 목록 조회 실패: ${certResult.error?.message || subjectResult.error?.message || examResult.error?.message}`);
   }
@@ -123,13 +128,15 @@ export async function loadPublishedDataset(): Promise<Dataset> {
 
   const questionRows: Record<string, unknown>[] = [];
   for (let from = 0; ; from += 1000) {
-    const result = await supabase
+    const query = supabase
       .from("question_bank_questions")
       .select("id,exam_id,cert_id,subject_id,no,stem,images,choices,answer,explanation,status,source_hash")
       .eq("status", "published")
       .order("exam_id")
       .order("no")
       .range(from, from + 999);
+    const result = await (signal ? query.abortSignal(signal) : query);
+    signal?.throwIfAborted();
     if (result.error) throw new Error(`CBT 문항 조회 실패: ${result.error.message}`);
     const page = (result.data ?? []) as Record<string, unknown>[];
     questionRows.push(...page);

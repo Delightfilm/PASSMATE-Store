@@ -116,7 +116,7 @@ export function ProductPurchaseOptions({
         </button>
       </div>
 
-      <div className="package-compare" aria-label="상품 구성 비교">
+      <div className={`package-compare package-compare--${kind}`} aria-label="상품 구성 비교">
         <div className="package-compare-row package-compare-head">
           <b>구성품</b><b>핵심노트</b><b>완성패키지</b>
         </div>

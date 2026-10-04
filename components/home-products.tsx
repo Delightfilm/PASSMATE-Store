@@ -37,7 +37,7 @@ export function HomeProducts({ product }: { product: Product | null }) {
     <section className="home-hero">
       <div className="container home-hero-grid">
         <div className="home-hero-copy">
-          <span className="eyebrow">PASSMATE · {product.year} EDITION</span>
+          <span className="eyebrow eyebrow--latin">PASSMATE · {product.year} EDITION</span>
           <h1>시험에 필요한 핵심을 짧게 정리하세요.</h1>
           <p>컴퓨터활용능력 2급 핵심노트로 핵심개념, 공식·수치, 시험 직전 점검을 한 번에 살펴보세요.</p>
         </div>

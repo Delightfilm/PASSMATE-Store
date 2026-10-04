@@ -38,3 +38,57 @@ No crawler, source master DB, or COMCBT process needs to change.
 Reported-question corrections are sparse public patches in Supabase, not a corpus
 import. The source NAS bundles remain immutable. Private audit events and report
 memos are never included in public patches. See [QUESTION_REVIEW.md](QUESTION_REVIEW.md).
+
+## Loading presentation — spinner and rotating guidance
+
+The dataset flow stays catalog → selected qualification bundles → fresh
+corrections. Catalog TTL is 60 seconds; the four-bundle LRU remains keyed by
+content base/release/SHA. Corrections are read fresh outside those caches.
+
+The loader shows a decorative 44px CSS spinner after 300ms, alongside guidance
+that changes every 5 seconds, measured from first appearance. The interval is
+defined once by LOADING_MESSAGE_INTERVAL_MS. Within the last 350ms of each
+interval the current message fades out; at the boundary it is replaced in the
+same text element and the next message fades in over 350ms. Messages never
+overlap, and the spinner element/animation stays mounted across text changes.
+There is no auxiliary guidance line. The message area reserves 48px: the longest
+notice and a truncated long-name message each measured two 24px lines at a
+360px viewport (294px text width). It displays no percentage,
+received capacity or ETA. At 15 seconds the guidance becomes a fixed long-wait
+notice and shows cancel/retry. All loader timers are disposed on unmount.
+Reduced-motion disables the spinner animation and text fade; text changes
+immediately at the same 5-second boundaries. The first three of the seven
+messages appear before the fixed notice; the remaining four stay in the list.
+Cancel/retry starts a new loader from the first message after its 300ms delay.
+
+Display names come from the signed-in user's profiles.display_name, then the
+explicit display_name/nickname/name/full_name metadata fields. Missing names
+use 수험자. Email/phone fields and email prefixes are never used; email-like or
+phone-like name values are rejected. Names are truncated at 10 graphemes and
+rendered as escaped React text. The value is frozen when the loader first
+appears; a late auth/profile response cannot change the visible first phrase.
+
+The visual rotating messages are aria-hidden. The status region uses polite
+announcements and aria-busy, with only the initial message and the 15-second
+notice in its screen-reader text. Cancel/retry remain accessible outside that
+live region. Text uses existing typography/colour tokens and reserved height.
+
+qualifications[].uncompressedBytes remains supported as an optional catalog
+field, but is not used by the current screen. Existing SHA/count/release/image
+validation is retained; streaming UTF-8 reading and AbortSignal reader
+cancellation remain. Presentation-only byte counting, Content-Length size
+estimation, percentage/rolling-rate/EMA/ETA calculation and progress listeners
+were removed.
+
+In-flight requests still coalesce with per-caller AbortSignal subscriptions.
+Cancelling one subscriber leaves other subscribers running; the last subscriber
+leaving aborts the actual request. Cancelled/failed entries can be retried, and
+an older failed request cannot clear a newer cache entry. HTTP failure UI and
+the existing single transport retry stay in place.
+
+Validation: npm run check:question-bank includes deterministic name/privacy,
+message schedule/announcements/timer disposal, UTF-8, abort, shared cancellation,
+fresh corrections and cache tests. Browser checks cover slow transfer/cancel/
+retry, motion preference, cache hit, responsive layout and the exam flow.
+No answering, grading, saving or submission handlers or NAS/proxy/CDN settings
+are modified by this presentation change.

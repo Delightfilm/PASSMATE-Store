@@ -1,0 +1,80 @@
+.card {
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  color: var(--ink);
+  text-align: center;
+}
+.spinner {
+  display: block;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  margin-inline: auto;
+  border: 4px solid var(--blue-soft);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+.messageArea {
+  display: grid;
+  align-items: center;
+  min-height: 48px;
+  margin-top: var(--space-3);
+}
+.message {
+  margin: 0;
+  font-size: var(--text-choice);
+  font-weight: 600;
+  line-height: var(--leading-subtitle);
+  letter-spacing: var(--tracking-body);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  opacity: 1;
+  transition: opacity var(--message-fade-duration) ease-in-out;
+}
+.messageFading { opacity: 0; }
+.actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.actions button {
+  min-height: var(--control-min-height);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--blue-line);
+  border-radius: var(--radius-control);
+  background: var(--white);
+  color: var(--blue);
+  font-size: var(--text-button);
+  font-weight: 700;
+  line-height: var(--leading-subtitle);
+  cursor: pointer;
+}
+.actions button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+.live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 620px) { .card { padding: var(--space-4); } }
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+  .message { transition: none; }
+  .messageFading { opacity: 1; }
+}

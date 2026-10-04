@@ -1,0 +1,99 @@
+/* Shared rhythm; page exceptions follow the semantic defaults. */
+:where(*) { line-height: inherit; }
+body { font-family: var(--font-ui); line-height: var(--leading-subtitle); font-variant-numeric: tabular-nums; }
+button, input, select, textarea { font-family: inherit; }
+h1 { letter-spacing: var(--tracking-h1); line-height: var(--leading-h1); text-wrap: balance; }
+h2 { letter-spacing: var(--tracking-h2); line-height: var(--leading-h2); text-wrap: balance; }
+h3, strong { letter-spacing: var(--tracking-title); line-height: var(--leading-title); }
+p { letter-spacing: var(--tracking-body); line-height: var(--leading-body); text-wrap: pretty; }
+small { line-height: var(--leading-small); }
+.eyebrow, .pill, .home-option-type { font-size: var(--text-small); letter-spacing: var(--tracking-label); line-height: var(--leading-small); }
+.eyebrow--latin, .pill--latin { letter-spacing: var(--tracking-latin); }
+.button { font-size: var(--text-button); min-height: var(--control-min-height); line-height: var(--leading-subtitle); text-wrap: pretty; }
+.price-row, .home-option-bottom, .home-featured-info > strong, .result-score, .cbt-live-timer, .question-timer { font-variant-numeric: tabular-nums; }
+.home-hero-copy h1 { line-height: var(--leading-h1); letter-spacing: var(--tracking-h1); }
+.home-hero-copy p { line-height: var(--leading-body); }
+.section-heading h2, .home-featured-info h2 { line-height: var(--leading-h2); letter-spacing: var(--tracking-h2); }
+.home-featured-info p { font-size: var(--text-small); line-height: var(--leading-small); }
+.home-product-option h3 { line-height: var(--leading-title); letter-spacing: var(--tracking-title); }
+.site-footer { padding-block: var(--space-6); }
+.footer-grid { gap: var(--space-4); }
+.footer-copy, .footer-meta { font-size: var(--text-small); line-height: var(--leading-small); }
+.footer-copy { margin: var(--space-2) 0 0; }
+.footer-meta p { margin: 0; }
+.footer-meta p + p { margin-top: var(--space-2); }
+.auth-menu-label { font-size: var(--text-small); }
+.product-info h1 { line-height: var(--leading-h1); letter-spacing: var(--tracking-h1); }
+.product-info > p { line-height: var(--leading-body); }
+.product-info > .product-subtitle { font-size: var(--text-subtitle); line-height: var(--leading-subtitle); text-wrap: balance; }
+.check-list li { font-size: var(--text-explanation); line-height: var(--leading-body); }
+.price-row { gap: var(--space-4); }
+.price-row h2 { margin: 0; font-size: 32px; flex-shrink: 0; line-height: var(--leading-h2); }
+.price-row span, .package-help { font-size: var(--text-small); line-height: var(--leading-small); text-wrap: pretty; }
+.package-compare-row > * { font-size: var(--text-small); line-height: var(--leading-small); }
+.detail-band { margin-top: var(--space-6); }
+.detail-band div { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-4); }
+.product-cover { background: #0b1d3a; }
+.product-cover--light { background: #f4f8ff; }
+.product-gallery-stage .product-cover { aspect-ratio: auto; }
+.product-gallery-stage .cover-title { font-size: clamp(22px,7vw,38px); }
+.product-cover > * { position: relative; z-index: 1; }
+.cover-title { line-height: var(--leading-h1); letter-spacing: var(--tracking-title); }
+.cover-sub { padding: var(--space-2); background: #0b1d3a; color: #fff; font-size: var(--text-small); line-height: var(--leading-small); }
+.product-cover--light .cover-sub { background: #f4f8ff; color: #243b53; }
+.cover-bottom { margin-top: var(--space-4); padding: var(--space-2); background: #e5fff2; color: #0b1d3a; line-height: var(--leading-small); }
+.product-cover--small .cover-top, .product-cover--small .cover-bottom, .product-cover--small .cover-sub { display: none; }
+.product-cover--small .cover-label { font-size: var(--text-small); }
+.question-card-head strong, .cbt-cert-card strong { line-height: var(--leading-title); letter-spacing: var(--tracking-title); }
+.exam-redesign .cbt-live-question h1 { letter-spacing: var(--tracking-question); line-height: var(--leading-question); font-weight: 600; text-wrap: pretty; }
+.choice-button { align-items: flex-start; line-height: var(--leading-question); }
+.choice-button > span { flex: 1; min-width: 0; }
+.choice-button .choice-number, .result-choice-heading .choice-number { display: inline-grid; place-items: center; flex: none; width: var(--choice-badge-size); height: var(--choice-badge-size); border: 1px solid currentColor; border-radius: 50%; color: var(--muted); font-size: var(--text-small); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.exam-redesign .cbt-live-question .choice-button.is-selected { border-color: var(--blue); background: var(--blue-soft); }
+.choice-button.is-selected .choice-number { border-color: var(--blue); background: var(--blue); color: #fff; }
+.choice-button.is-correct .choice-number { border-color: var(--success); background: var(--success); color: #fff; }
+.choice-button.is-wrong .choice-number { border-color: var(--error); background: var(--error); color: #fff; }
+.cbt-exam-identity strong, .cbt-exam-identity small, .exam-bookmark, .cbt-report-link { font-size: var(--text-small); line-height: var(--leading-subtitle); }
+.cbt-live-timer strong { font-size: var(--text-choice); letter-spacing: var(--tracking-body); line-height: var(--leading-subtitle); font-variant-numeric: tabular-nums; }
+.exam-redesign .exam-submit { font-size: var(--text-button); }
+.cbt-toast { bottom: calc(var(--toast-clearance) + env(safe-area-inset-bottom)); pointer-events: none; max-width: calc(100% - 40px); font-size: var(--text-small); line-height: var(--leading-small); text-align: center; }
+.cbt-review-heading h1 { line-height: var(--leading-h2); letter-spacing: var(--tracking-h2); }
+.cbt-review-heading p { line-height: var(--leading-body); }
+.cbt-review-actions .button, .cbt-modal-actions .button { min-height: var(--control-min-height); font-size: var(--text-button); }
+.cbt-review-notice, .cbt-review-range button, .cbt-answer-pages button { font-size: var(--text-small); line-height: var(--leading-small); }
+.cbt-modal > p { font-size: var(--text-explanation); line-height: var(--leading-body); }
+.cbt-modal .cbt-start-info { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-control); background: var(--soft); }
+.cbt-start-info strong { line-height: var(--leading-subtitle); }
+.cbt-mode-options legend { margin-bottom: var(--space-2); font-size: var(--text-small); line-height: var(--leading-small); }
+.cbt-result-identity p, .cbt-result-score-block p, .cbt-result-badge { line-height: var(--leading-subtitle); }
+.cbt-result-badge { margin-block: var(--space-2); font-size: var(--text-small); }
+.cbt-result-identity .cbt-attempt-id { display: none; }
+.exam-redesign .result-hero .result-score { letter-spacing: var(--tracking-score); font-variant-numeric: tabular-nums; }
+.exam-redesign .result-hero .result-score small { letter-spacing: var(--tracking-body); }
+.cbt-result-next-grid .result-actions .button, .cbt-result-mobile-actions .button { font-size: var(--text-button); }
+.cbt-reshuffle, .cbt-result-save-note { font-size: var(--text-small); line-height: var(--leading-small); }
+.result-choice-list li { display: grid; gap: var(--space-2); font-size: var(--text-choice); line-height: var(--leading-question); }
+.result-choice-heading { display: flex; align-items: center; gap: var(--space-2); }
+.result-choice-badge { font-size: var(--text-small); line-height: var(--leading-small); }
+.result-explanation { font-size: var(--text-explanation); line-height: var(--leading-body); }
+.result-explanation-empty { margin-top: var(--space-3); font-size: var(--text-small); color: var(--muted); line-height: var(--leading-small); }
+@media (hover: none) { .cbt-shortcuts { display: none; } }
+@media (max-width: 700px) {
+  .package-compare { overflow: hidden; }
+  .package-compare-row { grid-template-columns: minmax(0,1fr) minmax(108px,.65fr); min-width: 0; }
+  .package-compare--core .package-compare-row > :nth-child(3), .package-compare--pass .package-compare-row > :nth-child(2) { display: none; }
+  .package-compare-row > * { padding: var(--space-3) var(--space-2); }
+}
+@media (max-width: 620px) {
+  .product-info h1 { font-size: clamp(30px,8.6vw,36px); }
+  .price-row { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  .detail-band--dynamic { grid-template-columns: minmax(0,1fr); margin-top: var(--space-5); }
+  .detail-band--dynamic div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .detail-band--dynamic div:last-child { border-bottom: 0; }
+  .home-featured-info p { font-size: var(--text-small); line-height: var(--leading-small); }
+  .cbt-attempt-id { display: none; }
+  .exam-redesign .cbt-live-topbar { gap: var(--space-2); }
+  .cbt-exam-identity strong, .cbt-exam-identity small { font-size: var(--text-small); }
+  .cbt-live-timer strong { font-size: var(--text-choice); }
+  .cbt-review-actions .button, .cbt-result-next-grid .result-actions .button, .cbt-result-mobile-actions .button { font-size: var(--text-button); }
+}
