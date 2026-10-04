@@ -133,6 +133,10 @@ try {
   assert.ok(!JSON.stringify(diagnostics).includes("SECRET_PROVIDER_RESPONSE"));
 } finally { console.error = consoleError; globalThis.routeDependencies.generateExplanation = generateOriginal; }
 const component = read("../components/ai-question-explanation.tsx");
+const notice = "AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.";
+assert.equal(component.split(notice).length - 1, 1);
+assert.ok(component.indexOf(notice) < component.indexOf('{!explanation &&'));
+assert.ok(!component.includes("관리자 검수 전"));
 assert.ok(component.includes('onClick={showExplanation}')); assert.ok(component.includes('readOnly = true'));
 assert.ok(!component.includes('dangerouslySetInnerHTML')); assert.ok(!component.includes('AI_GATEWAY_API_KEY'));
 const api = read("../app/api/cbt/explanations/route.ts");

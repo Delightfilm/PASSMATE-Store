@@ -26,12 +26,13 @@ Status (2026-10-04, Asia/Seoul): NAS deployment, text generation, persistent reu
 
 ## User flow
 
+- Owner decision (2026-10-04): no mandatory human approval before serving a newly generated explanation that passes the automated answer-safety checks. Display exactly `AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.` for both new and stored AI explanations. Keep error reporting, the immutable registered answer, blind consistency checks, durable caching and no automatic paid retries. The notice accepts residual AI inaccuracy; it does not disable those guards or guarantee factual correctness.
 - Wrong-answer feedback, result details and the wrong-note explanation dialog offer `해설보기` when no registered explanation exists.
 - Wrong answer selection, page load and opening the dialog never call the AI automatically.
 - The first explicit click generates one shared explanation for all four choices. Later users/selected choices read the same NAS entry.
 - Existing registered/admin-reviewed explanations always take precedence.
 - New generation requires Supabase login; cached results do not. No account details, chosen answer or user notes are sent to the model.
-- AI text is labeled unreviewed; the displayed answer is always the registered answer, not model text. The existing question error-report action remains available.
+- AI text uses the owner's exact inaccuracy notice, not a mandatory administrator-review label; the displayed answer is always the registered answer, not model text. The existing question error-report action remains available.
 
 ## Model and answer safety
 

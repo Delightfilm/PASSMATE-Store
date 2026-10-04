@@ -9,7 +9,7 @@ function publicResult(result: Omit<ExplanationReply, "status"> & { status: strin
   // Preserve old entries/key and billing claims, but never serve unchecked text
   // or automatically regenerate it after strengthening the safety gate.
   if (result.status === "ready" && !hasAnswerVerification(result, answer)) return { status: "refused", cached,
-    message: "정답·해설 일치 검사 기준이 강화되어 이 해설은 관리자 검수 대기 중입니다. 중복 비용 방지를 위해 자동 재생성하지 않습니다." };
+    message: "정답 일치 여부가 확인되지 않아 이 해설은 표시하지 않습니다. 중복 비용 방지를 위해 자동 재생성하지 않습니다." };
   return { status: result.status, ...(result.status === "ready" ? { explanation: validateExplanation(result.explanation, answer) } : {}), message: result.message, cached };
 }
 

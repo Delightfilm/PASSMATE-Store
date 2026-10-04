@@ -62,6 +62,7 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
   if (!allowGenerate) return <p>등록된 해설이 없습니다.</p>;
   const explanation = result?.explanation;
   return <div className="ai-question-explanation" aria-busy={loading}>
+    <small className="ai-explanation-notice">AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.</small>
     {!explanation && <><p>등록된 해설이 없습니다. AI 해설로 복습할 수 있습니다.</p>
       {(!result || result.status === "generating") && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
         {loading ? "해설을 준비하고 있습니다…" : result ? "해설 상태 확인" : "해설보기"}
@@ -77,7 +78,6 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
       <ol className="ai-explanation-choices">{explanation.choiceReasons.map((reason, index) => <li key={index} className={index === selectedAnswer && index !== question.answer ? "is-selected-wrong" : ""}>
         <strong>{question.choices[index].label} {index === question.answer ? "등록 정답" : index === selectedAnswer ? "내가 고른 보기" : "보기 설명"}</strong><p>{reason}</p>
       </li>)}</ol>
-      <small>AI 생성 · 관리자 검수 전입니다. 정답은 변경하지 않지만 설명에 오류가 있을 수 있습니다.</small>
     </section>}
     {onReport && result && <button type="button" className="cbt-report-link" onClick={onReport}>해설 오류 신고</button>}
   </div>;
