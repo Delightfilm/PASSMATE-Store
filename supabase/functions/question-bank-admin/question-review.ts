@@ -1,13 +1,18 @@
-export type QuestionContent = { stem: string; choices: { label: string; text: string }[]; answer: number; explanation: string };
-export function editableContent(question: Record<string, unknown>): QuestionContent {
-  const choices = question.choices as { label: string; text: string }[];
-  const content = { stem: String(question.stem || ""), choices: choices?.map((choice, index) => ({ label: ["①", "②", "③", "④"][index], text: String(choice.text || "") })), answer: question.answer as number, explanation: String(question.explanation || "") };
+export type QuestionContent = { stem: string; choices: { label: string; text: string; images?: string[] }[]; answer: number; explanation: string };
+const imagePath = /^https:\/\/content\.mypassmate\.com\/images\/[a-f0-9]{2}\/[a-f0-9]{64}\.(png|jpe?g|gif|webp)$/i;
+export function editableContent(question: Record<string, unknown>, source = question): QuestionContent {
+  const choices = question.choices as QuestionContent["choices"];
+  const original = source.choices as QuestionContent["choices"];
+  const content = { stem: String(question.stem || ""), choices: choices?.map((choice, index) => ({ label: ["①", "②", "③", "④"][index], text: String(choice.text || ""),
+    ...(original?.[index]?.images?.length ? { images: original[index].images } : {}) })), answer: question.answer as number, explanation: String(question.explanation || "") };
   validatePatch(content);
   return content;
 }
 export function validatePatch(value: unknown): asserts value is QuestionContent {
   const p = value as QuestionContent | null;
-  if (!p || typeof p.stem !== "string" || !p.stem.trim() || p.stem.length > 20000 || !Array.isArray(p.choices) || p.choices.length !== 4 || p.choices.some((choice) => typeof choice.text !== "string" || !choice.text.trim() || choice.text.length > 10000) || !Number.isInteger(p.answer) || p.answer < 0 || p.answer > 3 || typeof p.explanation !== "string" || p.explanation.length > 20000) throw new Error("invalid_question_patch");
+  if (!p || typeof p.stem !== "string" || !p.stem.trim() || p.stem.length > 20000 || !Array.isArray(p.choices) || p.choices.length !== 4 || p.choices.some((choice) => typeof choice.text !== "string" || choice.text.length > 10000 ||
+    (choice.images !== undefined && (!Array.isArray(choice.images) || choice.images.length > 10 || !choice.images.every((image) => typeof image === "string" && imagePath.test(image)))) ||
+    (!choice.text.trim() && !choice.images?.length)) || !Number.isInteger(p.answer) || p.answer < 0 || p.answer > 3 || typeof p.explanation !== "string" || p.explanation.length > 20000) throw new Error("invalid_question_patch");
 }
 
 // Fixed origin + catalog allowlist: no client-supplied URLs or private NAS endpoints.
@@ -31,5 +36,10 @@ export async function loadNasQuestion(code: string, ref: string) {
   if (bundle.schemaVersion !== "passmate.question-bank.bundle.v1" || bundle.releaseId !== catalog.releaseId || bundle.qualification.code !== code || bundle.questions.length !== entry.questions) throw new Error("question_source_changed");
   const question = bundle.questions.find((item: { id: string }) => item.id === ref);
   if (!question || question.certId !== code) throw new Error("question_not_found");
-  return { ...question, images: question.images.filter((image: string) => /^images\/[a-f0-9]{2}\/[a-f0-9]{64}\.[a-z0-9]+$/i.test(image)).map((image: string) => `${origin}/${image}`) };
+  const imageUrl = (image: string) => {
+    if (!/^images\/[a-f0-9]{2}\/[a-f0-9]{64}\.[a-z0-9]+$/i.test(image)) throw new Error("question_image_invalid");
+    return `${origin}/${image}`;
+  };
+  return { ...question, images: question.images.map(imageUrl), choices: question.choices.map((choice: QuestionContent["choices"][number]) => ({ ...choice,
+    ...(choice.images ? { images: choice.images.map(imageUrl) } : {}) })) };
 }

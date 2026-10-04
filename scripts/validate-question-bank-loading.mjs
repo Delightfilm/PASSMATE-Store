@@ -149,7 +149,7 @@ try {
   abort.abort(); await assert.rejects(load, { name: "AbortError" });
   block = false; await adapter.loadContentCatalog(); assert.equal(aborted, 1, "aborted cache entry must not block retry");
 } finally { globalThis.fetch = originalFetch; Date.now = originalNow; }
-const correctionSource = read("../lib/question-bank-corrections.ts").replace('import { getSupabaseBrowserClient } from "./supabase-browser";', 'const getSupabaseBrowserClient = () => globalThis.loadingTestSupabase;');
+const correctionSource = read("../lib/question-bank-corrections.ts").replace('import { getSupabaseBrowserClient } from "./supabase-browser";', 'const getSupabaseBrowserClient = () => globalThis.loadingTestSupabase;').replace('from "./question-bank-choices"', `from "${urlFor(read("../lib/question-bank-choices.ts"))}"`);
 const { loadQuestionCorrections } = await import(urlFor(correctionSource));
 let correctionReads = 0; let waitForAbort = false; let signalSeen;
 globalThis.loadingTestSupabase = { from() {

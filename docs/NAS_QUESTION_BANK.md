@@ -5,8 +5,11 @@ The public content origin is `https://content.mypassmate.com`. Vercel sets
 public URL, not a credential. Changing it requires a new build.
 
 The current `release-2026-10-02` catalog contains 727 qualifications, 15,767
-exams, 979,863 playable questions, and 136,044 images. 21,068 incomplete source
-questions are excluded; they are not counted as playable questions.
+exams, 979,863 playable questions, and 136,044 images. 21,068 questions are
+excluded from that release. This is not proof of missing source questions:
+the 2026-10-04 investigation found omitted choice images and text-only filtering
+that compacted choice positions. Recovery is underway; the public release is
+unchanged until full data QA and verified NAS activation finish.
 
 The browser requests the catalog first, then only the selected qualification's
 gzip bundle. It uses a bounded four-bundle in-memory cache keyed by release and
@@ -92,3 +95,41 @@ fresh corrections and cache tests. Browser checks cover slow transfer/cancel/
 retry, motion preference, cache hit, responsive layout and the exam flow.
 No answering, grading, saving or submission handlers or NAS/proxy/CDN settings
 are modified by this presentation change.
+
+## Image-choice recovery — 2026-10-04 (not activated)
+
+Choices now support optional `images: string[]` alongside text. Preserve every
+source choice position: never filter empty text if an image represents the choice,
+and never shift the registered answer. Missing assets or genuinely empty choices
+remain explicit exclusions. Browser mapping validates every relative image path.
+Practice, results and administrator review share an image renderer with an
+accessible load-failure notice. OMR renders the actual choice count (including
+five-choice source questions). The existing four-choice admin-edit/AI safety
+contracts are not broadened by this repair.
+
+The isolated CBTBANK repair uses saved HTML, not another page crawl. A verified
+SQLite backup precedes additive positional references; question IDs, answers,
+source hashes, canonical associations and original text remain unchanged.
+Only newly discovered missing images are downloaded, with existing robots and
+adaptive 3-to-7 rps safeguards. COMCBT is untouched.
+
+Local checkpoint: `PASSMATE_CBTBANK_ALL_EXAMS/06_RECOVERY/2026-10-04-image-choices`.
+`resume_image_choice_recovery.ps1` runs reparse → missing-image download → fresh
+administrator export → new NAS release packaging → independent QA. It holds an
+OS lock; never duplicate a live repair. Completed pages are checkpointed in
+`image_choice_repair_pages`. A normal `status.json` is a stage snapshot, not a
+live progress counter. Read `recovery-progress.log` and the checkpoint table.
+
+The new release is `05_NAS_RELEASES/2026-10-04-image-choices`; neither this folder
+nor a successful local QA automatically publishes files to NAS. Gate activation
+on `QA.json`, hashes/counts, original HTML comparison, verified upload, administrator
+RPC/Edge validation and preview E2E. Keep the old NAS release available for rollback.
+Do not overwrite the master with its backup while any repair process is alive.
+
+Validation so far: seven website suites, 25 crawler tests and production build
+pass. Three real incident questions were independently compared to saved HTML;
+all ten choice images loaded, registered positions ③/①/④ remained unchanged,
+and a 360px local screen had no horizontal overflow or console errors. Temporary
+QA routes were removed. This is sample validation, not completion of the full
+corpus. Live administrator database preflight currently times out; no remote
+migration, Edge update, NAS activation or production deployment has been made.

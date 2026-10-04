@@ -36,7 +36,7 @@ const serverSource = read("../lib/ai-explanation-server.ts")
   .replace('import sharp from "sharp";', 'const sharp = globalThis.testSharp;')
   .replace(/import \{ getPublicSupabaseConfig \}[^;]+;/, 'const getPublicSupabaseConfig = () => ({});')
   .replace(/import \{ loadContentCatalog, loadContentBundle \}[^;]+;/, 'const loadContentCatalog = () => {}; const loadContentBundle = () => {};')
-  .replace(/import \{ normalizeLiveChoices \}[^;]+;/, 'const normalizeLiveChoices = (value) => value;')
+  .replace(/import \{ correctedChoices, normalizeLiveChoices \}[^;]+;/, 'const normalizeLiveChoices = (value) => value; const correctedChoices = (original, edited) => edited;')
   .replace(/import \{ EXPLANATION_MODEL,[^;]+;/, 'const { EXPLANATION_MODEL, VERIFICATION_VERSION, explanationInput, validateExplanation } = globalThis.explanationContract;');
 const server = await moduleFrom(serverSource);
 process.env.PASSMATE_AI_CACHE_TOKEN = "test-only-cache-token-not-a-secret";
@@ -98,19 +98,26 @@ const gif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA
 globalThis.fetch = async () => new Response(gif);
 try {
   const images = await server.imageParts({ ...question, images: ["https://content.mypassmate.com/images/aa/" + "a".repeat(64) + ".gif"] });
-  assert.equal(images[0].type, "file"); assert.equal(images[0].mediaType, "image/png"); assert.equal(typeof images[0].data, "string");
-  assert.equal((await sharp(Buffer.from(images[0].data, "base64")).metadata()).format, "png");
-  assert.equal((await server.imageParts({ ...question, images: ["https://img.comcbt.com/cbt/data/hp/hp20160124/hp20160124m1.gif"] }))[0].mediaType, "image/png");
+  assert.equal(images[0].text, "문제 본문 이미지 1");
+  assert.equal(images[1].type, "file"); assert.equal(images[1].mediaType, "image/png"); assert.equal(typeof images[1].data, "string");
+  assert.equal((await sharp(Buffer.from(images[1].data, "base64")).metadata()).format, "png");
+  assert.equal((await server.imageParts({ ...question, images: ["https://img.comcbt.com/cbt/data/hp/hp20160124/hp20160124m1.gif"] }))[1].mediaType, "image/png");
+  const choiceImage = "https://content.mypassmate.com/images/aa/" + "a".repeat(64) + ".gif";
+  const imageQuestion = { ...question, choices: question.choices.map((choice, index) => ({ ...choice, text: "", images: [choiceImage] })) };
+  const choiceParts = await server.imageParts(imageQuestion);
+  assert.deepEqual(choiceParts.filter((part) => part.type === "text").map((part) => part.text), [1, 2, 3, 4].map((number) => `${number}번 보기 이미지 1`));
+  assert.notEqual(server.fingerprint(question), server.fingerprint(imageQuestion));
+  await assert.rejects(server.imageParts({ ...imageQuestion, images: [choiceImage] }), /이미지가 많은/);
   outputs = [{ ...good, supported: true, imagesReadable: true }, approved];
   await server.generateExplanation(question, images);
-  assert.equal(calls.at(-1).messages[0].content[1].mediaType, "image/png");
+  assert.equal(calls.at(-1).messages[0].content[2].mediaType, "image/png");
   // Exercise the real installed SDK's PNG encoding, but intercept transport:
   // this is not a paid/provider call and needs no credentials.
   let transported = 0;
   const mockGateway = createGateway({ apiKey: "test-only-not-a-credential", fetch: async (_url, init) => {
     transported++;
     const payload = JSON.parse(init.body);
-    const part = payload.prompt[0].content[1];
+    const part = payload.prompt[0].content[2];
     assert.equal(part.type, "file"); assert.equal(part.mediaType, "image/png");
     assert.equal(part.data.type, "data");
     assert.equal((await sharp(Buffer.from(part.data.data, "base64")).metadata()).format, "png");
