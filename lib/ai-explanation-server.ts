@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { generateText, gateway, jsonSchema, Output, type UserContent } from "ai";
 import sharp from "sharp";
@@ -39,13 +39,29 @@ export async function cacheRequest(key: string, action = "", body?: unknown) {
 }
 export async function authenticatedUser(request: Request) {
   const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
-  if (!token) throw new ExplanationError(401, "새 AI 해설을 만들려면 로그인해 주세요. 저장된 해설은 로그인 없이 볼 수 있습니다.");
+  if (!token) throw new ExplanationError(401, "로그인 정보를 다시 확인해 주세요. 비회원도 해설을 이용할 수 있습니다.");
   const { url, key } = getPublicSupabaseConfig();
   const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) throw new ExplanationError(401, "로그인 정보를 다시 확인해 주세요.");
   // Salted identifier only. No account/email, wrong answer or study notes sent to NAS/model.
   return createHmac("sha256", cacheConfig().token).update(data.user.id).digest("hex");
+}
+
+export async function generationIdentity(request: Request): Promise<{ userHash: string; cookie?: string }> {
+  // A supplied login must still be verified; never silently downgrade an invalid bearer.
+  if (request.headers.has("authorization")) return { userHash: await authenticatedUser(request) };
+  const { token } = cacheConfig();
+  const sign = (id: string) => createHmac("sha256", token).update(`guest-cookie:${id}`).digest("hex");
+  const stored = request.headers.get("cookie")?.split(";").map((part) => part.trim())
+    .find((part) => part.startsWith("passmate_ai_guest="))?.slice("passmate_ai_guest=".length) || "";
+  const match = /^([a-f0-9]{32})\.([a-f0-9]{64})$/.exec(stored);
+  const valid = match && timingSafeEqual(Buffer.from(match[2], "hex"), Buffer.from(sign(match[1]), "hex"));
+  const id = valid ? match[1] : randomBytes(16).toString("hex");
+  return {
+    userHash: createHmac("sha256", token).update(`guest-quota:${id}`).digest("hex"),
+    ...(!valid ? { cookie: `passmate_ai_guest=${id}.${sign(id)}; Path=/api/cbt/explanations/; Max-Age=31536000; HttpOnly; SameSite=Lax${new URL(request.url).protocol === "https:" ? "; Secure" : ""}` } : {}),
+  };
 }
 
 export async function trustedQuestion(qualification: string, id: string): Promise<Question> {

@@ -1,9 +1,8 @@
-import { authenticatedUser, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } from "@/lib/ai-explanation-server";
+import { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } from "@/lib/ai-explanation-server";
 import { validateExplanation, hasAnswerVerification, type ExplanationReply } from "@/lib/ai-explanation-contract";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
-const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 function publicResult(result: Omit<ExplanationReply, "status"> & { status: string }, answer: number, cached = true) {
   if (!["ready", "generating", "refused", "failed"].includes(result.status)) throw new Error("cache_result_invalid");
   // Preserve old entries/key and billing claims, but never serve unchecked text
@@ -15,8 +14,19 @@ function publicResult(result: Omit<ExplanationReply, "status"> & { status: strin
 
 export async function POST(request: Request) {
   let key: string | undefined; let lease: string | undefined;
+  let guestCookie: string | undefined;
+  const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: {
+    "Cache-Control": "no-store", ...(guestCookie ? { "Set-Cookie": guestCookie } : {}),
+  } });
   let stage = "request";
   try {
+    const origin = request.headers.get("origin");
+    if ((origin && origin !== new URL(request.url).origin) || request.headers.get("sec-fetch-site") === "cross-site") {
+      return reply({ error: "이 사이트에서 해설보기를 눌러 주세요." }, 403);
+    }
+    if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
+      return reply({ error: "JSON 요청만 사용할 수 있습니다." }, 415);
+    }
     if (Number(request.headers.get("content-length") || 0) > 2048) return reply({ error: "요청이 너무 큽니다." }, 413);
     const raw = await request.text();
     if (raw.length > 2048) return reply({ error: "요청이 너무 큽니다." }, 413);
@@ -36,7 +46,8 @@ export async function POST(request: Request) {
     const existing = await cacheRequest(key);
     if (existing.status !== "missing") return reply(publicResult(existing, question.answer));
     if (readOnly) return reply({ status: "missing" });
-    const userHash = await authenticatedUser(request);
+    const identity = await generationIdentity(request);
+    const userHash = identity.userHash; guestCookie = identity.cookie;
     const claimed = await cacheRequest(key, "claim", { userHash });
     if (claimed.status === "limited") return reply({ error: "오늘 또는 이번 달의 새 해설 생성 한도에 도달했습니다. 저장된 해설은 계속 이용할 수 있습니다." }, 429);
     if (claimed.status !== "claimed") return reply(publicResult(claimed, question.answer));
