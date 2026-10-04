@@ -3,6 +3,7 @@ import type { Question } from "./question-bank";
 export const EXPLANATION_MODEL = "alibaba/qwen3.7-flash";
 export const EXPLANATION_VERSION = "answer-locked-v1";
 export const VERIFICATION_VERSION = "answer-blind-v2";
+export const REPAIR_VERSION = "answer-repair-v1";
 export type AiExplanation = {
   correctAnswer: number;
   summary: string;
@@ -14,6 +15,7 @@ export type ExplanationReply = {
   cached?: boolean;
   message?: string;
   retryable?: boolean;
+  repairVersion?: string;
   verification?: { version: string; solvedAnswer: number; explanationAnswer: number };
 };
 

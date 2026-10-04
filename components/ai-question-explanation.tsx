@@ -93,10 +93,10 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
   return <div className="ai-question-explanation" aria-busy={loading}>
     <small className="ai-explanation-notice">AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.</small>
     {!explanation && <><p>등록된 해설이 없습니다. AI 해설로 복습할 수 있습니다.</p>
-      {(!result || result.status === "generating" || (result.status === "failed" && result.retryable)) && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
-        {loading ? "해설을 준비하고 있습니다…" : result?.retryable ? "해설 다시 생성" : result ? "해설 상태 확인" : "해설보기"}
+      {(!result || result.status === "generating" || (["failed", "refused"].includes(result.status) && result.retryable)) && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
+        {loading ? "해설을 작성하고 근거를 검사하고 있습니다…" : result?.status === "refused" && result.retryable ? "해설 보완 생성" : result?.retryable ? "해설 다시 생성" : result ? "해설 상태 확인" : "해설보기"}
       </button>}
-      <small>등록 정답 기준 · 처음 생성할 때만 AI를 사용하며 저장 후 함께 재사용합니다.</small></>}
+      <small>등록 정답 기준 · 근거 검사에서 실패하면 한 번 보완하며, 저장된 해설은 함께 재사용합니다.</small></>}
     {error && <p className="ai-explanation-error" role="alert">{error}</p>}
     {loginRequired && <Link className="button button-secondary" href="/account/login/?next=%2Fcbt%2F">로그인</Link>}
     {guest && createdCount >= AI_SIGNUP_THRESHOLD && <aside className="ai-explanation-signup" aria-label="회원가입 안내">

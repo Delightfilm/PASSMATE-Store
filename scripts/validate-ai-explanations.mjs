@@ -11,7 +11,7 @@ assert.deepEqual(normalizeLiveChoices(["가", "나", "다", "라"]).map((item) =
 const { validateExplanation, explanationInput } = contract;
 const question = { id: "a".repeat(20), certId: "kh", sourceHash: "source", stem: "테스트: 옳지 않은 것은?", choices: ["가", "나", "다", "라"].map((text, i) => ({ label: ["①", "②", "③", "④"][i], text })), answer: 0, images: [], explanation: "" };
 const good = { correctAnswer: 0, summary: "등록 정답이 질문 조건에 맞는 원리를 설명합니다.", choiceReasons: ["질문 조건에 맞는 보기입니다.", "조건에 해당하지 않는 보기입니다.", "조건에 해당하지 않는 보기입니다.", "조건에 해당하지 않는 보기입니다."] };
-const approved = { approved: true, solvedAnswer: 0, explanationAnswer: 0 };
+const approved = { approved: true, solvedAnswer: 0, explanationAnswer: 0, feedback: "" };
 const verification = { version: contract.VERIFICATION_VERSION, solvedAnswer: 0, explanationAnswer: 0 };
 validateExplanation(good, 0);
 for (const invalid of [{ ...good, correctAnswer: 2 }, { ...good, choiceReasons: [] }, { ...good, summary: "정답은 ③번입니다." }, { ...good, summary: "②가 정답입니다. 다른 문제를 봅시다." }, { ...good, summary: "<script>악성 내용</script>" }]) assert.throws(() => validateExplanation(invalid, 0));
@@ -37,7 +37,7 @@ const serverSource = read("../lib/ai-explanation-server.ts")
   .replace(/import \{ getPublicSupabaseConfig \}[^;]+;/, 'const getPublicSupabaseConfig = () => ({});')
   .replace(/import \{ loadContentCatalog, loadContentBundle \}[^;]+;/, 'const loadContentCatalog = () => {}; const loadContentBundle = () => {};')
   .replace(/import \{ correctedChoices, normalizeLiveChoices \}[^;]+;/, 'const normalizeLiveChoices = (value) => value; const correctedChoices = (original, edited) => edited;')
-  .replace(/import \{ EXPLANATION_MODEL,[^;]+;/, 'const { EXPLANATION_MODEL, VERIFICATION_VERSION, explanationInput, validateExplanation } = globalThis.explanationContract;');
+  .replace(/import \{ EXPLANATION_MODEL,[^;]+;/, 'const { EXPLANATION_MODEL, VERIFICATION_VERSION, REPAIR_VERSION, explanationInput, validateExplanation } = globalThis.explanationContract;');
 const server = await moduleFrom(serverSource);
 process.env.PASSMATE_AI_CACHE_TOKEN = "test-only-cache-token-not-a-secret";
 process.env.PASSMATE_AI_CACHE_URL = "https://content.mypassmate.com/ai-cache";
@@ -81,18 +81,36 @@ assert.ok(calls[0].system.includes("옳지 않은 것")); assert.ok(calls[1].sys
 const blindInput = JSON.parse(calls[1].messages[0].content[0].text);
 assert.ok(!("answer" in blindInput.question)); assert.ok(!("correctAnswer" in blindInput.proposedExplanation));
 assert.deepEqual(calls[1].output.schema.properties.solvedAnswer.enum, [-1, 0, 1, 2, 3]);
-outputs = [{ ...good, supported: false, imagesReadable: true }];
-assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 3);
-outputs = [{ ...good, supported: true, imagesReadable: false }];
+outputs = [{ ...good, supported: false, imagesReadable: true }, { ...good, supported: false, imagesReadable: true }];
 assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 4);
-outputs = [{ ...good, supported: true, imagesReadable: true }, { ...approved, approved: false }];
+outputs = [{ ...good, supported: true, imagesReadable: false }];
+assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 5);
+const rejected = { ...approved, approved: false, feedback: "부정형 질문의 조건과 보기별 이유가 모순됩니다." };
+outputs = [{ ...good, supported: true, imagesReadable: true }, rejected, { ...good, supported: true, imagesReadable: true }, rejected];
 assert.equal((await server.generateExplanation(question, [])).status, "refused");
 for (const mismatch of [{ ...approved, solvedAnswer: 2 }, { ...approved, explanationAnswer: 2 }, { ...approved, explanationAnswer: -1 }]) {
-  outputs = [{ ...good, supported: true, imagesReadable: true }, mismatch];
+  outputs = [{ ...good, supported: true, imagesReadable: true }, mismatch, { ...good, supported: true, imagesReadable: true }, mismatch];
   assert.equal((await server.generateExplanation(question, [])).status, "refused");
 }
-outputs = [{ ...good, supported: true, imagesReadable: true, correctAnswer: 2 }];
-await assert.rejects(server.generateExplanation(question, []), /invalid/);
+outputs = [{ ...good, supported: true, imagesReadable: true, correctAnswer: 2 }, { ...good, supported: true, imagesReadable: true, correctAnswer: 2 }];
+assert.equal((await server.generateExplanation(question, [])).status, "refused");
+const beforeRepair = calls.length;
+outputs = [{ ...good, supported: true, imagesReadable: true }, rejected, { ...good, supported: true, imagesReadable: true }, approved];
+const repairedResult = await server.generateExplanation(question, []);
+assert.equal(repairedResult.status, "ready"); assert.equal(repairedResult.rounds, 2);
+assert.equal(repairedResult.repairVersion, contract.REPAIR_VERSION);
+assert.deepEqual(repairedResult.usage, { inputTokens: 400, outputTokens: 400 });
+assert.equal(calls.length - beforeRepair, 4);
+assert.ok(calls[beforeRepair + 2].messages[0].content[0].text.includes(rejected.feedback));
+const secondBlindInput = JSON.parse(calls[beforeRepair + 3].messages[0].content[0].text);
+assert.ok(!("answer" in secondBlindInput.question)); assert.ok(!("correctAnswer" in secondBlindInput.proposedExplanation));
+assert.ok(!JSON.stringify(secondBlindInput).includes(rejected.feedback));
+outputs = [{ ...good, supported: false, imagesReadable: true }, { ...good, supported: true, imagesReadable: true }, approved];
+assert.equal((await server.generateExplanation(question, [])).status, "ready");
+const beforeProviderFailure = calls.length;
+outputs = [{ ...good, supported: true, imagesReadable: true }, undefined];
+await assert.rejects(server.generateExplanation(question, []));
+assert.equal(calls.length - beforeProviderFailure, 2); // No paid transport retries.
 const fetchOriginal = globalThis.fetch;
 // NAS committed a claim, but its first HTTP response was lost. Retry only
 // the identical lease-bearing request; this is separate from paid generation.
@@ -159,7 +177,7 @@ globalThis.routeDependencies = { ...server, cacheConfig: () => ({}), trustedQues
 };
 const route = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
   .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
-  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;'));
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification, REPAIR_VERSION } = globalThis.explanationContract;'));
 const request = (readOnly = false, extra = {}, headers = {}) => new Request("https://www.mypassmate.com/api/cbt/explanations/", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ questionId: question.id, qualificationCode: "kh", revision: server.fingerprint(question), readOnly, ...extra }) });
 const responses = await Promise.all(Array.from({ length: 12 }, () => route.POST(request())));
 assert.ok(responses.every((response) => response.status === 200)); assert.equal(billed, 1);
@@ -194,7 +212,7 @@ const generateOriginal = globalThis.routeDependencies.generateExplanation;
 globalThis.routeDependencies.generateExplanation = async () => { throw Object.assign(new Error("SECRET_PROVIDER_RESPONSE"), { name: "GatewayInvalidRequestError", statusCode: 400 }); };
 const failingRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
   .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
-  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;') + "\n// diagnostic fixture");
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification, REPAIR_VERSION } = globalThis.explanationContract;') + "\n// diagnostic fixture");
 try {
   console.error = (...args) => diagnostics.push(args);
   assert.equal((await failingRoute.POST(request())).status, 503);
@@ -214,7 +232,7 @@ globalThis.routeDependencies.cacheRequest = async (key, action, body) => {
 };
 const recoveryRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
   .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
-  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification } = globalThis.explanationContract;') + "\n// recovery fixture");
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification, REPAIR_VERSION } = globalThis.explanationContract;') + "\n// recovery fixture");
 cacheState = { status: "missing" };
 const billedBeforeRecovery = billed;
 try {
@@ -229,6 +247,45 @@ try {
   assert.equal((await (await recoveryRoute.POST(request())).json()).status, "ready");
   assert.equal(billed, billedBeforeRecovery + 1);
 } finally { console.error = consoleError; globalThis.routeDependencies.cacheRequest = cacheRequestOriginal; }
+// Old paid refusals remain immutable; one separate, durable upgrade job is
+// shared by all callers. Polls never start it and refusal never opens a loop.
+const originalKey = server.fingerprint(question);
+const oldRefusal = { status: "refused", message: "old refusal", usage: { inputTokens: 100 } };
+const jobs = new Map([[originalKey, oldRefusal]]);
+globalThis.routeDependencies.cacheRequest = async (key, action, body) => {
+  const current = jobs.get(key) || { status: "missing" };
+  if (action === "claim") {
+    if (current.status !== "missing") return current;
+    jobs.set(key, { status: "generating" }); return { status: "claimed", lease: body.lease };
+  }
+  if (action === "finish") { jobs.set(key, body.payload); return { ok: true }; }
+  return current;
+};
+globalThis.routeDependencies.generateExplanation = async () => {
+  billed++; await new Promise((resolve) => setTimeout(resolve, 10));
+  return { status: "refused", repairVersion: contract.REPAIR_VERSION, rounds: 2 };
+};
+const upgradeRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
+  .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
+  .replace(/import \{ validateExplanation,[^;]+;/, 'const { validateExplanation, hasAnswerVerification, REPAIR_VERSION } = globalThis.explanationContract;') + "\n// refusal upgrade fixture");
+try {
+  const before = billed;
+  assert.equal((await (await upgradeRoute.POST(request(true))).json()).retryable, true);
+  assert.equal(billed, before); assert.equal(jobs.size, 1);
+  await Promise.all(Array.from({ length: 12 }, () => upgradeRoute.POST(request())));
+  assert.equal(billed, before + 1); assert.equal(jobs.size, 2); assert.equal(jobs.get(originalKey), oldRefusal);
+  for (const readOnly of [true, false, false]) {
+    const result = await (await upgradeRoute.POST(request(readOnly))).json();
+    assert.equal(result.status, "refused"); assert.equal(result.retryable, undefined);
+  }
+  assert.equal(billed, before + 1);
+  // New-pipeline refusals use the original key and have no upgrade eligibility.
+  jobs.clear(); jobs.set(originalKey, { status: "refused", repairVersion: contract.REPAIR_VERSION });
+  await upgradeRoute.POST(request()); assert.equal(jobs.size, 1); assert.equal(billed, before + 1);
+} finally {
+  globalThis.routeDependencies.cacheRequest = cacheRequestOriginal;
+  globalThis.routeDependencies.generateExplanation = generateOriginal;
+}
 const component = read("../components/ai-question-explanation.tsx");
 const notice = "AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.";
 assert.equal(component.split(notice).length - 1, 1);
@@ -242,4 +299,4 @@ assert.ok(component.includes('/account/signup/?next='));
 assert.ok(component.includes('가입하지 않아도 해설은 계속 이용할 수 있습니다.'));
 const api = read("../app/api/cbt/explanations/route.ts");
 assert.ok(api.indexOf('"claim", { userHash, lease: requestedLease }') < api.indexOf('await generateExplanation'));
-console.log("AI explanations OK: explicit click, immutable answer, independent verifier, image safety, cache/no rebilling, concurrent claims, guest signed-cookie quota, cross-site denial, validated login, persisted 9/10 signup threshold, cache/failure exclusion");
+console.log("AI explanations OK: bounded feedback repair, blind recheck, no false-answer bypass, one durable refusal upgrade, concurrent/read-only no rebilling, image safety, guest quota and signup");

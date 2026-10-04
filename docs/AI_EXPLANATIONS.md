@@ -1,5 +1,13 @@
 # On-demand AI explanations
 
+## Bounded answer-grounded repair — 2026-10-05
+
+- Owner requested a revision when answer/evidence verification refuses an explanation. Drafts still use the immutable registered answer. The blind verifier now returns concrete factual/consistency feedback. On rejection, the writer can revise once using that feedback, then a fresh blind check must approve and independently support the registered answer. Unsupported drafts and local format/contradiction failures can also use this single revision. Unreadable images stop immediately.
+- At most two drafts and two verifier calls per job, within a shared 105-second generation deadline. Provider/transport failures retain `maxRetries: 0`; failure is persisted and does not start a paid retry loop. All completed calls contribute to stored usage, including refused drafts.
+- Successful existing cache entries retain their keys and verification requirements. A previously stored refusal without `answer-repair-v1` can be upgraded only after an explicit click. Its new job key is SHA-256 of `<original fingerprint>:answer-repair-v1`; the original paid refusal remains intact. Atomic NAS claims, existing quotas, and persistence bound this upgrade to one job shared across callers. Reads/polls do not generate; repeated clicks reuse the upgrade result, including refusal/failure.
+- The UI distinguishes old eligible refusals (`해설 보완 생성`) from a final refusal after revision. Error reporting remains the fallback when the revised explanation still lacks valid evidence. This does not certify every registered answer or force a false explanation to pass.
+- Mock checks cover successful revision, persistent contradiction/alternative answers, unreadable images, malformed drafts, complete usage, blind recheck without the answer key, provider failure without retry, concurrent upgrade claims, and read-only/repeated-click no billing. Full local build and repository checks passed. Live verification is pending.
+
 ## Claim transport recovery — 2026-10-04
 
 The production rolling-master exam request at 21:11 KST committed its NAS claim
@@ -10,13 +18,15 @@ transport retry, and accepts an identical completion idempotently. Independent
 requests cannot obtain another job's lease. Cache transport and correction reads
 have one bounded retry; paid draft/verifier calls still have `maxRetries: 0`.
 
-Only a confirmed failure before the model call may carry `retryable: true`.
+Only a confirmed failure before the model call may carry stored `retryable: true`.
+The newer repair route may expose this flag on an old refusal when a separate,
+bounded upgrade job is still missing; it never marks the paid refusal itself retryable.
 Read-only requests never reclaim it; an explicit click can reclaim that same row.
 Paid/unknown failures and old expired jobs remain blocked. The identified
 `caj20180331` question 1 claim was backed up and marked retryable using its exact
 key, timestamp, state and null payload; unrelated cache records were preserved.
 Local full build, route/model transport regression checks and seven NAS SQLite/
-HTTP tests passed. Production verification of this change is pending.
+HTTP tests passed. PR #22 merged as `205e7bc`; production deployment `dpl_GYPRyH3JgcXte1LQj9b4RhxNx8ac` was READY. The original claim recovered and reached a semantic refusal rather than the timeout. Information-processing engineer 2022 second exam question 6 generated a ready ERD explanation and read it back unchanged from NAS. This confirms the transport repair, not that the refused rolling question had valid AI evidence.
 
 Status (2026-10-04, Asia/Seoul): production deployment confirmed. PR #19 merged as `9704f5c`; Vercel `passmate-store-80ztd9lxv` is Production READY and serves `mypassmate.com` and `www.mypassmate.com`. The live wrong-answer screen showed the exact inaccuracy notice and the identical NAS-stored question 2 explanation. No mandatory human approval is imposed. Fresh image questions 37 and 42 were refused by the automated check; their paid claims remain stored and no retry was made. These are verified safe refusals, not successful image explanations. Release retains the guard and does not promise that every image question can receive an explanation.
 
