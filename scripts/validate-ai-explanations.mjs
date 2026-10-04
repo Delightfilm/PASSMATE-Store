@@ -11,7 +11,7 @@ assert.deepEqual(normalizeLiveChoices(["가", "나", "다", "라"]).map((item) =
 const { validateExplanation, explanationInput } = contract;
 const question = { id: "a".repeat(20), certId: "kh", sourceHash: "source", stem: "테스트: 옳지 않은 것은?", choices: ["가", "나", "다", "라"].map((text, i) => ({ label: ["①", "②", "③", "④"][i], text })), answer: 0, images: [], explanation: "" };
 const good = { correctAnswer: 0, summary: "등록 정답이 질문 조건에 맞는 원리를 설명합니다.", choiceReasons: ["질문 조건에 맞는 보기입니다.", "조건에 해당하지 않는 보기입니다.", "조건에 해당하지 않는 보기입니다.", "조건에 해당하지 않는 보기입니다."] };
-const approved = { approved: true, solvedAnswer: 0, explanationAnswer: 0, feedback: "" };
+const approved = { approved: true, solvedChoice: "①", explanationChoice: "①", feedback: "" };
 const verification = { version: contract.VERIFICATION_VERSION, solvedAnswer: 0, explanationAnswer: 0 };
 validateExplanation(good, 0);
 for (const invalid of [{ ...good, correctAnswer: 2 }, { ...good, choiceReasons: [] }, { ...good, summary: "정답은 ③번입니다." }, { ...good, summary: "②가 정답입니다. 다른 문제를 봅시다." }, { ...good, summary: "<script>악성 내용</script>" }]) assert.throws(() => validateExplanation(invalid, 0));
@@ -23,6 +23,8 @@ globalThis.explanationContract = contract;
 globalThis.testSharp = sharp;
 const calls = [];
 let outputs = [];
+const privateDiagnostics = []; const consoleInfo = console.info;
+console.info = (...args) => privateDiagnostics.push(args);
 globalThis.testGenerateText = async (options) => {
   calls.push(options); assert.equal(options.maxRetries, 0); assert.equal(options.reasoning, "none");
   assert.deepEqual(options.providerOptions.gateway.models, [contract.EXPLANATION_MODEL]);
@@ -80,20 +82,32 @@ assert.equal((await server.generateExplanation(question, [])).status, "ready"); 
 assert.ok(calls[0].system.includes("옳지 않은 것")); assert.ok(calls[1].system.includes("거짓 원리"));
 const blindInput = JSON.parse(calls[1].messages[0].content[0].text);
 assert.ok(!("answer" in blindInput.question)); assert.ok(!("correctAnswer" in blindInput.proposedExplanation));
-assert.deepEqual(calls[1].output.schema.properties.solvedAnswer.enum, [-1, 0, 1, 2, 3]);
+assert.deepEqual(calls[1].output.schema.properties.solvedChoice.enum, ["①", "②", "③", "④", "uncertain"]);
+for (let answer = 1; answer < 4; answer++) {
+  outputs = [{ ...good, correctAnswer: answer, supported: true, imagesReadable: true },
+    { ...approved, solvedChoice: ["①", "②", "③", "④"][answer], explanationChoice: ["①", "②", "③", "④"][answer] }];
+  const result = await server.generateExplanation({ ...question, answer }, []);
+  assert.equal(result.status, "ready"); assert.equal(result.verification.solvedAnswer, answer);
+  assert.equal(result.verification.explanationAnswer, answer);
+  const writerInput = calls.at(-2).messages[0].content[0].text;
+  assert.ok(writerInput.includes(`"registeredAnswer":{"label":"${["①", "②", "③", "④"][answer]}"`));
+}
+const beforeUnsupported = calls.length;
 outputs = [{ ...good, supported: false, imagesReadable: true }, { ...good, supported: false, imagesReadable: true }];
-assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 4);
+assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length - beforeUnsupported, 2);
+const beforeUnreadable = calls.length;
 outputs = [{ ...good, supported: true, imagesReadable: false }];
-assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length, 5);
+assert.equal((await server.generateExplanation(question, [])).status, "refused"); assert.equal(calls.length - beforeUnreadable, 1);
 const rejected = { ...approved, approved: false, feedback: "부정형 질문의 조건과 보기별 이유가 모순됩니다." };
 outputs = [{ ...good, supported: true, imagesReadable: true }, rejected, { ...good, supported: true, imagesReadable: true }, rejected];
 assert.equal((await server.generateExplanation(question, [])).status, "refused");
-for (const mismatch of [{ ...approved, solvedAnswer: 2 }, { ...approved, explanationAnswer: 2 }, { ...approved, explanationAnswer: -1 }]) {
+for (const mismatch of [{ ...approved, solvedChoice: "③" }, { ...approved, explanationChoice: "③" }, { ...approved, explanationChoice: "uncertain" }]) {
   outputs = [{ ...good, supported: true, imagesReadable: true }, mismatch, { ...good, supported: true, imagesReadable: true }, mismatch];
-  assert.equal((await server.generateExplanation(question, [])).status, "refused");
+  const result = await server.generateExplanation(question, []);
+  assert.equal(result.status, "refused"); assert.equal(result.diagnostics.reason, "answer_mismatch");
 }
 outputs = [{ ...good, supported: true, imagesReadable: true, correctAnswer: 2 }, { ...good, supported: true, imagesReadable: true, correctAnswer: 2 }];
-assert.equal((await server.generateExplanation(question, [])).status, "refused");
+assert.equal((await server.generateExplanation(question, [])).diagnostics.reason, "explanation_invalid");
 const beforeRepair = calls.length;
 outputs = [{ ...good, supported: true, imagesReadable: true }, rejected, { ...good, supported: true, imagesReadable: true }, approved];
 const repairedResult = await server.generateExplanation(question, []);
@@ -263,7 +277,7 @@ globalThis.routeDependencies.cacheRequest = async (key, action, body) => {
 };
 globalThis.routeDependencies.generateExplanation = async () => {
   billed++; await new Promise((resolve) => setTimeout(resolve, 10));
-  return { status: "refused", repairVersion: contract.REPAIR_VERSION, rounds: 2 };
+  return { status: "refused", repairVersion: contract.REPAIR_VERSION, rounds: 2, diagnostics: { feedback: "PRIVATE_CHECK_FEEDBACK" } };
 };
 const upgradeRoute = await moduleFrom(read("../app/api/cbt/explanations/route.ts")
   .replace(/import \{ generationIdentity,[^;]+;/, 'const { generationIdentity, cacheConfig, cacheRequest, ExplanationError, fingerprint, generateExplanation, imageParts, trustedQuestion } = globalThis.routeDependencies;')
@@ -277,6 +291,7 @@ try {
   for (const readOnly of [true, false, false]) {
     const result = await (await upgradeRoute.POST(request(readOnly))).json();
     assert.equal(result.status, "refused"); assert.equal(result.retryable, undefined);
+    assert.ok(!JSON.stringify(result).includes("PRIVATE_CHECK_FEEDBACK"));
   }
   assert.equal(billed, before + 1);
   // New-pipeline refusals use the original key and have no upgrade eligibility.
@@ -299,4 +314,8 @@ assert.ok(component.includes('/account/signup/?next='));
 assert.ok(component.includes('가입하지 않아도 해설은 계속 이용할 수 있습니다.'));
 const api = read("../app/api/cbt/explanations/route.ts");
 assert.ok(api.indexOf('"claim", { userHash, lease: requestedLease }') < api.indexOf('await generateExplanation'));
+assert.ok(!JSON.stringify(privateDiagnostics).includes(rejected.feedback));
+assert.ok(privateDiagnostics.some(([, value]) => value.reason === "answer_mismatch"));
+assert.ok(privateDiagnostics.some(([, value]) => value.reason === "explanation_invalid"));
+console.info = consoleInfo;
 console.log("AI explanations OK: bounded feedback repair, blind recheck, no false-answer bypass, one durable refusal upgrade, concurrent/read-only no rebilling, image safety, guest quota and signup");
