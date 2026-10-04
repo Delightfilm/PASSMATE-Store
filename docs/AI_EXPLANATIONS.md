@@ -1,5 +1,23 @@
 # On-demand AI explanations
 
+## Claim transport recovery — 2026-10-04
+
+The production rolling-master exam request at 21:11 KST committed its NAS claim
+but lost the HTTP response at the previous 12-second timeout, before any AI call.
+The orphaned claim then blocked all subsequent attempts as an expired generation.
+NAS now accepts a caller-generated lease, returns the same claim for an identical
+transport retry, and accepts an identical completion idempotently. Independent
+requests cannot obtain another job's lease. Cache transport and correction reads
+have one bounded retry; paid draft/verifier calls still have `maxRetries: 0`.
+
+Only a confirmed failure before the model call may carry `retryable: true`.
+Read-only requests never reclaim it; an explicit click can reclaim that same row.
+Paid/unknown failures and old expired jobs remain blocked. The identified
+`caj20180331` question 1 claim was backed up and marked retryable using its exact
+key, timestamp, state and null payload; unrelated cache records were preserved.
+Local full build, route/model transport regression checks and seven NAS SQLite/
+HTTP tests passed. Production verification of this change is pending.
+
 Status (2026-10-04, Asia/Seoul): production deployment confirmed. PR #19 merged as `9704f5c`; Vercel `passmate-store-80ztd9lxv` is Production READY and serves `mypassmate.com` and `www.mypassmate.com`. The live wrong-answer screen showed the exact inaccuracy notice and the identical NAS-stored question 2 explanation. No mandatory human approval is imposed. Fresh image questions 37 and 42 were refused by the automated check; their paid claims remain stored and no retry was made. These are verified safe refusals, not successful image explanations. Release retains the guard and does not promise that every image question can receive an explanation.
 
 ## Live verification checkpoint (2026-10-04)

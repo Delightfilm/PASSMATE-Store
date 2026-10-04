@@ -26,11 +26,20 @@ export function cacheConfig() {
   }
   return { token, url };
 }
+// Only use for reads or NAS operations carrying an idempotent lease. Never for AI calls.
+export async function retrySafeFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await fetch(input, { ...init, signal: AbortSignal.timeout(20_000) }); }
+    catch (error) {
+      if (attempt || !(error instanceof TypeError || (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)))) throw error;
+    }
+  }
+}
 export async function cacheRequest(key: string, action = "", body?: unknown) {
   if (!/^[a-f0-9]{64}$/.test(key) || !["", "claim", "finish"].includes(action)) throw new Error("cache_key_invalid");
   const { token, url } = cacheConfig();
-  const response = await fetch(`${url}/v1/${key}${action ? `/${action}` : ""}`, {
-    method: body ? "POST" : "GET", cache: "no-store", redirect: "error", signal: AbortSignal.timeout(12_000),
+  const response = await retrySafeFetch(`${url}/v1/${key}${action ? `/${action}` : ""}`, {
+    method: body ? "POST" : "GET", cache: "no-store", redirect: "error",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
@@ -67,11 +76,12 @@ export async function generationIdentity(request: Request): Promise<{ userHash: 
 export async function trustedQuestion(qualification: string, id: string): Promise<Question> {
   const { url, key } = getPublicSupabaseConfig();
   const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(12_000) }) } });
+    global: { fetch: retrySafeFetch } });
   let question: Question | undefined;
   if (/^[a-f0-9]{20}$/.test(id)) {
-    const catalog = await loadContentCatalog();
-    question = (await loadContentBundle(catalog, qualification)).questions.find((item) => item.id === id);
+    const options = { signal: AbortSignal.timeout(30_000) };
+    const catalog = await loadContentCatalog(options);
+    question = (await loadContentBundle(catalog, qualification, options)).questions.find((item) => item.id === id);
   } else if (/^[a-f0-9-]{36}$/i.test(id)) {
     const { data, error } = await supabase.from("question_bank_questions")
       .select("id,exam_id,cert_id,subject_id,no,stem,images,choices,answer,explanation,status,source_hash")
