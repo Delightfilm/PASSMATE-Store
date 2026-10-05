@@ -1159,6 +1159,17 @@ body{word-break:keep-all}
 .ai-question-explanation>.button{min-height:44px;margin:4px 0 12px}
 .ai-question-explanation small{display:block;color:#526174;font-size:12px;line-height:1.6}
 .ai-explanation-heading{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.ai-explanation-progress{width:100%;margin:12px 0;padding:16px;border:1px solid #bfdbfe;border-radius:12px;background:#eff6ff}
+.ai-explanation-progress-row{display:flex;align-items:flex-start;gap:12px}
+.ai-explanation-progress-copy{min-width:0;flex:1;word-break:keep-all;overflow-wrap:anywhere}
+.ai-explanation-progress-copy strong{display:block;color:#1e40af;font-size:15px;line-height:1.5}
+.ai-question-explanation .ai-explanation-progress-copy p{margin:5px 0 0;color:#475569;font-size:13px;line-height:1.65}
+.ai-explanation-spinner{flex:none;width:22px;height:22px;margin-top:1px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:ai-explanation-spin .9s linear infinite}
+.ai-explanation-progress-bar{height:4px;margin-top:14px;border-radius:999px;overflow:hidden;background:#dbeafe}
+.ai-explanation-progress-bar::after{content:"";display:block;width:38%;height:100%;border-radius:inherit;background:#2563eb;animation:ai-explanation-progress 1.8s ease-in-out infinite}
+@keyframes ai-explanation-spin{to{transform:rotate(360deg)}}
+@keyframes ai-explanation-progress{from{transform:translateX(-110%)}to{transform:translateX(310%)}}
+@media(prefers-reduced-motion:reduce){.ai-explanation-spinner,.ai-explanation-progress-bar::after{animation:none}.ai-explanation-progress-bar::after{margin-left:31%}}
 .ai-explanation-heading span{font-size:12px;padding:4px 8px;border-radius:6px;background:#eaf0ff;color:#1e40af}
 .ai-question-explanation .ai-explanation-answer{color:#166534;font-weight:600}
 .ai-question-explanation .ai-explanation-text,.ai-explanation-choices p{white-space:pre-wrap;line-height:1.8;color:#1f2937}
