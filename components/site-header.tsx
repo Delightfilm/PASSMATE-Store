@@ -10,7 +10,7 @@ export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}
   const pathname = usePathname();
   const cbt = pathname.startsWith("/cbt");
   const admin = pathname.startsWith("/admin");
-  const store = pathname === "/" || /^\/(products|library|cart|checkout)(\/|$)/.test(pathname) || /^\/account\/(login|signup)(\/|$)/.test(pathname);
+  const store = pathname === "/" || /^\/(store|products|library|cart|checkout)(\/|$)/.test(pathname) || /^\/account\/(login|signup)(\/|$)/.test(pathname);
   const exam = /^\/cbt\/[^/]+\/exam\//.test(pathname);
   const detailPath = /^\/cbt\/[^/]+\/?$/.test(pathname) && !/^\/cbt\/(wrong-notes|bookmarks|history)\/?$/.test(pathname);
 
