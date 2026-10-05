@@ -357,3 +357,14 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 - `docs/STORE_COPY_INVENTORY.md`(신규), `docs/STORE_MOBILE_QA.md`, `docs/DESIGN_SYSTEM.md`: 목록·검증·명세.
 
 검증 도구와 PNG/HTML/JSON/로그는 워크스페이스 `tmp/store-copy*`에 별도 보관했다. 저장소의 다른 기존 변경과 `supabase/.temp/`는 보존했다.
+
+## 푸터 배치 재조정 — 2026-10-05
+
+사용자 피드백에 따라 어두운 푸터를 흰 배경으로 되돌리고 브랜드/슬로건 → 가로 구분선 → 사업자 정보 → 저작권 순서로 재배치했다. PC 메뉴는 오른쪽, 767px 이하에서는 2열이다. 모바일 줄바꿈 앞에 불필요한 구분점이 생기지 않도록 처리했다. 기존 상호·등록번호·대표·주소·신고번호·공개 이메일을 보존했으며, 인증·결제·다운로드·DB·메일 전달 설정은 변경하지 않았다. 미확정 정책 본문/링크는 만들지 않았다.
+
+- 변경 파일: `components/site-footer.tsx`, `components/business-information.tsx`, `app/legal.css`, `app/tokens.css`, `docs/DESIGN_SYSTEM.md`, `docs/STATUS.md`, 이 문서.
+- 로컬 Chromium 홈/스토어/CBT 360·390·430·1280px 12건, WebKit 모바일 9건: 가로 넘침·검사 대상 터치 영역/최소 폰트 위반·페이지 오류 0건. 보조 텍스트 최소 대비 6.70:1. 별도로 푸터 모든 링크 44×44px 이상, 텍스트 14px 이상을 확인했다.
+- Chromium 전체 페이지 CLS 최대 0.052, 홈 최대 0.00304. WebKit은 Layout Shift 관측 API를 지원하지 않아 CLS를 측정하지 못했다.
+- `npm run check`, `npx tsc --noEmit`, `npx next build` 통과. 법적 검사의 경고 6개는 기존 미확정 정책 4개·비공개 전화·미확정 운영시간이다.
+- 전/후 PNG 및 JSON: 워크스페이스 `reports/learning-home-release-20261005/`의 `footer-contact-*`(전), `footer-light-*`(후). 운영 배포/최종 캡처 결과는 해당 폴더의 `FOOTER_LAYOUT_REVISION.md`에 기록한다.
+- 이번 푸터 수정 커밋만 revert하면 이전 어두운 푸터로 돌아간다. 학습 홈·스토어·사업자 정보 값·메일 전달 설정에는 영향을 주지 않는다.

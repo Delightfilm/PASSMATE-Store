@@ -48,11 +48,11 @@
   --line:#d1d5db;
   --soft:#f9fafb;
   --white:#fff;
-  --footer-surface: var(--ink);
-  --footer-foreground: var(--white);
-  --footer-secondary: var(--line);
-  --footer-link: var(--blue-line);
-  --footer-border: var(--muted);
+  --footer-surface: var(--white);
+  --footer-foreground: var(--ink);
+  --footer-secondary: var(--muted);
+  --footer-link: var(--blue-dark);
+  --footer-border: var(--line);
   --success:#257343;
   --success-soft:#eff9f1;
   --error:#b5473c;
