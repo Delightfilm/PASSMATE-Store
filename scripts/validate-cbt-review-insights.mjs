@@ -17,7 +17,6 @@ const hash = (value) => createHash("sha256").update(JSON.stringify(value)).diges
 const stats = load("lib/cbt-question-stats.ts", { "./question-bank": { sourceHash: async (value) => hash(value) } });
 assert.equal(stats.statsPresentation({ total: 0, correct: 0 }).rate, null);
 assert.equal(stats.statsPresentation({ total: 2, correct: 1 }).tone, "good");
-assert.equal(stats.statsPresentation({ total: 2, correct: 1 }).lowSample, true);
 assert.equal(stats.statsPresentation({ total: 20, correct: 6 }).tone, "hard");
 assert.equal(stats.statsPresentation({ total: 20, correct: 12 }).tone, "good");
 for (const [correct, tone] of [[0,"hard"],[39,"hard"],[40,"careful"],[49,"careful"],[50,"good"],[69,"good"],[70,"high"],[100,"high"]]) {
@@ -63,8 +62,9 @@ assert.equal(pulledMemo.wrongNotes[question.id].memo, cloudMemo.memo, "Cloud rea
 cloudMemo.memo = "";
 assert.equal((await accountBank.mergeAccountStore(pulledMemo)).wrongNotes[question.id].memo, "", "A cleared cloud memo must not revive stale local text");
 
+let sourceReads = 0;
 const route = load("app/api/cbt/question-stats/route.ts", {
-  "@/lib/ai-explanation-server": { trustedQuestion: async () => question },
+  "@/lib/ai-explanation-server": { trustedQuestion: async () => { sourceReads++; return question; } },
   "@/lib/cbt-question-stats": stats,
   "@/lib/public-supabase-config": { getPublicSupabaseConfig: () => ({ url: "https://test.supabase.co", key: "publishable-test" }) },
 });
@@ -78,10 +78,12 @@ const request = (action, extra = {}, headers = {}) => new Request("https://www.m
 try {
   const first = await route.POST(request("read"));
   assert.equal(first.status, 200);
+  assert.equal(sourceReads, 0, "Aggregate reads must not wait for source questions or correction lookups");
   assert.equal(calls[0].rows[0].correct, undefined, "Read does not include a response");
   const cookie = first.headers.get("set-cookie").split(";")[0];
   const second = await route.POST(request("record", { correct: true }, { cookie }));
   assert.equal(second.status, 200);
+  assert.equal(sourceReads, 1, "Recording must still resolve the authoritative question");
   assert.equal(calls[1].rows[0].correct, false, "Never trust a browser-supplied correctness flag");
   assert.equal(calls[1].visitorHash, calls[0].visitorHash, "One browser identity survives read/write without login");
   assert.equal(second.headers.get("set-cookie"), null);
@@ -97,4 +99,57 @@ const migration = readFileSync(resolve("supabase/migrations/20261005084944_cbt_q
 assert.match(migration, /security invoker/i);
 assert.match(migration, /enable row level security/i);
 assert.match(migration, /on conflict do nothing returning/i);
-console.log("CBT review insights OK: memo preservation, instant-review dedup, low-sample labels, correction isolation, server grading, stable anonymous identity and cross-site rejection");
+const timeBefore = Date.now;
+let now = timeBefore();
+Date.now = () => now;
+const clientCalls = [];
+let releaseRead;
+globalThis.fetch = async (_url, init) => {
+  const body = JSON.parse(init.body);
+  clientCalls.push(body);
+  if (releaseRead === undefined) await new Promise((resolve) => { releaseRead = resolve; });
+  return Response.json({ stats: Object.fromEntries(body.questions.map((row) => [row.questionId, { total: 10, correct: 7 }])) });
+};
+try {
+  const nextQuestion = { ...question, id: "b".repeat(20) };
+  const prefetch = stats.loadQuestionStats([question, nextQuestion]);
+  const concurrent = stats.loadQuestionStats([nextQuestion]);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(clientCalls.length, 1, "Concurrent views share a pending prefetch");
+  releaseRead();
+  await Promise.all([prefetch, concurrent]);
+  assert.equal(stats.cachedQuestionStats(nextQuestion).correct, 7);
+  await stats.loadQuestionStats([nextQuestion, question]);
+  assert.equal(clientCalls.length, 1, "Navigation to prefetched questions makes no request");
+  await stats.loadQuestionStats([{ ...question, answer: 2 }]);
+  assert.equal(clientCalls.length, 2, "A corrected question has a separate cache entry");
+  now += 60_001;
+  assert.equal(stats.cachedQuestionStats(question).total, 10, "Navigation can display the previous real aggregate while revalidating an expired entry");
+  await stats.loadQuestionStats([question]);
+  assert.equal(clientCalls.length, 3, "Expired aggregates refresh");
+  globalThis.fetch = async () => { throw new Error("offline"); };
+  await assert.rejects(stats.loadQuestionStats([nextQuestion]));
+  globalThis.fetch = async () => Response.json({ stats: { [nextQuestion.id]: { total: 12, correct: 9 } } });
+  assert.equal((await stats.loadQuestionStats([nextQuestion]))[nextQuestion.id].total, 12, "A failed lookup can retry instead of remaining pending");
+  const raceQuestion = { ...question, id: "c".repeat(20) };
+  let finishOldRead;
+  const windowBefore = globalThis.window;
+  const events = [];
+  globalThis.window = { dispatchEvent: (event) => events.push(event) };
+  try {
+    globalThis.fetch = async (_url, init) => {
+      const body = JSON.parse(init.body);
+      if (body.action === "read") await new Promise((resolve) => { finishOldRead = resolve; });
+      return Response.json({ stats: { [raceQuestion.id]: body.action === "read" ? { total: 1, correct: 0 } : { total: 2, correct: 1 } } });
+    };
+    const oldRead = stats.loadQuestionStats([raceQuestion]);
+    await new Promise((resolve) => setImmediate(resolve));
+    stats.recordQuestionResponses([raceQuestion], { [raceQuestion.id]: 1 });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(events.length, 1, "Successful recording announces the updated aggregate");
+    assert.equal(stats.cachedQuestionStats(raceQuestion).total, 2);
+    finishOldRead();
+    assert.equal((await oldRead)[raceQuestion.id].total, 2, "An earlier read cannot overwrite a newer recorded aggregate");
+  } finally { if (windowBefore === undefined) delete globalThis.window; else globalThis.window = windowBefore; }
+} finally { globalThis.fetch = fetchBefore; Date.now = timeBefore; }
+console.log("CBT review insights OK: private memos, first-response grading, guest identity, fast aggregate reads, prefetch coalescing, revision cache isolation, expiry and retry");

@@ -31,14 +31,17 @@ export async function POST(request: Request) {
     const id = valid ? match[1] : randomBytes(16).toString("hex");
     if (!valid) cookie = `passmate_cbt_stats=${id}.${sign(id)}; Path=/api/cbt/question-stats/; Max-Age=31536000; HttpOnly; SameSite=Lax${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
     const rows: { question_ref: string; qualification_code: string; revision: string; correct?: boolean }[] = [];
-    // Bound concurrency when validating source questions and fresh administrator corrections.
-    for (let offset = 0; offset < body.questions.length; offset += 5) {
+    // Reads expose aggregate counts only; source validation is needed when recording correctness.
+    if (body.action === "read") {
+      rows.push(...body.questions.map((row: { questionId: string; qualificationCode: string; revision: string }) =>
+        ({ question_ref: row.questionId, qualification_code: row.qualificationCode, revision: row.revision })));
+    } else for (let offset = 0; offset < body.questions.length; offset += 5) {
       rows.push(...await Promise.all(body.questions.slice(offset, offset + 5).map(async (row: { questionId: string; qualificationCode: string; revision: string; answer: number }) => {
         const question = await trustedQuestion(row.qualificationCode, row.questionId);
         const revision = createHash("sha256").update(JSON.stringify(questionStatsInput(question))).digest("hex");
-        if (revision !== row.revision || (body.action === "record" && row.answer >= question.choices.length)) throw new Error("question_changed");
+        if (revision !== row.revision || row.answer >= question.choices.length) throw new Error("question_changed");
         return { question_ref: question.id, qualification_code: question.certId, revision,
-          ...(body.action === "record" ? { correct: row.answer === question.answer } : {}) };
+          correct: row.answer === question.answer };
       })));
     }
     const { url, key } = getPublicSupabaseConfig();
