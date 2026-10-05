@@ -120,7 +120,7 @@ export async function mergeAccountStore(local: LocalStore): Promise<LocalStore> 
   for (const row of nasState.data || []) {
     questionCerts[row.question_ref] = row.qualification_code;
     if (row.bookmarked) nasBookmarks.push(row.question_ref);
-    if (row.wrong_count > 0) mergedNotes[row.question_ref] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at, memo: row.memo, mastered: row.mastered };
+    if (row.wrong_count > 0 || row.memo || mergedNotes[row.question_ref]) mergedNotes[row.question_ref] = { wrongCount: row.wrong_count, lastWrongAt: row.last_wrong_at || "", memo: row.memo, mastered: row.mastered };
   }
   return { ...local, attempts: mergedAttempts, bookmarks: Array.from(new Set([...local.bookmarks, ...(bookmarks.data || []).map((row) => row.question_id), ...nasBookmarks])), wrongNotes: mergedNotes, questionCerts };
 }

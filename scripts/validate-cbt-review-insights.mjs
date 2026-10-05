@@ -30,11 +30,29 @@ assert.equal(store.wrongNotes[question.id], undefined, "Do not mutate the previo
 const withMemo = state.saveQuestionMemo(reviewed, question, "오답 원인");
 assert.equal(withMemo.wrongNotes[question.id].memo, "오답 원인");
 assert.equal(withMemo.questionCerts[question.id], "kh");
+const correctMemo = state.saveQuestionMemo(state.recordInstantReview(store, attempt, question, question.answer), question, "맞힌 문제의 메모");
+assert.equal(correctMemo.wrongNotes[question.id].wrongCount, 0, "A memo on a correct answer must not create a personal error");
+assert.equal(state.saveQuestionMemo(correctMemo, question, "수정된 메모").wrongNotes[question.id].wrongCount, 0, "Editing a memo must preserve zero errors");
+assert.equal(state.recordInstantReview(correctMemo, { ...attempt, reviewedQuestionIds: [] }, question, 0).wrongNotes[question.id].wrongCount, 1, "A later real error starts at one and retains the memo");
 const oldAttemptMemo = state.saveQuestionMemo(state.recordInstantReview(store, attempt, question, 0), question, "Old attempt note");
 assert.equal(oldAttemptMemo.attempts[0].reviewedQuestionIds.includes(question.id), true, "Saving an old instant attempt's memo marks its already-graded answer before finalization");
 assert.equal(state.recordInstantReview(withMemo, withMemo.attempts[0], question, 0).wrongNotes[question.id].wrongCount, 1, "Do not count the same instant review twice");
 assert.equal(state.recordInstantReview(withMemo, { ...attempt, reviewedQuestionIds: [] }, question, 0).wrongNotes[question.id].wrongCount, 2, "A new attempt can count as another personal error");
 assert.throws(() => state.saveQuestionMemo(store, question, "x".repeat(2001)));
+
+const cloudMemo = { question_ref: question.id, qualification_code: question.certId, wrong_count: 0, last_wrong_at: null, memo: "맞힌 문제의 계정 메모", bookmarked: false, mastered: false };
+const accountBank = load("lib/question-bank.ts", {
+  "@/lib/supabase-browser": { getSupabaseBrowserClient: () => ({
+    auth: { getSession: async () => ({ data: { session: { user: { id: "test-member" } } } }) },
+    from: (table) => ({ select: () => ({ eq: async () => ({ data: table === "question_bank_user_question_state" ? [cloudMemo] : [] }) }) }),
+  }) },
+  "./question-bank-choices": { normalizeLiveChoices: () => [] },
+});
+const pulledMemo = await accountBank.mergeAccountStore(store);
+assert.equal(pulledMemo.wrongNotes[question.id].wrongCount, 0);
+assert.equal(pulledMemo.wrongNotes[question.id].memo, cloudMemo.memo, "Cloud reads must retain notes on correctly answered questions");
+cloudMemo.memo = "";
+assert.equal((await accountBank.mergeAccountStore(pulledMemo)).wrongNotes[question.id].memo, "", "A cleared cloud memo must not revive stale local text");
 
 const route = load("app/api/cbt/question-stats/route.ts", {
   "@/lib/ai-explanation-server": { trustedQuestion: async () => question },
