@@ -97,12 +97,14 @@ export async function trustedQuestion(qualification: string, id: string): Promis
   if (error) throw new ExplanationError(503, "문항의 최신 검수 상태를 확인하지 못했습니다.");
   if (correction && correction.source_hash === question.sourceHash) {
     const { stem, choices, answer, explanation } = correction.content;
-    question = { ...question, stem, choices: correctedChoices(question.choices, choices), answer, explanation };
+    question = { ...question, stem, choices: correctedChoices(question.choices, choices), answer, explanation,
+      acceptedAnswers: [answer], answerStatus: undefined, answerLabel: undefined,
+      inferredAnswers: undefined, inferredAnswerNote: undefined, answerComparison: undefined };
   }
   if (typeof question.stem !== "string" || !question.stem.trim() || question.stem.length > 10_000 ||
-      !Array.isArray(question.choices) || question.choices.length !== 4 ||
+      !Array.isArray(question.choices) || question.choices.length < 2 || question.choices.length > 10 ||
       !question.choices.every((choice) => typeof choice.text === "string" && choice.text.length <= 1500 && typeof choice.label === "string") ||
-      !Number.isInteger(question.answer) || question.answer < 0 || question.answer > 3 || !Array.isArray(question.images)) {
+      !Number.isInteger(question.answer) || question.answer < 0 || question.answer >= question.choices.length || !Array.isArray(question.images)) {
     throw new ExplanationError(422, "문항 형식을 확인해야 합니다. 오류 신고를 이용해 주세요.");
   }
   return question;
