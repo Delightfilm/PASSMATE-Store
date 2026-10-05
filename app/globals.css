@@ -1187,6 +1187,14 @@ body{word-break:keep-all}
 .cbt-feedback-heading>strong{font-size:16px;line-height:1.5;color:#0f172a}
 .cbt-feedback-heading>span{padding:6px 10px;border-radius:8px;font-size:13px;font-weight:600;background:#fff1f2;color:#9f1239}
 .instant-feedback.is-correct .cbt-feedback-heading>span{background:#ecfdf5;color:#065f46}
+.cbt-explanation-disclosure{margin-top:16px}
+.cbt-explanation-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:10px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;cursor:pointer;list-style:none;color:#0f172a}
+.cbt-explanation-disclosure>summary::-webkit-details-marker{display:none}
+.cbt-explanation-disclosure>summary>strong{font-size:14px;line-height:1.5}
+.cbt-explanation-disclosure>summary>svg{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.cbt-explanation-disclosure[open]>summary>svg{transform:rotate(180deg)}
+.cbt-explanation-disclosure>summary:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
+.cbt-explanation-disclosure>p{white-space:pre-wrap;line-height:1.8;margin:16px 0 0}
 .exam-redesign .cbt-live-question .choice-list .choice-button.is-correct{border:2px solid #059669;background:#ecfdf5;box-shadow:inset 4px 0 #059669;color:#064e3b}
 .exam-redesign .cbt-live-question .choice-list .choice-button.is-wrong{border:2px solid #e11d48;background:#fff1f2;box-shadow:inset 4px 0 #e11d48;color:#881337}
 .cbt-live-question .choice-button.is-correct .choice-number{background:#047857;color:#fff;border-color:#047857}

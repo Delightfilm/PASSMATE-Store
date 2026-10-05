@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { sourceHash, type Question } from "@/lib/question-bank";
 import { explanationInput, validateExplanation, type ExplanationReply } from "@/lib/ai-explanation-contract";
 import { AI_DEVICE_EVENT, AI_DEVICE_STORAGE_KEY, AI_SIGNUP_THRESHOLD, deviceGenerationCount, recordDeviceGeneration } from "@/lib/ai-explanation-device";
 
 type Props = {
-  question: Question; selectedAnswer?: number; allowGenerate?: boolean; onReport?: () => void;
+  question: Question; selectedAnswer?: number; allowGenerate?: boolean; collapsible?: boolean; onReport?: () => void;
 };
 function ExplanationProgress() {
   return <div className="ai-explanation-progress">
@@ -25,7 +25,7 @@ function ExplanationProgress() {
 export function AiQuestionExplanation(props: Props) {
   return <ExplanationPanel key={JSON.stringify(explanationInput(props.question))} {...props} />;
 }
-function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onReport }: Props) {
+function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, collapsible = false, onReport }: Props) {
   const [result, setResult] = useState<ExplanationReply | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -126,10 +126,19 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
     }
   }
 
-  if (question.explanation.trim()) return <p>{question.explanation}</p>;
+  function disclosure(content: ReactNode) {
+    if (!collapsible) return content;
+    return <details className="cbt-explanation-disclosure" onToggle={(event) => {
+      if (event.currentTarget.open && !question.explanation.trim() && !result && allowGenerate) void showExplanation();
+    }}>
+      <summary><strong>해설보기</strong><svg aria-hidden="true" viewBox="0 0 20 20"><path d="m5 7.5 5 5 5-5" /></svg></summary>
+      {content}
+    </details>;
+  }
+  if (question.explanation.trim()) return disclosure(<p>{question.explanation}</p>);
   if (!allowGenerate) return null;
   const explanation = result?.explanation;
-  return <div className="ai-question-explanation" aria-busy={loading}>
+  return disclosure(<div className="ai-question-explanation" aria-busy={loading}>
     <small className="ai-explanation-notice">AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.</small>
     {!explanation && <>{loading ? <ExplanationProgress /> : <>
       {(!result || result.status === "generating" || (["failed", "refused"].includes(result.status) && result.retryable)) && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
@@ -152,5 +161,5 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
       </li>)}</ol>
     </section>}
     {onReport && result && <button type="button" className="cbt-report-link" onClick={onReport}>해설 오류 신고</button>}
-  </div>;
+  </div>);
 }
