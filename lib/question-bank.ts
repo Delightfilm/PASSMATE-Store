@@ -14,6 +14,7 @@ export type Question = {
   acceptedAnswers?: number[]; answerStatus?: "official_final" | "provisional";
   answerLabel?: string; inferredAnswers?: number[]; inferredAnswerNote?: string;
   answerComparison?: "agree" | "disagree";
+  displayMode?: "text" | "source_image" | "corrected_source";
 };
 export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };

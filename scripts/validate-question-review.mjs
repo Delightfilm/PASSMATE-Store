@@ -17,6 +17,9 @@ const stageQuestion = { ...question, acceptedAnswers: [0, 1], answerStatus: "pro
 const correctedStage = applyCorrections({ ...dataset, questions: [stageQuestion] }, [correction]).questions[0];
 assert.deepEqual(correctedStage.acceptedAnswers, [2], "admin correction must supersede source grading keys");
 assert.equal(correctedStage.inferredAnswers, undefined, "old source candidate cannot label revised content");
+const sourceQuestion = { ...question, displayMode: "source_image" };
+assert.equal(applyCorrections({ ...dataset, questions: [sourceQuestion] }, [correction]).questions[0].displayMode, "corrected_source", "revised text cannot be hidden behind an older original crop");
+assert.equal(applyCorrections({ ...dataset, questions: [sourceQuestion] }, [{ ...correction, content: { ...patch, stem: question.stem } }]).questions[0].displayMode, "source_image", "answer-only corrections keep original visual presentation");
 assert.equal(applyCorrections(dataset, [{ ...correction, source_hash: "changed" }]).questions[0].answer, 0);
 assert.throws(() => applyCorrections(dataset, [{ ...correction, content: { ...patch, answer: 4 } }]), /invalid/);
 let reads = 0; let fail = false;

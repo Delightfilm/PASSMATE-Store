@@ -13,6 +13,7 @@ export function applyCorrections(dataset: Dataset, corrections: Correction[]): D
     if (!content || typeof content.stem !== "string" || !Array.isArray(content.choices) || content.choices.length !== 4 || !Number.isInteger(content.answer) || content.answer < 0 || content.answer > 3 || typeof content.explanation !== "string") throw new Error("question_correction_invalid");
     // Never overwrite IDs, source hash, images or exam/qualification metadata.
     return { ...question, stem: content.stem, choices: correctedChoices(question.choices, content.choices), answer: content.answer, explanation: content.explanation,
+      ...(question.displayMode === "source_image" && (content.stem !== question.stem || content.choices.some((choice, index) => choice.text !== question.choices[index]?.text)) ? { displayMode: "corrected_source" as const } : {}),
       acceptedAnswers: [content.answer], answerStatus: undefined, answerLabel: undefined,
       inferredAnswers: undefined, inferredAnswerNote: undefined, answerComparison: undefined };
   }) };

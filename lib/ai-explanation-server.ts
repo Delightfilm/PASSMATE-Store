@@ -98,6 +98,7 @@ export async function trustedQuestion(qualification: string, id: string): Promis
   if (correction && correction.source_hash === question.sourceHash) {
     const { stem, choices, answer, explanation } = correction.content;
     question = { ...question, stem, choices: correctedChoices(question.choices, choices), answer, explanation,
+      ...(question.displayMode === "source_image" && (stem !== question.stem || choices.some((choice: { text: string }, index: number) => choice.text !== question!.choices[index]?.text)) ? { displayMode: "corrected_source" as const } : {}),
       acceptedAnswers: [answer], answerStatus: undefined, answerLabel: undefined,
       inferredAnswers: undefined, inferredAnswerNote: undefined, answerComparison: undefined };
   }
