@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     if (raw.length > 35_000) return reply({ error: "request_too_large" }, 413);
     const body = JSON.parse(raw);
     if (!["read", "record"].includes(body?.action) || !Array.isArray(body.questions) || !body.questions.length || body.questions.length > 100) return reply({ error: "invalid_request" }, 400);
+    if (body.action === "record" && body.attemptId !== undefined && (typeof body.attemptId !== "string" || !/^(?:attempt-[a-z0-9]{1,24}-[a-z0-9]{1,24}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i.test(body.attemptId))) return reply({ error: "invalid_attempt" }, 400);
     for (const row of body.questions) {
       if (!row || typeof row.qualificationCode !== "string" || !/^[a-z0-9-]{1,80}$/i.test(row.qualificationCode) ||
         typeof row.questionId !== "string" || !/^(?:[a-f0-9]{20}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i.test(row.questionId) ||
@@ -30,7 +31,8 @@ export async function POST(request: Request) {
     const valid = match && timingSafeEqual(Buffer.from(match[2], "hex"), Buffer.from(sign(match[1]), "hex"));
     const id = valid ? match[1] : randomBytes(16).toString("hex");
     if (!valid) cookie = `passmate_cbt_stats=${id}.${sign(id)}; Path=/api/cbt/question-stats/; Max-Age=31536000; HttpOnly; SameSite=Lax${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
-    const rows: { question_ref: string; qualification_code: string; revision: string; correct?: boolean }[] = [];
+    const attemptHash = body.attemptId === undefined ? "0".repeat(64) : createHmac("sha256", token).update(`stats-attempt:${body.attemptId}`).digest("hex");
+    const rows: { question_ref: string; qualification_code: string; revision: string; correct?: boolean; attempt_hash?: string }[] = [];
     // Reads expose aggregate counts only; source validation is needed when recording correctness.
     if (body.action === "read") {
       rows.push(...body.questions.map((row: { questionId: string; qualificationCode: string; revision: string }) =>
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
         const revision = createHash("sha256").update(JSON.stringify(questionStatsInput(question))).digest("hex");
         if (revision !== row.revision || row.answer >= question.choices.length) throw new Error("question_changed");
         return { question_ref: question.id, qualification_code: question.certId, revision,
-          correct: row.answer === question.answer };
+          correct: row.answer === question.answer, attempt_hash: attemptHash };
       })));
     }
     const { url, key } = getPublicSupabaseConfig();

@@ -11,11 +11,11 @@ export function statsPresentation(stats: QuestionStats) {
   return { rate, tone: rate >= 70 ? "high" : rate >= 50 ? "good" : rate >= 40 ? "careful" : "hard",
     label: rate >= 70 ? "많이 맞히는 문제예요" : rate >= 50 ? "대체로 잘 맞혀요" : rate >= 40 ? "많이 헷갈려하는 문제예요" : "많이 틀리는 문제예요" };
 }
-export async function questionStatsRequest(questions: Question[], answers?: Record<string, number>, signal?: AbortSignal) {
+export async function questionStatsRequest(questions: Question[], answers?: Record<string, number>, signal?: AbortSignal, attemptId?: string) {
   const rows = await Promise.all(questions.map(async (question) => ({ questionId: question.id, qualificationCode: question.certId,
     revision: await sourceHash(questionStatsInput(question)), ...(answers ? { answer: answers[question.id] } : {}) })));
   const response = await fetch("/api/cbt/question-stats/", { method: "POST", cache: "no-store", signal,
-    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: answers ? "record" : "read", questions: rows }) });
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: answers ? "record" : "read", ...(answers ? { attemptId } : {}), questions: rows }) });
   if (!response.ok) throw new Error("stats_unavailable");
   return (await response.json()) as { stats: Record<string, QuestionStats> };
 }
@@ -54,13 +54,13 @@ export async function loadQuestionStats(questions: Question[]) {
   return Object.fromEntries(questions.map((question, index) => [question.id, values[index]]));
 }
 let recording = Promise.resolve();
-export function recordQuestionResponses(questions: Question[], answers: Record<string, number>) {
+export function recordQuestionResponses(questions: Question[], answers: Record<string, number>, attemptId: string) {
   const answered = questions.filter((question) => Number.isInteger(answers[question.id]));
   // Serialize batches so the anonymous cookie is established before the next write.
   recording = recording.catch(() => {}).then(async () => {
     for (let offset = 0; offset < answered.length; offset += 100) {
       const batch = answered.slice(offset, offset + 100);
-      const body = await questionStatsRequest(batch, answers, AbortSignal.timeout(45_000));
+      const body = await questionStatsRequest(batch, answers, AbortSignal.timeout(45_000), attemptId);
       batch.forEach((question) => cacheStats(question, body.stats[question.id] || { total: 0, correct: 0 }));
     }
     window.dispatchEvent(new CustomEvent("cbt-stats-updated", { detail: answered.map((question) => question.id) }));

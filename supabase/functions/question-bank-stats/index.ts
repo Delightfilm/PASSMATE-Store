@@ -30,7 +30,8 @@ Deno.serve(async (request: Request) => {
       !Array.isArray(body.rows) || !body.rows.length || body.rows.length > 100 ||
       !body.rows.every((row: Record<string, unknown>) => typeof row.question_ref === "string" && row.question_ref.length <= 36 &&
         typeof row.qualification_code === "string" && row.qualification_code.length <= 80 && typeof row.revision === "string" && /^[a-f0-9]{64}$/.test(row.revision) &&
-        (body.action === "read" || typeof row.correct === "boolean"))) return json({ error: "invalid_request" }, 400);
+        (body.action === "read" || (typeof row.correct === "boolean" &&
+          (row.attempt_hash === undefined || (typeof row.attempt_hash === "string" && /^[a-f0-9]{64}$/.test(row.attempt_hash))))))) return json({ error: "invalid_request" }, 400);
     if (body.action === "record") {
       const { error } = await context.supabaseAdmin.rpc("record_question_bank_responses", { p_visitor_hash: body.visitorHash, p_rows: body.rows });
       if (error) return json({ error: "unavailable" }, 503);
