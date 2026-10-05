@@ -6,6 +6,6 @@ export const businessInfo = {
   "address": "",
   "email": "",
   "phone": "",
-  "commerceRegistration": "",
+  "commerceRegistration": "2026-서울노원1344",
   "supportHours": ""
 } as const;

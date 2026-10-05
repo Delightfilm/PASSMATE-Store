@@ -10,7 +10,7 @@
 
 - Implemented synchronous `/` learning shell, local certification search and source-derived shortcuts. Preserved the previous store home at `/store/`; the main body and service switcher link there.
 - Catalog JSON is committed with release `2026-10-04-image-choices` (727 qualifications). Only the explicit `catalog:snapshot` command fetches its source. Builds validate local JSON and do not generate it.
-- Confirmed business footer is server-rendered: 딜라이트 커머스 / 876-59-00934. Policy Markdown and six business fields remain unconfirmed; missing policy pages and dead links were not created. C4 consent/schema work remains excluded.
+- Confirmed business footer is server-rendered: 딜라이트 커머스 / 876-59-00934 / 통신판매업 신고번호 2026-서울노원1344 (confirmed by the user on 2026-10-05). Policy Markdown and five business fields remain unconfirmed; missing policy pages and dead links were not created. C4 consent/schema work remains excluded.
 - Payment, download, issuance and authentication contracts passed existing checks. Production DB changes, live payment and automatic AI generation are not part of this release.
 - Local QA and commit rollback evidence: `docs/LEARNING_HOME_RELEASE_QA.md`. Deployment verification is recorded separately after production deployment completes.
 
