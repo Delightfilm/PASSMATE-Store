@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product-gallery";
 import { getProduct, getStaticProductSlugs } from "@/lib/products";
 import { ProductPurchaseOptions } from "@/components/product-purchase-options";
+import { getServerProductPrices } from "@/lib/server-product-prices";
+import { getPackageSlug } from "@/lib/cart";
 import {
   getCoreProductTitle,
   getCustomerCopy,
-  getCustomerFeatureLabel,
 } from "@/lib/product-display";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -29,13 +31,10 @@ export default async function ProductPage({
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) notFound();
+  const prices = await getServerProductPrices([getPackageSlug(slug, "core"), getPackageSlug(slug, "pass")]);
 
   const isStageSoundCore = product.code === "PM-SS3-CORE";
   const displayTitle = getCoreProductTitle(product.title);
-  const displayFeatures = product.features.map(getCustomerFeatureLabel);
-  const packageFeatures = isStageSoundCore
-    ? displayFeatures.slice(0, 3)
-    : displayFeatures.slice(0, 4);
 
   return (
     <section className="section page-section product-detail">
@@ -53,29 +52,15 @@ export default async function ProductPage({
           />
         </div>
         <div className="product-info">
-          <span className="pill">PASSMATE 핵심노트</span>
+          <span className="pill">핵심노트</span>
           <h1>{product.year}<br/>{displayTitle}</h1>
-          <p className="product-subtitle">{getCustomerCopy(product.subtitle).replaceAll("시험직전", "시험 직전")}</p>
           <p>{getCustomerCopy(product.description)}</p>
-          <ul className="check-list">
-            {displayFeatures.map((feature) => (
-              <li key={feature}>✓ {feature}</li>
-            ))}
-          </ul>
           <div className="price-row">
             <h2>패키지 선택</h2>
-            <span>현재 판매가는 아래 옵션에서 확인 · 디지털 PDF</span>
+            <span>디지털 PDF</span>
           </div>
-          <ProductPurchaseOptions slug={product.slug} title={displayTitle} />
+          <ProductPurchaseOptions slug={product.slug} title={displayTitle} initialPrices={prices} />
         </div>
-      </div>
-      <div className="container detail-band detail-band--dynamic">
-        {packageFeatures.map((feature, index) => (
-          <div key={feature}>
-            <b>{String(index + 1).padStart(2, "0")}</b>
-            <span>{feature}</span>
-          </div>
-        ))}
       </div>
     </section>
   );

@@ -325,18 +325,11 @@ export function CheckoutClient() {
   return (
     <div className="container checkout-grid">
       <div>
-        <span className="eyebrow">CHECKOUT</span>
         <h1 className="page-title">구매하기</h1>
         <p className="page-lead">
           결제 완료 후 구매한 자료는 내 자료에서 확인할 수 있습니다.
         </p>
 
-        <div className="checkout-steps">
-          <p><b>1</b> 로그인 확인</p>
-          <p><b>2</b> 카드 결제</p>
-          <p><b>3</b> 결제 확인</p>
-          <p><b>4</b> 내 자료에서 확인</p>
-        </div>
 
         <p
           className={"checkout-status checkout-status--" + statusKind}
@@ -349,12 +342,7 @@ export function CheckoutClient() {
       <aside className="order-box">
         {payment ? (
           <>
-            <span>{payment.orderName}</span>
-            {payment.items.length === 1 ? (
-              <small>
-                상품 코드 {payment.productCode} · 버전 {payment.productVersion}
-              </small>
-            ) : (
+            {payment.items.length > 1 && (
               <small>{payment.items.length}개 상품 묶음 결제</small>
             )}
 
@@ -363,7 +351,7 @@ export function CheckoutClient() {
                 <div className="checkout-item-row" key={item.slug}>
                   <span>
                     {item.title}
-                    <small>{item.code} · {item.version}</small>
+                    <small>{item.version}</small>
                   </span>
                   <b>{formatKrw(item.amountKrw)}</b>
                 </div>
@@ -375,9 +363,6 @@ export function CheckoutClient() {
               <strong>{formatKrw(payment.amountKrw)}</strong>
             </div>
 
-            <p className="checkout-account-note">
-              결제 직전 서버에서 확정한 상품과 금액입니다.
-            </p>
 
             <label>
               <input
@@ -404,9 +389,6 @@ export function CheckoutClient() {
           <>
             <span>결제 상품 및 금액</span>
             <strong>서버 확인 전</strong>
-            <p className="checkout-account-note">
-              최신 상품명, 버전, 결제 금액을 서버에서 확인한 뒤 결제를 진행합니다.
-            </p>
 
             {!ready ? (
               <button disabled>계정 확인 중</button>
@@ -427,11 +409,7 @@ export function CheckoutClient() {
           </>
         )}
 
-        <p className="checkout-account-note">
-          {email
-            ? email + " 계정으로 구매합니다."
-            : "구매하려면 먼저 로그인해주세요."}
-        </p>
+        {email && <p className="checkout-account-note">{email} 계정으로 구매합니다.</p>}
 
         <Link href={backHref}>
           ← {productSlugs.length > 1

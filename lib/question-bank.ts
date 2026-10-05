@@ -32,7 +32,52 @@ export type ImportBatch = { id: string; remoteId?: string; createdAt: string; fi
 
 export const EMPTY_STORE: LocalStore = { attempts: [], bookmarks: [], wrongNotes: {}, presets: [], imports: [], issueReports: [] };
 export const STORE_KEY = "passmate.cbt-mate.v1";
-export function readLocalStore(): LocalStore { if (typeof window === "undefined") return EMPTY_STORE; try { return { ...EMPTY_STORE, ...JSON.parse(localStorage.getItem(STORE_KEY) || "{}") }; } catch { return EMPTY_STORE; } }
+const storeRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+const storeStrings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.length > 0) : [];
+function storeConfig(value: unknown): AttemptConfig | null {
+  if (!storeRecord(value) || typeof value.certId !== "string" || !value.certId ||
+    !Number.isInteger(value.count) || (value.count as number) < 1 ||
+    !["ordered", "random"].includes(String(value.order)) || !["all", "unanswered", "wrong", "bookmark"].includes(String(value.target)) ||
+    !["submit", "instant"].includes(String(value.gradeMode)) ||
+    !(value.timeLimitMinutes === null || (typeof value.timeLimitMinutes === "number" && Number.isFinite(value.timeLimitMinutes) && value.timeLimitMinutes >= 0))) return null;
+  return { ...value, examIds: storeStrings(value.examIds), subjectIds: storeStrings(value.subjectIds) } as AttemptConfig;
+}
+function storeAttempt(value: unknown): LocalAttempt | null {
+  if (!storeRecord(value) || typeof value.id !== "string" || !value.id ||
+    !["in_progress", "submitted"].includes(String(value.status)) || typeof value.startedAt !== "string" || !Number.isFinite(Date.parse(value.startedAt)) ||
+    !(value.endAt === null || (typeof value.endAt === "string" && Number.isFinite(Date.parse(value.endAt))))) return null;
+  const config = storeConfig(value.config);
+  if (!config) return null;
+  const questionIds = storeStrings(value.questionIds);
+  // Preserve source positions for questions with more than four choices.
+  const answers = Object.fromEntries(Object.entries(storeRecord(value.answers) ? value.answers : {}).filter(([id, answer]) => questionIds.includes(id) && Number.isSafeInteger(answer) && (answer as number) >= 0));
+  const optional = { ...value };
+  if (optional.submittedAt !== undefined && (typeof optional.submittedAt !== "string" || !Number.isFinite(Date.parse(optional.submittedAt)))) delete optional.submittedAt;
+  if (optional.score !== undefined && (typeof optional.score !== "number" || !Number.isFinite(optional.score) || optional.score < 0 || optional.score > 100)) delete optional.score;
+  return { ...optional, config, questionIds, answers, lockedIds: storeStrings(value.lockedIds).filter(id => questionIds.includes(id)) } as LocalAttempt;
+}
+// Parse persisted data as unknown: valid JSON is not necessarily a valid store.
+// Each read builds fresh collections, retaining valid records alongside bad ones.
+export function normalizeLocalStore(input: unknown): LocalStore {
+  const value = storeRecord(input) ? input : {};
+  const array = (key: string): unknown[] => Array.isArray(value[key]) ? value[key] : [];
+  const wrongNotes = Object.fromEntries(Object.entries(storeRecord(value.wrongNotes) ? value.wrongNotes : {}).filter(([, note]) => storeRecord(note)).map(([id, raw]) => {
+    const note = raw as Record<string, unknown>;
+    return [id, { wrongCount: Number.isInteger(note.wrongCount) && (note.wrongCount as number) >= 0 ? note.wrongCount : 0, lastWrongAt: typeof note.lastWrongAt === "string" ? note.lastWrongAt : "", memo: typeof note.memo === "string" ? note.memo : "", mastered: note.mastered === true }];
+  })) as LocalStore["wrongNotes"];
+  const presets = array("presets").flatMap(raw => {
+    if (!storeRecord(raw) || typeof raw.name !== "string") return [];
+    const config = storeConfig(raw.config); return config ? [{ name: raw.name, config }] : [];
+  });
+  return {
+    attempts: array("attempts").map(storeAttempt).filter((attempt): attempt is LocalAttempt => attempt !== null),
+    bookmarks: [...new Set(storeStrings(value.bookmarks))], wrongNotes, presets,
+    imports: array("imports").filter((item): item is ImportBatch => storeRecord(item) && typeof item.id === "string" && Array.isArray(item.rows) && Array.isArray(item.errors)),
+    issueReports: array("issueReports").filter((item): item is IssueReport => storeRecord(item) && typeof item.id === "string" && typeof item.questionId === "string" && typeof item.memo === "string"),
+    questionCerts: Object.fromEntries(Object.entries(storeRecord(value.questionCerts) ? value.questionCerts : {}).filter((pair): pair is [string, string] => typeof pair[1] === "string")),
+  };
+}
+export function readLocalStore(): LocalStore { if (typeof window === "undefined") return normalizeLocalStore({}); try { return normalizeLocalStore(JSON.parse(localStorage.getItem(STORE_KEY) || "{}")); } catch { return normalizeLocalStore({}); } }
 export function writeLocalStore(store: LocalStore) { if (typeof window !== "undefined") { localStorage.setItem(STORE_KEY, JSON.stringify(store)); window.dispatchEvent(new Event("cbt-store")); } }
 export function makeId(prefix: string) { return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
 export function certCategory(name: string) { return ["산업기사", "기능사", "기능장", "기사", "공무원"].find((item) => name.includes(item)) || "기타"; }
@@ -95,8 +140,13 @@ export async function parseImportFile(file: File): Promise<ParsedImport> {
     else if (name.endsWith(".csv")) { const [head, ...lines] = text.split(/\r?\n/).filter(Boolean); const keys = csvCells(head).map((key) => key.replace(/^\uFEFF/, "")); rows = lines.map((line) => Object.fromEntries(csvCells(line).map((value, i) => [keys[i] || `column${i + 1}`, value]))); }
     else { rows = text.split(/\n(?=##?\s)/).filter(Boolean).map((block) => { const lines = block.split(/\r?\n/); const stem = lines.find((line) => /^##?\s/.test(line))?.replace(/^##?\s*/, "") || ""; const choices = lines.filter((line) => /^\s*[①②③④1-4][.)\s]/.test(line)).map((line) => line.replace(/^\s*/, "")); const answer = lines.find((line) => /^(정답|answer)\s*:/i.test(line))?.split(":")[1]?.trim() || ""; return { stem, choices, answer }; }); }
   } catch { return { rows: [], errors: [{ row: 1, message: "파일 형식을 읽을 수 없습니다." }], context: null }; }
+  if (!Array.isArray(rows)) return { rows: [], errors: [{ row: 1, message: "문항 목록(questions)은 배열이어야 합니다." }], context };
   const errors: ImportError[] = [];
+  if (!rows.length) errors.push({ row: 1, message: "가져올 문항이 없습니다." });
+  const validRows: ImportRow[] = [];
   rows.forEach((row, index) => {
+    if (!storeRecord(row)) { errors.push({ row: index + 2, message: "문항은 객체 형식이어야 합니다." }); return; }
+    validRows.push(row);
     const stem = String(row.stem || row.question || "").trim();
     const choices = Array.isArray(row.choices) ? row.choices : String(row.choices || "").split(/\s*\|\s*/).filter(Boolean);
     const answer = row.answer_no ?? row.answer;
@@ -106,7 +156,7 @@ export async function parseImportFile(file: File): Promise<ParsedImport> {
     if (context && !String(row.question_uid || "").trim()) errors.push({ row: index + 2, message: "원본 문항 ID(question_uid)가 없습니다." });
     if (context && !String(row.exam_id || "").trim()) errors.push({ row: index + 2, message: "시험 회차 ID(exam_id)가 없습니다." });
   });
-  return { rows, errors, context };
+  return { rows: validRows, errors, context };
 }
 
 export async function loadPublishedDataset(signal?: AbortSignal): Promise<Dataset> {

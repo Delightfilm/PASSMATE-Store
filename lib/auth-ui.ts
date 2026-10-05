@@ -19,6 +19,18 @@ export function getSafeNextPath(value: string | null): string {
   }
 }
 
+// OAuth navigation still works when privacy settings deny sessionStorage.
+// Without storage the callback keeps its explicit next query, or uses /library/.
+export function readOAuthNextPath(): string | null {
+  try { return window.sessionStorage.getItem("passmate.oauth.next"); } catch { return null; }
+}
+export function rememberOAuthNextPath(path: string): void {
+  try { window.sessionStorage.setItem("passmate.oauth.next", getSafeNextPath(path)); } catch { /* Optional redirect hint. */ }
+}
+export function clearOAuthNextPath(): void {
+  try { window.sessionStorage.removeItem("passmate.oauth.next"); } catch { /* Storage may be unavailable. */ }
+}
+
 export function getAuthErrorMessage(message: string): string {
   const normalized = message.toLowerCase();
 

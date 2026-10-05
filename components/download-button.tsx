@@ -69,9 +69,11 @@ export function DownloadButton({
         className="library-download-button"
         onClick={download}
         disabled={!ready || busy}
+        aria-label={!ready ? "자료 준비 중" : busy ? "PDF 다운로드 준비 중" : "PDF 다운로드"}
       >
-        {busy ? "준비 중..." : ready ? "PDF 다운로드" : "자료 준비 중"}
+        {busy ? "준비 중..." : ready ? "PDF 다운로드" : "준비 중"}
       </button>
+      {!ready && <span className="library-download-note">준비가 끝나면 여기서 내려받을 수 있어요</span>}
       {message && <span className="library-download-note">{message}</span>}
     </div>
   );

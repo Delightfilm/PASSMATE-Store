@@ -1,10 +1,13 @@
 import fs from "node:fs";
+import assert from "node:assert/strict";
+import { validateStorePriceBinding } from "./validate-store-price-binding.mjs";
 
 const read = (path) =>
   fs.readFileSync(new URL(path, import.meta.url), "utf8");
 
 const cart = read("../lib/cart.ts");
 const pricing = read("../lib/live-product-prices.ts");
+const priceHook = read("../lib/use-product-prices.ts");
 const options = read("../components/product-purchase-options.tsx");
 const cartClient = read("../components/cart-client.tsx");
 const checkout = read("../components/checkout-client.tsx");
@@ -50,7 +53,8 @@ if (cart.includes("quantity:") || cartClient.includes("item.quantity")) {
 }
 
 if (
-  !options.includes("fetchLiveProductPrices") ||
+  !options.includes("useProductPrices") ||
+  !priceHook.includes("fetchLiveProductPrices") ||
   !cartClient.includes("fetchLiveProductPrices")
 ) {
   throw new Error("Product options and cart must refresh prices from Supabase.");
@@ -87,4 +91,26 @@ for (const required of [
   }
 }
 
-console.log("PASSMATE cart + dynamic pricing contract OK");
+// Keep the original SQL/idempotency guards and explicitly pin server authority.
+for (const required of [
+  'new Set(["productSlug", "productSlugs", "idempotencyKey"])',
+  'Object.keys(body).some((field) => !allowedRequestFields.has(field))',
+  'admin.rpc("create_direct_checkout",',
+  'p_product_slugs: productSlugs',
+  'items.reduce((sum, item) => sum + item.amountKrw, 0) !== row.amount_krw',
+]) {
+  if (!paymentStart.includes(required)) throw new Error("Server price authority missing: " + required);
+}
+for (const required of ["where p.slug = v_slug", "and p.is_active = true", "for share;", "unit_price_krw"]) {
+  if (!migration.includes(required)) throw new Error("SKU price validation missing: " + required);
+}
+await validateStorePriceBinding();
+// Mutations stay in memory: demonstrate that the new guards reject regressions.
+for (const [from, to] of [
+  ["const selectedPrice = prices[selectedSlug]", "const selectedPrice = prices[coreSlug]"],
+  ["const selectedSlug = getPackageSlug(slug, kind)", 'const selectedSlug = getPackageSlug(slug, "core")'],
+  ["const next = await fetchLiveProductPrices(requested)", "const next = {}"],
+]) {
+  await assert.rejects(validateStorePriceBinding((_, source) => source.replace(from, to)), { name: "AssertionError" });
+}
+console.log("PASSMATE cart + dynamic pricing contract OK (live hook, CORE/PASS SKU binding, refresh disabled, server authority)");

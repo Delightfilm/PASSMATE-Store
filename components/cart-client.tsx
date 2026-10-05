@@ -21,6 +21,7 @@ export function CartClient() {
   const [prices, setPrices] = useState<LiveProductPriceMap>({});
   const [priceLoading, setPriceLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
+  const [storageError, setStorageError] = useState("");
 
   async function refresh(nextItems = readCart()) {
     setItems(nextItems);
@@ -83,8 +84,13 @@ export function CartClient() {
   const total = items.reduce((sum, item) => sum + (prices[item.slug] ?? 0), 0);
 
   function update(next: CartItem[]) {
-    writeCart(next);
-    void refresh(next);
+    try {
+      writeCart(next);
+      setStorageError("");
+      void refresh(next);
+    } catch {
+      setStorageError("장바구니를 저장하지 못했어요. 브라우저 저장소 설정과 여유 공간을 확인한 뒤 다시 시도해주세요.");
+    }
   }
 
   const checkoutHref = checkoutReady
@@ -95,6 +101,7 @@ export function CartClient() {
   return (
     <div className="cart-layout">
       <div className="cart-list">
+        {storageError && <p role="alert">{storageError}</p>}
         {items.length ? (
           items.map((item) => (
             <article className="cart-item" key={item.familySlug}>
@@ -150,7 +157,7 @@ export function CartClient() {
               : "확인 필요"}
         </strong>
         <p className="checkout-account-note">
-          현재 판매가를 표시하며, 실제 결제 금액은 결제 직전 서버가 다시 확정합니다.
+          결제 전 최신 가격을 확인합니다.
         </p>
         {checkoutReady ? (
           <Link className="button button-primary button-wide" href={checkoutHref}>

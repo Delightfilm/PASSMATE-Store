@@ -40,7 +40,12 @@ export function LibraryClient() {
       if (!active) return;
 
       if (!userData.user) {
-        router.replace("/account/login/?next=/library/");
+        // A document navigation avoids replacing the mobile library layout mid-paint.
+        if (window.matchMedia("(max-width: 767px)").matches) {
+          window.location.replace("/account/login/?next=/library/");
+        } else {
+          router.replace("/account/login/?next=/library/");
+        }
         return;
       }
 
@@ -121,11 +126,7 @@ export function LibraryClient() {
   if (rows.length === 0) {
     return (
       <div className="empty-state">
-        <div className="empty-icon">PM</div>
         <h2>아직 구매한 자료가 없습니다.</h2>
-        <p>
-          PASSMATE 요약노트를 구매하면 이곳에서 바로 확인할 수 있습니다.
-        </p>
         <Link className="button button-primary" href="/products/">
           요약노트 둘러보기
         </Link>
@@ -137,42 +138,22 @@ export function LibraryClient() {
     <div className="library-grid">
       {rows.map((row) => {
         const ready = isGrantDownloadReady(row, orders);
+        const date = new Date(row.granted_at);
+        const dateParts = Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date) : [];
+        const purchaseDate = dateParts.length ? ["year", "month", "day"].map(type => dateParts.find(part => part.type === type)?.value).join(".") : "구매일 확인 필요";
+        const version = row.product_versions?.version;
+        const displayVersion = version ? (version.startsWith("v") ? version : "v" + version) : "";
 
         return (
           <article className="library-item" key={row.id}>
             <div>
-              <span className="eyebrow">
-                {row.products?.display_year ??
-                  row.product_versions?.edition_year ??
-                  ""}{" "}
-                PASSMATE
-              </span>
               <h3>
                 {row.products?.title ?? "PASSMATE 요약노트"}
               </h3>
-              <p>
-                구매일{" "}
-                {new Date(row.granted_at).toLocaleDateString("ko-KR")}
-              </p>
-              <div className="library-meta">
-                {row.product_versions?.version && (
-                  <span className="library-chip">
-                    {row.product_versions.version}
-                  </span>
-                )}
-                <span className="library-chip">구매 완료</span>
-              </div>
+              <p className="library-meta muted">{purchaseDate} 구매{displayVersion ? " · " + displayVersion : ""}</p>
             </div>
 
             <div className="library-item-action">
-              <div
-                className={
-                  "library-status" +
-                  (ready ? " library-status--active" : "")
-                }
-              >
-                {ready ? "다운로드 가능" : "자료 준비 중"}
-              </div>
               <DownloadButton
                 entitlementId={row.id}
                 ready={ready}

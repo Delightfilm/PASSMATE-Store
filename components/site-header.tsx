@@ -10,6 +10,7 @@ export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}
   const pathname = usePathname();
   const cbt = pathname.startsWith("/cbt");
   const admin = pathname.startsWith("/admin");
+  const store = pathname === "/" || /^\/(products|library|cart|checkout)(\/|$)/.test(pathname) || /^\/account\/(login|signup)(\/|$)/.test(pathname);
   const exam = /^\/cbt\/[^/]+\/exam\//.test(pathname);
   const detailPath = /^\/cbt\/[^/]+\/?$/.test(pathname) && !/^\/cbt\/(wrong-notes|bookmarks|history)\/?$/.test(pathname);
 
@@ -23,7 +24,7 @@ export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}
   if (exam && !showOnExam) return null;
 
   return (
-    <header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}`}>
+    <><header className={`site-header${cbt ? " site-header--cbt" : ""}${admin ? " site-header--admin" : ""}${store ? " site-header--store" : ""}`}>
       <div className="container nav-wrap">
         <Link href={cbt ? "/cbt/" : "/"} className="logo-link" aria-label={cbt ? "CBT MATE 홈" : "PASSMATE 홈"}>
           {cbt ? <CbtMateLogo priority /> : <PassmateLogo compact />}
@@ -42,6 +43,6 @@ export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}
       {cbt && <nav className="mobile-cbt-nav" aria-label="CBT 모바일 주요 메뉴">
         {cbtLinks.map((item) => <Link href={item.href} aria-current={item.active ? "page" : undefined} key={item.href}>{item.label}</Link>)}
       </nav>}
-    </header>
+    </header>{store && <div className="store-mobile-switcher"><div className="container"><ServiceSwitcher /></div></div>}</>
   );
 }

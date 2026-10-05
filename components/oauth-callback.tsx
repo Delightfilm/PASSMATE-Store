@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSafeNextPath } from "@/lib/auth-ui";
+import { clearOAuthNextPath, getSafeNextPath, readOAuthNextPath } from "@/lib/auth-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 function getProviderError(): string | null {
@@ -19,9 +19,9 @@ export function OAuthCallback() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const storedNext = window.sessionStorage.getItem("passmate.oauth.next");
+    const storedNext = readOAuthNextPath();
     const nextPath = getSafeNextPath(params.get("next") || storedNext);
-    const clearStoredNext = () => window.sessionStorage.removeItem("passmate.oauth.next");
+    const clearStoredNext = clearOAuthNextPath;
     const loginUrl = new URL("/account/login/", window.location.origin);
     loginUrl.searchParams.set("next", nextPath);
     setLoginPath(`${loginUrl.pathname}${loginUrl.search}`);
@@ -60,7 +60,7 @@ export function OAuthCallback() {
         return;
       }
       if (error || !data.session) setFailed(true);
-    });
+    }, () => { if (active && !completed) setFailed(true); });
 
     return () => {
       active = false;

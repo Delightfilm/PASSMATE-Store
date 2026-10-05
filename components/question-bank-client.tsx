@@ -41,9 +41,14 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const [loadingProfile, setLoadingProfile] = useState<{ id: string; name: unknown } | null>(null);
   const loadingUserId = user?.id;
   const [authReady, setAuthReady] = useState(false);
+  const [storageError, setStorageError] = useState("");
   const syncTimer = useRef<number | null>(null);
   const loadVersion = useRef(0);
   const loadController = useRef<AbortController | null>(null);
+  const persistStore = useCallback((next: LocalStore) => {
+    try { writeLocalStore(next); setStorageError(""); return true; }
+    catch { setStorageError("학습 기록을 저장하지 못했어요. 브라우저 저장소 설정과 여유 공간을 확인한 뒤 다시 시도해주세요."); return false; }
+  }, []);
 
   const retryDataset = useCallback(() => {
     const version = ++loadVersion.current;
@@ -56,7 +61,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     const load = async () => {
       if (!contentBase()) return loadPublishedDataset(controller.signal);
       let current = readLocalStore();
-      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); controller.signal.throwIfAborted(); setStore(current); writeLocalStore(current); }
+      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); controller.signal.throwIfAborted(); setStore(current); persistStore(current); }
       const live = await loadContentDataset(mode, certParam, attemptId, current, options);
       // Preserve links to pre-NAS UUID-based exams and saved learning records.
       const hasLegacyRefs = [...current.bookmarks, ...Object.keys(current.wrongNotes)].some((id) => !/^[a-f0-9]{20}$/.test(id));
@@ -69,7 +74,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
       console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
       setDataset(null); setDataState("error");
     });
-  }, [mode, certParam, attemptId]);
+  }, [mode, certParam, attemptId, persistStore]);
 
   const cancelDataset = useCallback(() => {
     loadVersion.current++;
@@ -94,7 +99,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     }, () => { /* Name lookup is optional and never blocks data loading. */ });
     return () => controller.abort();
   }, [loadingUserId]);
-  useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); writeLocalStore(next); }); }, [user]);
+  useEffect(() => { if (!user) return; void mergeAccountStore(readLocalStore()).then((next) => { setStore(next); persistStore(next); }); }, [user, persistStore]);
   useEffect(() => { const refresh = (event: StorageEvent) => { if (event.key === STORE_KEY) setStore(readLocalStore()); }; window.addEventListener("storage", refresh); return () => window.removeEventListener("storage", refresh); }, []);
   const saveStore = useCallback((next: LocalStore) => {
     const current = readLocalStore();
@@ -104,20 +109,23 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     dataset?.questions.forEach((question) => { if (refs.has(question.id)) questionCerts[question.id] = question.certId; });
     const safe = { ...next, attempts, questionCerts };
     const started = attempts.some((item) => item.status === "in_progress" && !current.attempts.some((saved) => saved.id === item.id));
-    setStore(safe); writeLocalStore(safe);
+    if (!persistStore(safe)) return false;
+    setStore(safe);
     if (user) { if (syncTimer.current) window.clearTimeout(syncTimer.current); if (started) void syncAccountStore(safe); else syncTimer.current = window.setTimeout(() => void syncAccountStore(safe), 400); }
-  }, [user, dataset]);
+    return true;
+  }, [user, dataset, persistStore]);
+  const withStorageNotice = (content: React.ReactNode) => <>{storageError && <div className="container" role="alert"><p>{storageError}</p></div>}{content}</>;
 
   if (!hydrated) return <CbtSkeleton />;
   if (dataState === "loading") return <PageShell><QuestionBankLoading key={loadSequence} displayName={loadingDisplayName(loadingProfile?.id === user?.id ? loadingProfile?.name : undefined, user?.user_metadata)} onCancel={cancelDataset} onRetry={retryDataset} /></PageShell>;
   if (dataState === "cancelled") return <PageShell><div className="cbt-load-error" role="status"><h1>데이터 불러오기를 취소했습니다.</h1><p>다시 시도하면 문제 데이터를 불러옵니다.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
-  if (mode === "home") return <CbtHome dataset={dataset} />;
-  if (mode === "exam") return <ExamScreen dataset={dataset} store={store} saveStore={saveStore} certParam={certParam} attemptId={attemptId} user={user} />;
-  if (mode === "wrong-notes" || mode === "bookmarks" || mode === "history") return <LearningScreen mode={mode} dataset={dataset} store={store} saveStore={saveStore} user={user} authReady={authReady} />;
+  if (mode === "home") return withStorageNotice(<CbtHome dataset={dataset} />);
+  if (mode === "exam") return withStorageNotice(<ExamScreen dataset={dataset} store={store} saveStore={saveStore} certParam={certParam} attemptId={attemptId} user={user} />);
+  if (mode === "wrong-notes" || mode === "bookmarks" || mode === "history") return withStorageNotice(<LearningScreen mode={mode} dataset={dataset} store={store} saveStore={saveStore} user={user} authReady={authReady} />);
   const cert = findCert(dataset, certParam);
   if (!cert) return <PageShell><EmptyState title="종목을 찾을 수 없습니다." body="종목 선택 화면에서 다시 선택해 주세요." href="/cbt/" action="종목 선택으로" /></PageShell>;
-  return <CertDetail dataset={dataset} cert={cert} store={store} saveStore={saveStore} user={user} />;
+  return withStorageNotice(<CertDetail dataset={dataset} cert={cert} store={store} saveStore={saveStore} user={user} />);
 }
 
 function PageShell({ children }: { children: React.ReactNode }) { return <section className="question-bank-page"><div className="container question-bank-container">{children}</div></section>; }
@@ -139,7 +147,7 @@ function CbtHome({ dataset }: { dataset: Dataset }) {
   </PageShell>;
 }
 
-function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Dataset; cert: Cert; store: LocalStore; saveStore: (store: LocalStore) => void; user: User | null }) {
+function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Dataset; cert: Cert; store: LocalStore; saveStore: (store: LocalStore) => boolean; user: User | null }) {
   const router = useRouter();
   const certExams = useMemo(() => dataset.exams.filter((exam) => exam.certId === cert.id).sort((a, b) => b.year - a.year || b.round.localeCompare(a.round)), [dataset, cert]);
   const subjects = useMemo(() => dataset.subjects.filter((subject) => subject.certId === cert.id), [dataset, cert]);
@@ -154,7 +162,14 @@ function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Datase
   const displayName = typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : "수험자";
   useEffect(() => { const value = new URLSearchParams(window.location.search).get("tab"); if (value === "subjects" || value === "mock" || value === "builder" || value === "records") setTabState(value); }, []);
   function setTab(value: typeof tab) { setTabState(value); const url = new URL(window.location.href); if (value === "exams") url.searchParams.delete("tab"); else url.searchParams.set("tab", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
-  function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects) { const ids = exact ? questionIds : order === "random" ? shuffle(questionIds).slice(0, count) : questionIds.slice(0, count); if (!ids.length) { setToast("선택한 범위에 출제 가능한 문제가 없습니다."); return; } const id = makeId("attempt"); const now = new Date(); const attempt: LocalAttempt = { id, config: { certId: cert.id, certSlug: certSlug(cert), examIds, subjectIds, count: ids.length, order: exact ? "ordered" : order, target, gradeMode: mode, timeLimitMinutes: minutes }, questionIds: ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: minutes ? new Date(now.getTime() + minutes * 60000).toISOString() : null, status: "in_progress" }; saveStore({ ...store, attempts: [attempt, ...store.attempts] }); router.push(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`); }
+  function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects) {
+    const ids = exact ? questionIds : order === "random" ? shuffle(questionIds).slice(0, count) : questionIds.slice(0, count);
+    if (!ids.length) { setToast("선택한 범위에 출제 가능한 문제가 없습니다."); return; }
+    const id = makeId("attempt"); const now = new Date();
+    const attempt: LocalAttempt = { id, config: { certId: cert.id, certSlug: certSlug(cert), examIds, subjectIds, count: ids.length, order: exact ? "ordered" : order, target, gradeMode: mode, timeLimitMinutes: minutes }, questionIds: ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: minutes ? new Date(now.getTime() + minutes * 60000).toISOString() : null, status: "in_progress" };
+    if (!saveStore({ ...store, attempts: [attempt, ...store.attempts] })) { setStartExamId(""); return; }
+    router.push(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`);
+  }
   function beginBuilder() { const scopedSubjects = selectedSubjects.length ? selectedSubjects : subjects.map((subject) => subject.id); const ids = scopedSubjects.flatMap((subjectId) => { const available = pool.filter((question) => question.subjectId === subjectId); const ordered = order === "random" ? shuffle(available) : available.sort((a, b) => a.no - b.no); return ordered.slice(0, Math.max(0, builderCounts[subjectId] || 0)).map((question) => question.id); }); begin(ids, selectedExamIds, gradeMode, timeLimit, true); }
   function beginExam() { const exam = certExams.find((item) => item.id === startExamId); if (exam) begin(dataset.questions.filter((question) => question.examId === exam.id).sort((a, b) => a.no - b.no).map((question) => question.id), [exam.id], gradeMode, exam.durationMinutes, true); }
   function beginMock() { const available = dataset.questions.filter((question) => question.certId === cert.id); begin(shuffle(available).slice(0, Math.min(60, available.length)).map((question) => question.id), certExams.map((exam) => exam.id), "submit", 60, true, []); }

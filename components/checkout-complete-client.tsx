@@ -185,9 +185,8 @@ export function CheckoutCompleteClient() {
 
   return (
     <div className="container checkout-result-wrap">
-      <span className="eyebrow">결제 결과</span>
       <h1 className="page-title">{title}</h1>
-      <p className="page-lead">{detail}</p>
+      <p className="page-lead">{detail.replace(/^결제가 완료되었고 자료 준비도 끝났습니다\./, "자료 준비가 끝났습니다.").replace(/^결제가 완료되었습니다\. /, "")}</p>
 
       <div className={"checkout-result-card checkout-result-card--" + state}>
         <div className="checkout-result-icon">
@@ -197,17 +196,13 @@ export function CheckoutCompleteClient() {
               ? "…"
               : "!"}
         </div>
-        <strong>
+        <strong className="sr-only">
           {state === "paid"
             ? "구매 완료"
             : state === "checking"
               ? "확인 중"
               : "확인 필요"}
         </strong>
-        <p>
-          결제창의 응답만으로 구매를 확정하지 않고,
-          서버에서 확인된 주문 상태를 기준으로 표시합니다.
-        </p>
       </div>
 
       <div className="account-actions">

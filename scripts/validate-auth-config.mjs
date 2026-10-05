@@ -20,6 +20,7 @@ const authNav = fs.readFileSync(
   new URL("../components/auth-nav.tsx", import.meta.url),
   "utf8"
 );
+const authUi = fs.readFileSync(new URL("../lib/auth-ui.ts", import.meta.url), "utf8");
 
 if (!publicConfig.includes("sb_publishable_")) {
   throw new Error("Auth config must use a Supabase publishable key.");
@@ -31,6 +32,7 @@ for (const [name, source] of [
   ["auth form", authForm],
   ["OAuth callback", oauthCallback],
   ["auth nav", authNav],
+  ["auth UI", authUi],
 ]) {
   const forbiddenPatterns = [
     /SUPABASE_SERVICE_ROLE_KEY/,
@@ -73,12 +75,13 @@ for (const required of [
 if (
   !authForm.includes("skipBrowserRedirect: true") ||
   !authForm.includes("window.location.assign(data.url)") ||
-  !authForm.includes('sessionStorage.setItem("passmate.oauth.next"')
+  !authForm.includes("rememberOAuthNextPath(nextPath)") ||
+  !authUi.includes('sessionStorage.setItem("passmate.oauth.next", getSafeNextPath(path))')
 ) {
   throw new Error("OAuth navigation must preserve the current deployment origin and next path explicitly.");
 }
 
-if (!oauthCallback.includes('sessionStorage.getItem("passmate.oauth.next")')) {
+if (!oauthCallback.includes("readOAuthNextPath()") || !authUi.includes('sessionStorage.getItem("passmate.oauth.next")')) {
   throw new Error("OAuth callback must restore the next path without widening redirect URL matching.");
 }
 

@@ -1,41 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import type { Product } from "@/lib/products";
-import { fetchLiveProductPrices } from "@/lib/live-product-prices";
+import { useProductPrices } from "@/lib/use-product-prices";
+import { ProductPrice } from "./product-price";
 import { getCoreProductTitle, getCustomerCopy } from "@/lib/product-display";
 import { ProductCover } from "./product-cover";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product, initialPrice }: { product: Product; initialPrice?: number }) {
   const isStageSoundCore = product.code === "PM-SS3-CORE";
-  const [price, setPrice] = useState<number | null>(null);
-  const [priceLoading, setPriceLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    async function refreshPrice() {
-      setPriceLoading(true);
-      try {
-        const prices = await fetchLiveProductPrices([product.slug]);
-        if (active) setPrice(prices[product.slug] ?? null);
-      } catch (error) {
-        console.error("[PASSMATE] product card price lookup failed", error);
-        if (active) setPrice(null);
-      } finally {
-        if (active) setPriceLoading(false);
-      }
-    }
-
-    void refreshPrice();
-    window.addEventListener("focus", refreshPrice);
-
-    return () => {
-      active = false;
-      window.removeEventListener("focus", refreshPrice);
-    };
-  }, [product.slug]);
+  const { prices, failed, retry } = useProductPrices([product.slug], initialPrice === undefined ? {} : { [product.slug]: initialPrice });
 
   return (
     <article className="product-card">
@@ -55,18 +29,13 @@ export function ProductCard({ product }: { product: Product }) {
         />
       </div>
       <div className="product-card-body">
-        <span className="eyebrow">{product.badge}</span>
         <h3>{product.year} {getCoreProductTitle(product.title)}</h3>
         <p>{getCustomerCopy(product.subtitle)}</p>
         <div className="product-card-footer">
           <strong>
-            {priceLoading
-              ? "가격 확인 중"
-              : price === null
-                ? "판매 준비 중"
-                : price.toLocaleString("ko-KR") + "원부터"}
+            <ProductPrice price={prices[product.slug]} failed={failed} retry={retry} suffix="원부터" />
           </strong>
-          <Link href={"/products/" + product.slug}>자세히 보기 →</Link>
+          <Link className="product-card-link" href={"/products/" + product.slug} aria-label={`${getCoreProductTitle(product.title)} 자세히 보기`}>자세히 보기 →</Link>
         </div>
       </div>
     </article>

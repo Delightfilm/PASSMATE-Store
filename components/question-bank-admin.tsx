@@ -137,6 +137,8 @@ export function QuestionBankAdmin() {
   async function importFile(file?: File) {
     if (!file) return;
     setBusy(true); setNotice(""); setError(""); setProgress(0);
+    setBatch(null); setContext(null);
+    try {
     const parsed = await parseImportFile(file);
     const rows: ImportRow[] = [];
     for (const row of parsed.rows) {
@@ -144,8 +146,13 @@ export function QuestionBankAdmin() {
       rows.push({ ...row, sourceHash: hash, status: "needs_review" });
     }
     const next: ImportBatch = { id: makeId("preview"), createdAt: new Date().toISOString(), fileName: file.name, rows, errors: parsed.errors, status: "needs_review" };
-    setBatch(next); setContext(parsed.context); setBusy(false);
+    setBatch(next); setContext(parsed.context);
     setNotice(parsed.errors.length ? `${parsed.errors.length}개 오류를 먼저 확인해주세요.` : `${rows.length}개 문항을 검증했습니다. 중복 문항도 모두 유지됩니다.`);
+    } catch {
+      setError("파일을 읽지 못했습니다. 파일 형식을 확인한 뒤 다시 시도해주세요.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveToDatabase() {
