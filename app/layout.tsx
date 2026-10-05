@@ -5,6 +5,7 @@ import "./globals.css";
 import "./ui-refinements.css";
 import "./store-mobile.css";
 import "./store-copy.css";
+import "./legal.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageTransition } from "@/components/page-transition";

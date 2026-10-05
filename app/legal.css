@@ -1,0 +1,7 @@
+/* Business footer only; pending policies do not create public routes or links. */
+.site-footer .business-information { color: var(--muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.site-footer .business-information p { margin: 0; font-size: 14px; line-height: 1.6; }
+.site-footer .business-information a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: var(--blue-dark); }
+.footer-business-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+body .site-footer.site-footer--business { padding-bottom: calc(var(--footer-clearance, 32px) + var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px)); }
+body:has(.mobile-purchase-bar) .site-footer.site-footer--business { --footer-clearance: 152px; }
