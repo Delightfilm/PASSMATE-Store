@@ -57,7 +57,7 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, coll
     };
   }, []);
   useEffect(() => {
-    if (!allowGenerate || question.explanation.trim()) return;
+    if (!allowGenerate || question.explanation.trim() || question.choices.length !== 4 || question.answerComparison === "disagree" || (question.acceptedAnswers?.length || 0) > 1) return;
     const abort = new AbortController();
     savedExplanation.current = null;
     lookup.current = (async () => {
@@ -136,6 +136,7 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, coll
     </details>;
   }
   if (question.explanation.trim()) return disclosure(<p>{question.explanation}</p>);
+  if (question.choices.length !== 4 || question.answerComparison === "disagree" || (question.acceptedAnswers?.length || 0) > 1) return <p>답안 정보를 참고해 복습해 주세요. 이 문항의 해설은 준비 중입니다.</p>;
   if (!allowGenerate) return null;
   const explanation = result?.explanation;
   return disclosure(<div className="ai-question-explanation" aria-busy={loading}>

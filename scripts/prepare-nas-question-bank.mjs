@@ -31,6 +31,7 @@ const safeText = (value) => value == null ? "" : String(value).trim();
 const verifiedImages = new Set();
 
 function answerIndex(question) {
+  if (Array.isArray(question.accepted_answer_positions) && question.accepted_answer_positions.length) return Number(question.accepted_answer_positions[0]) - 1;
   const explicit = Number(question.answer_no);
   if (Number.isInteger(explicit) && explicit >= 1) return explicit - 1;
   const candidate = Number(question.answer);
@@ -112,10 +113,11 @@ for (let index = 0; index < files.length; index += 1) {
   const examCounts = new Map();
   const questions = [];
   for (const [rowIndex, row] of (source.questions || []).entries()) {
-    const id = safeText(row.question_uid);
+    const sourceQuestionId = safeText(row.question_uid);
+    const id = !sourceQuestionId || /^[a-f0-9]{20}$/.test(sourceQuestionId) ? sourceQuestionId : sha256(sourceQuestionId).slice(0, 20);
     const examId = safeText(row.exam_id);
     const stem = safeText(row.stem ?? row.question);
-    const positional = separateChoices.get(id);
+    const positional = separateChoices.get(sourceQuestionId);
     const values = positional?.length ? positional : normalizeChoices(row.choices).map((choice, index) => ({ ...choice, position: index + 1,
       assets: Array.isArray(row.choice_assets?.[index]) ? row.choice_assets[index] : [] }));
     const reasons = [];
@@ -127,6 +129,11 @@ for (let index = 0; index < files.length; index += 1) {
       return { label: value.label, text: value.text, ...(images.length ? { images: images.filter(Boolean) } : {}) };
     });
     const answer = answerIndex(row);
+    const acceptedAnswers = Array.isArray(row.accepted_answer_positions) && row.accepted_answer_positions.length
+      ? row.accepted_answer_positions.map(position => Number(position) - 1) : [answer];
+    if (acceptedAnswers.some(index => !Number.isInteger(index) || index < 0 || index >= choices.length)) reasons.push("accepted_answer_out_of_range");
+    const inferredAnswers = Array.isArray(row.inferred_answer_positions) ? row.inferred_answer_positions.map(position => Number(position) - 1) : undefined;
+    if (inferredAnswers?.some(index => !Number.isInteger(index) || index < 0 || index >= choices.length)) reasons.push("inferred_answer_out_of_range");
     if (!id) reasons.push("missing_question_uid");
     if (!examId) reasons.push("missing_exam_id");
     if (!stem) reasons.push("missing_stem");
@@ -146,6 +153,7 @@ for (let index = 0; index < files.length; index += 1) {
     usedImages.forEach((image) => allImages.add(image));
     questions.push({
       id,
+      ...(id !== sourceQuestionId ? { sourceQuestionId } : {}),
       examId,
       certId: code,
       no: Number(row.question_no ?? row.no),
@@ -154,6 +162,10 @@ for (let index = 0; index < files.length; index += 1) {
       images,
       choices,
       answer,
+      ...(row.answer_status === "official_final" || row.answer_status === "provisional" ? {
+        acceptedAnswers, answerStatus: row.answer_status, answerLabel: safeText(row.answer_label),
+      } : {}),
+      ...(inferredAnswers !== undefined ? { inferredAnswers, inferredAnswerNote: safeText(row.inferred_answer_note), answerComparison: row.answer_comparison } : {}),
       explanation: safeText(row.explanation),
       sourceHash: safeText(row.sourceHash ?? row.source_hash ?? row.content_hash) || sha256(JSON.stringify({ stem, choices, answer })),
     });

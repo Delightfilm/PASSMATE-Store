@@ -3,7 +3,8 @@ import { sourceHash, type Question } from "./question-bank";
 export type QuestionStats = { total: number; correct: number };
 export function questionStatsInput(question: Question) {
   return { id: question.id, certId: question.certId, sourceHash: question.sourceHash,
-    stem: question.stem, choices: question.choices, answer: question.answer, images: question.images };
+    stem: question.stem, choices: question.choices, answer: question.answer, images: question.images,
+    ...(question.acceptedAnswers?.length ? { acceptedAnswers: question.acceptedAnswers } : {}) };
 }
 export function statsPresentation(stats: QuestionStats) {
   if (!stats.total) return { label: "응답을 모으고 있어요", tone: "neutral", rate: null };

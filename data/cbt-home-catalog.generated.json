@@ -1,8 +1,8 @@
 {
   "snapshotSchemaVersion": "passmate.cbt-home-catalog.v1",
   "releaseId": "2026-10-04-image-choices",
-  "generatedAt": "2026-10-05T08:22:35.362Z",
-  "sourceSha256": "70ef3b68bcfdb64e30725d12b3b4b1b32b8b8ae8255d506de61cb2c6a9c779b5",
+  "generatedAt": "2026-10-05T11:50:09.063Z",
+  "sourceSha256": "285f0c8e094d14dd0abfda9dce1807a87130e013288fb94c858d45a807968356",
   "qualifications": [
     {
       "code": "b2",
@@ -3559,6 +3559,83 @@
       "slug": "산림기능사",
       "questions": 2160,
       "exams": 36
+    },
+    {
+      "code": "official-bar-exam",
+      "title": "변호사시험 선택형",
+      "slug": "변호사시험-선택형",
+      "questions": 150,
+      "exams": 1
+    },
+    {
+      "code": "official-driving-general",
+      "title": "운전면허 1·2종보통·대형·특수 학과시험(2026년 시행)",
+      "slug": "운전면허-1·2종보통·대형·특수-학과시험(2026년-시행)",
+      "questions": 669,
+      "exams": 1
+    },
+    {
+      "code": "official-stage-audio-1",
+      "title": "무대음향 1급",
+      "slug": "무대음향-1급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-audio-2",
+      "title": "무대음향 2급",
+      "slug": "무대음향-2급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-audio-3",
+      "title": "무대음향 3급",
+      "slug": "무대음향-3급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-lighting-1",
+      "title": "무대조명 1급",
+      "slug": "무대조명-1급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-lighting-2",
+      "title": "무대조명 2급",
+      "slug": "무대조명-2급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-lighting-3",
+      "title": "무대조명 3급",
+      "slug": "무대조명-3급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-machinery-1",
+      "title": "무대기계 1급",
+      "slug": "무대기계-1급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-machinery-2",
+      "title": "무대기계 2급",
+      "slug": "무대기계-2급",
+      "questions": 1915,
+      "exams": 19
+    },
+    {
+      "code": "official-stage-machinery-3",
+      "title": "무대기계 3급",
+      "slug": "무대기계-3급",
+      "questions": 1915,
+      "exams": 19
     },
     {
       "code": "p1",

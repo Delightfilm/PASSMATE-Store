@@ -13,6 +13,10 @@ const correction = { question_ref: question.id, source_hash: question.sourceHash
 assert.equal(applyCorrections(dataset, [correction]).questions[0].answer, 2);
 assert.deepEqual(applyCorrections(dataset, [correction]).questions[0].images, question.images);
 assert.equal(question.answer, 0, "source bundle must remain immutable");
+const stageQuestion = { ...question, acceptedAnswers: [0, 1], answerStatus: "provisional", answerLabel: "가답안", inferredAnswers: [3], answerComparison: "disagree" };
+const correctedStage = applyCorrections({ ...dataset, questions: [stageQuestion] }, [correction]).questions[0];
+assert.deepEqual(correctedStage.acceptedAnswers, [2], "admin correction must supersede source grading keys");
+assert.equal(correctedStage.inferredAnswers, undefined, "old source candidate cannot label revised content");
 assert.equal(applyCorrections(dataset, [{ ...correction, source_hash: "changed" }]).questions[0].answer, 0);
 assert.throws(() => applyCorrections(dataset, [{ ...correction, content: { ...patch, answer: 4 } }]), /invalid/);
 let reads = 0; let fail = false;

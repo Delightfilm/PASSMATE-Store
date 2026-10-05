@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { trustedQuestion } from "@/lib/ai-explanation-server";
 import { questionStatsInput } from "@/lib/cbt-question-stats";
+import { isCorrectAnswer } from "@/lib/question-bank-answers";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 
 export const runtime = "nodejs";
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
         const revision = createHash("sha256").update(JSON.stringify(questionStatsInput(question))).digest("hex");
         if (revision !== row.revision || row.answer >= question.choices.length) throw new Error("question_changed");
         return { question_ref: question.id, qualification_code: question.certId, revision,
-          correct: row.answer === question.answer, attempt_hash: attemptHash };
+          correct: isCorrectAnswer(question, row.answer), attempt_hash: attemptHash };
       })));
     }
     const { url, key } = getPublicSupabaseConfig();

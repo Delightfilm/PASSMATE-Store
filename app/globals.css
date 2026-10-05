@@ -457,6 +457,9 @@ body.cbt-exam-active main{min-height:100vh}
 .instant-feedback.is-correct{background:var(--success-soft);color:var(--success)}
 .instant-feedback.is-wrong{background:var(--error-soft);color:var(--error)}
 .instant-feedback p{margin:7px 0 0;line-height:var(--leading-body)}
+.question-answer-info{margin:16px 0;padding:14px;border:1px solid var(--line);border-radius:var(--radius-control);background:var(--white);color:var(--ink);font-size:14px;line-height:1.65;overflow-wrap:anywhere}
+.question-answer-info p{margin:0 0 6px}
+.question-answer-info small{font-size:12px}
 .exam-nav{display:flex;justify-content:space-between;gap:12px;margin-top:28px}
 .exam-nav .button{min-width:104px;box-shadow:none}
 
