@@ -30,6 +30,8 @@ assert.equal(store.wrongNotes[question.id], undefined, "Do not mutate the previo
 const withMemo = state.saveQuestionMemo(reviewed, question, "오답 원인");
 assert.equal(withMemo.wrongNotes[question.id].memo, "오답 원인");
 assert.equal(withMemo.questionCerts[question.id], "kh");
+const oldAttemptMemo = state.saveQuestionMemo(state.recordInstantReview(store, attempt, question, 0), question, "Old attempt note");
+assert.equal(oldAttemptMemo.attempts[0].reviewedQuestionIds.includes(question.id), true, "Saving an old instant attempt's memo marks its already-graded answer before finalization");
 assert.equal(state.recordInstantReview(withMemo, withMemo.attempts[0], question, 0).wrongNotes[question.id].wrongCount, 1, "Do not count the same instant review twice");
 assert.equal(state.recordInstantReview(withMemo, { ...attempt, reviewedQuestionIds: [] }, question, 0).wrongNotes[question.id].wrongCount, 2, "A new attempt can count as another personal error");
 assert.throws(() => state.saveQuestionMemo(store, question, "x".repeat(2001)));
