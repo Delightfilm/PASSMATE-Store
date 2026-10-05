@@ -50,6 +50,7 @@ assert.throws(() => state.saveQuestionMemo(store, question, "x".repeat(2001)));
 
 const cloudMemo = { question_ref: question.id, qualification_code: question.certId, wrong_count: 0, last_wrong_at: null, memo: "맞힌 문제의 계정 메모", bookmarked: false, mastered: false };
 const accountBank = load("lib/question-bank.ts", {
+  "./question-bank-groups": load("lib/question-bank-groups.ts"),
   "@/lib/supabase-browser": { getSupabaseBrowserClient: () => ({
     auth: { getSession: async () => ({ data: { session: { user: { id: "test-member" } } } }) },
     from: (table) => ({ select: () => ({ eq: async () => ({ data: table === "question_bank_user_question_state" ? [cloudMemo] : [] }) }) }),

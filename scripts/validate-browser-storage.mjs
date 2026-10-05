@@ -17,6 +17,7 @@ function load(path, dependencies = {}) {
 const { normalizeLocalStore, readLocalStore, parseImportFile } = load("../lib/question-bank.ts", {
   "@/lib/supabase-browser": { getSupabaseBrowserClient() { throw new Error("Tests must not access Supabase"); } },
   "./question-bank-choices": {},
+  "./question-bank-groups": load("../lib/question-bank-groups.ts"),
 });
 const auth = load("../lib/auth-ui.ts");
 const attempt = {

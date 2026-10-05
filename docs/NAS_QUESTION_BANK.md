@@ -1,5 +1,9 @@
 # NAS question-bank runtime
 
+Qualification cards use the presentation-only grouping contract in
+[QUESTION_BANK_GROUPING.md](QUESTION_BANK_GROUPING.md). Original source IDs and
+bundles are retained; this does not rename the NAS corpus or migrate user state.
+
 The public content origin is `https://content.mypassmate.com`. Vercel sets
 `NEXT_PUBLIC_QUESTION_BANK_CONTENT_URL` for Production and Preview. This is a
 public URL, not a credential. Changing it requires a new build.
