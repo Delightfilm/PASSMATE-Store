@@ -16,14 +16,23 @@ const question = { id: "a".repeat(20), certId: "kh", stem: "Question", choices: 
 const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const stats = load("lib/cbt-question-stats.ts", { "./question-bank": { sourceHash: async (value) => hash(value) } });
 assert.equal(stats.statsPresentation({ total: 0, correct: 0 }).rate, null);
-assert.equal(stats.statsPresentation({ total: 2, correct: 1 }).tone, "neutral");
+assert.equal(stats.statsPresentation({ total: 2, correct: 1 }).tone, "good");
+assert.equal(stats.statsPresentation({ total: 2, correct: 1 }).lowSample, true);
 assert.equal(stats.statsPresentation({ total: 20, correct: 6 }).tone, "hard");
-assert.equal(stats.statsPresentation({ total: 20, correct: 12 }).tone, "careful");
+assert.equal(stats.statsPresentation({ total: 20, correct: 12 }).tone, "good");
+for (const [correct, tone] of [[0,"hard"],[39,"hard"],[40,"careful"],[49,"careful"],[50,"good"],[69,"good"],[70,"high"],[100,"high"]]) {
+  assert.equal(stats.statsPresentation({ total: 100, correct }).tone, tone, `Rate boundary ${correct}%`);
+}
 assert.equal(stats.statsPresentation({ total: 20, correct: 19 }).rate, 95);
 assert.notEqual(hash(stats.questionStatsInput(question)), hash(stats.questionStatsInput({ ...question, answer: 2 })), "Corrections must isolate old answer statistics");
 const state = load("lib/cbt-review-state.ts");
 const attempt = { id: "attempt-test", answers: { [question.id]: 0 } };
 const store = { attempts: [attempt], wrongNotes: {}, bookmarks: [] };
+const preAnswerMemo = state.saveQuestionMemo({ ...store, attempts: [{ ...attempt, answers: {} }] }, question, "답을 고르기 전의 메모");
+assert.deepEqual(preAnswerMemo.attempts[0].answers, {}, "A pre-answer memo must not select an answer");
+assert.equal(preAnswerMemo.attempts[0].reviewedQuestionIds, undefined, "A pre-answer memo must not mark an ungraded question reviewed");
+assert.equal(preAnswerMemo.wrongNotes[question.id].wrongCount, 0);
+assert.equal(state.recordInstantReview(preAnswerMemo, preAnswerMemo.attempts[0], question, 0).wrongNotes[question.id].wrongCount, 1, "The first actual wrong answer still counts after a memo");
 const reviewed = state.recordInstantReview(store, attempt, question, 0);
 assert.equal(reviewed.wrongNotes[question.id].wrongCount, 1);
 assert.equal(store.wrongNotes[question.id], undefined, "Do not mutate the previous store");
