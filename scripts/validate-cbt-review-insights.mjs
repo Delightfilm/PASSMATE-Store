@@ -9,7 +9,7 @@ import ts from "typescript";
 function load(path, dependencies = {}) {
   const file = resolve(path), module = { exports: {} };
   const output = ts.transpileModule(readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
-  new Script(`(function(require,module,exports){${output}\n})`).runInThisContext()((name) => dependencies[name] || createRequire(file)(name), module, module.exports);
+  new Script(`(function(require,module,exports){${output}\n})`).runInThisContext()((name) => dependencies[name] || (name === "@/lib/question-bank-answers" ? load("lib/question-bank-answers.ts") : createRequire(file)(name)), module, module.exports);
   return module.exports;
 }
 const question = { id: "a".repeat(20), certId: "kh", stem: "Question", choices: [0,1,2,3].map((i) => ({ label: String(i + 1), text: `Choice ${i}` })), answer: 1, images: [], explanation: "", sourceHash: "source" };

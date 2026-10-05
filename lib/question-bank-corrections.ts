@@ -12,7 +12,9 @@ export function applyCorrections(dataset: Dataset, corrections: Correction[]): D
     const content = correction.content;
     if (!content || typeof content.stem !== "string" || !Array.isArray(content.choices) || content.choices.length !== 4 || !Number.isInteger(content.answer) || content.answer < 0 || content.answer > 3 || typeof content.explanation !== "string") throw new Error("question_correction_invalid");
     // Never overwrite IDs, source hash, images or exam/qualification metadata.
-    return { ...question, stem: content.stem, choices: correctedChoices(question.choices, content.choices), answer: content.answer, explanation: content.explanation };
+    return { ...question, stem: content.stem, choices: correctedChoices(question.choices, content.choices), answer: content.answer, explanation: content.explanation,
+      acceptedAnswers: [content.answer], answerStatus: undefined, answerLabel: undefined,
+      inferredAnswers: undefined, inferredAnswerNote: undefined, answerComparison: undefined };
   }) };
 }
 

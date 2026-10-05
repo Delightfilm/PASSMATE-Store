@@ -11,6 +11,9 @@ export type Question = {
   id: string; examId: string; certId: string; no: number; subjectId: string;
   stem: string; images: string[]; choices: Choice[]; answer: number;
   explanation: string; status: QuestionStatus; sourceHash: string;
+  acceptedAnswers?: number[]; answerStatus?: "official_final" | "provisional";
+  answerLabel?: string; inferredAnswers?: number[]; inferredAnswerNote?: string;
+  answerComparison?: "agree" | "disagree";
 };
 export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };
