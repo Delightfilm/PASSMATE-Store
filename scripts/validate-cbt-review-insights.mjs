@@ -74,7 +74,7 @@ const fetchBefore = globalThis.fetch;
 const calls = [];
 globalThis.fetch = async (_url, init) => { calls.push(JSON.parse(init.body)); return Response.json({ stats: {} }); };
 const revision = hash(stats.questionStatsInput(question));
-const request = (action, extra = {}, headers = {}) => new Request("https://www.mypassmate.com/api/cbt/question-stats/", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ action, questions: [{ qualificationCode: "kh", questionId: question.id, revision, answer: 0, ...extra }] }) });
+const request = (action, extra = {}, headers = {}, attemptId = "attempt-test-a") => new Request("https://www.mypassmate.com/api/cbt/question-stats/", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ action, ...(action === "record" && attemptId !== null ? { attemptId } : {}), questions: [{ qualificationCode: "kh", questionId: question.id, revision, answer: 0, ...extra }] }) });
 try {
   const first = await route.POST(request("read"));
   assert.equal(first.status, 200);
@@ -94,6 +94,17 @@ try {
   assert.equal((await route.POST(request("record", { answer: -1 }))).status, 400);
   assert.equal((await route.POST(request("read", {}, { origin: "https://other.example" }))).status, 403);
   assert.equal(calls.length, 3, "Invalid/cross-site writes must never reach the privileged backend");
+  assert.match(calls[1].rows[0].attempt_hash, /^[a-f0-9]{64}$/);
+  assert.equal(calls[2].rows[0].attempt_hash, calls[1].rows[0].attempt_hash, "Instant/final saves in one attempt retain the same deduplication key");
+  assert.equal(JSON.stringify(calls).includes("attempt-test-a"), false, "Statistics storage never receives the raw attempt ID");
+  assert.equal((await route.POST(request("record", {}, { cookie }, "attempt-test-b"))).status, 200);
+  assert.notEqual(calls[3].rows[0].attempt_hash, calls[1].rows[0].attempt_hash, "A new attempt contributes a separate response for the same browser and question");
+  assert.equal((await route.POST(request("record", { attempt_hash: "f".repeat(64) }, { cookie }))).status, 200);
+  assert.equal(calls[4].rows[0].attempt_hash, calls[1].rows[0].attempt_hash, "Ignore browser-supplied row hashes");
+  assert.equal((await route.POST(request("record", {}, { cookie }, null))).status, 200);
+  assert.equal(calls[5].rows[0].attempt_hash, "0".repeat(64), "Old open clients keep their legacy sample key");
+  assert.equal((await route.POST(request("record", {}, { cookie }, "bad id"))).status, 400);
+  assert.equal(calls.length, 6);
 } finally { globalThis.fetch = fetchBefore; if (tokenBefore === undefined) delete process.env.PASSMATE_CBT_STATS_TOKEN; else process.env.PASSMATE_CBT_STATS_TOKEN = tokenBefore; }
 const migration = readFileSync(resolve("supabase/migrations/20261005084944_cbt_question_answer_statistics.sql"), "utf8");
 assert.match(migration, /security invoker/i);
@@ -144,7 +155,7 @@ try {
     };
     const oldRead = stats.loadQuestionStats([raceQuestion]);
     await new Promise((resolve) => setImmediate(resolve));
-    stats.recordQuestionResponses([raceQuestion], { [raceQuestion.id]: 1 });
+    stats.recordQuestionResponses([raceQuestion], { [raceQuestion.id]: 1 }, "attempt-test-c");
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(events.length, 1, "Successful recording announces the updated aggregate");
     assert.equal(stats.cachedQuestionStats(raceQuestion).total, 2);

@@ -248,7 +248,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
       }
       const submitted: LocalAttempt = { ...attempt, answers: result.answers, status: "submitted", submittedAt: result.submittedAt, score: result.score };
       saveStore({ ...latest, wrongNotes, attempts: latest.attempts.map((item) => item.id === attempt.id ? submitted : item) });
-      recordQuestionResponses(questions, result.answers);
+      recordQuestionResponses(questions, result.answers, attempt.id);
       setModal(null);
     } catch (error) {
       finishedIds.current.delete(attempt.id);
@@ -264,7 +264,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
     const item = questions.find((question) => question.id === questionId);
     if (attempt.config.gradeMode === "instant" && item) {
       saveStore(recordInstantReview({ ...store, attempts: store.attempts.map((saved) => saved.id === next.id ? next : saved) }, next, item, index));
-      recordQuestionResponses([item], { [item.id]: index });
+      recordQuestionResponses([item], { [item.id]: index }, attempt.id);
     } else updateAttempt(next);
     setToast(answers[questionId] === undefined ? "선택을 해제했습니다." : "답안을 저장했습니다.");
   }, [attempt, store, questions, saveStore]);
