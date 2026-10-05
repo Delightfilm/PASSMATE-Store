@@ -23,7 +23,7 @@
     "check:server-keys": "node scripts/validate-server-key-migration.mjs",
     "check:cart": "node scripts/validate-cart-contract.mjs",
     "check:admin-price": "node scripts/validate-admin-price-flow.mjs",
-    "check:question-bank": "node scripts/validate-question-bank-contract.mjs && node scripts/validate-cbt-ui.mjs && node scripts/validate-nas-content-runtime.mjs && node scripts/validate-question-review.mjs && node scripts/validate-question-bank-loading.mjs && node scripts/validate-ai-explanations.mjs && node scripts/validate-image-choices.mjs",
+    "check:question-bank": "node scripts/validate-question-bank-contract.mjs && node scripts/validate-cbt-ui.mjs && node scripts/validate-nas-content-runtime.mjs && node scripts/validate-question-review.mjs && node scripts/validate-question-bank-loading.mjs && node scripts/validate-ai-explanations.mjs && node scripts/validate-cbt-review-insights.mjs && node scripts/validate-image-choices.mjs",
     "check:ai-nas": "python -B -m unittest discover -s nas/ai-explanations -p test_server.py"
   },
   "dependencies": {
