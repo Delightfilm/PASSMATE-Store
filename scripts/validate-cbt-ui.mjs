@@ -56,10 +56,13 @@ const clientRequire = (name) => {
 new Script(`(function(require,module,exports){${clientOutput}\nexports.LearningScreen=LearningScreen;})`).runInThisContext()(clientRequire, client, client.exports);
 const questions = Array.from({ length: 25 }, (_, i) => ({ id: `q${i}`, certId: "test", subjectId: "test", no: i + 1, stem: `검증용 문항 ${i + 1}` }));
 const wrongNotes = Object.fromEntries(questions.map((question) => [question.id, { wrongCount: 3, lastWrongAt: "2026-10-01T00:00:00Z", memo: "", mastered: false }]));
+questions.unshift({ id: "memo-only", certId: "test", subjectId: "test", no: 0, stem: "정답 메모 전용 문항" });
+wrongNotes["memo-only"] = { wrongCount: 0, lastWrongAt: "2026-10-05T00:00:00Z", memo: "맞힌 문제의 메모", mastered: false };
 const list = renderToStaticMarkup(React.createElement(client.exports.LearningScreen, { mode: "wrong-notes", dataset: { certs: [{ id: "test", name: "검증용 종목" }], subjects: [{ id: "test", certId: "test", name: "검증용 과목" }], questions }, store: { attempts: [], bookmarks: [], wrongNotes }, user: {}, authReady: true, saveStore() { throw new Error("Rendering must not write data"); } }));
 assert.equal((list.match(/class="cbt-learning-row cbt-wrong-row"/g) || []).length, 20);
 assert.equal((list.match(/type="checkbox"/g) || []).length, 20);
 assert.doesNotMatch(list, /<textarea/);
+assert.doesNotMatch(list, /정답 메모 전용 문항/, "Memo-only questions must not appear as wrong answers");
 assert.match(list, /많이 틀린 순/);
 assert.match(list, /20문항 풀기/);
 console.log("CBT UI OK: answer selection/change/deselect, isolation, counters, radio semantics, locked controls, guide identity, 20-row paging, collapsed memos, sort controls; no DB writes");

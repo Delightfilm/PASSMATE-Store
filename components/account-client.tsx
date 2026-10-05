@@ -42,7 +42,7 @@ export function AccountClient() {
 
     void load();
     const local = readLocalStore();
-    setCbtSummary({ attempts: local.attempts.filter((item) => item.status === "submitted").length, wrong: Object.keys(local.wrongNotes).length, bookmarks: local.bookmarks.length });
+    setCbtSummary({ attempts: local.attempts.filter((item) => item.status === "submitted").length, wrong: Object.values(local.wrongNotes).filter((note) => note.wrongCount > 0).length, bookmarks: local.bookmarks.length });
     return () => { active = false; };
   }, [router]);
 

@@ -14,6 +14,6 @@ export function saveQuestionMemo(store: LocalStore, question: Question, memo: st
   if (memo.length > 2000) throw new Error("memo_too_long");
   const old = store.wrongNotes[question.id];
   return { ...store, questionCerts: { ...store.questionCerts, [question.id]: question.certId },
-    wrongNotes: { ...store.wrongNotes, [question.id]: { wrongCount: old?.wrongCount || 1, lastWrongAt: old?.lastWrongAt || new Date().toISOString(),
+    wrongNotes: { ...store.wrongNotes, [question.id]: { wrongCount: old?.wrongCount ?? 0, lastWrongAt: old?.lastWrongAt || new Date().toISOString(),
       mastered: old?.mastered || false, memo: memo.trim() } } };
 }
