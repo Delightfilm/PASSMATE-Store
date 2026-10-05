@@ -124,7 +124,7 @@ try {
   await stats.loadQuestionStats([{ ...question, answer: 2 }]);
   assert.equal(clientCalls.length, 2, "A corrected question has a separate cache entry");
   now += 60_001;
-  assert.equal(stats.cachedQuestionStats(question), null);
+  assert.equal(stats.cachedQuestionStats(question).total, 10, "Navigation can display the previous real aggregate while revalidating an expired entry");
   await stats.loadQuestionStats([question]);
   assert.equal(clientCalls.length, 3, "Expired aggregates refresh");
   globalThis.fetch = async () => { throw new Error("offline"); };

@@ -29,11 +29,14 @@ function cacheStats(question: Question, stats: QuestionStats) {
   if (cached.size > 500) cached.delete(cached.keys().next().value!);
 }
 export function cachedQuestionStats(question: Question) {
+  return cached.get(cacheKey(question))?.stats || null;
+}
+function freshQuestionStats(question: Question) {
   const entry = cached.get(cacheKey(question));
   return entry && Date.now() - entry.at < 60_000 ? entry.stats : null;
 }
 export async function loadQuestionStats(questions: Question[]) {
-  const missing = questions.filter((question) => !cachedQuestionStats(question) && !pending.has(cacheKey(question)));
+  const missing = questions.filter((question) => !freshQuestionStats(question) && !pending.has(cacheKey(question)));
   for (let offset = 0; offset < missing.length; offset += 100) {
     const batch = missing.slice(offset, offset + 100);
     const before = batch.map((question) => cached.get(cacheKey(question)));
@@ -47,7 +50,7 @@ export async function loadQuestionStats(questions: Question[]) {
     batch.forEach((question) => pending.set(cacheKey(question), request.then((body) =>
       cachedQuestionStats(question) || body.stats[question.id] || { total: 0, correct: 0 })));
   }
-  const values = await Promise.all(questions.map((question) => cachedQuestionStats(question) || pending.get(cacheKey(question))!));
+  const values = await Promise.all(questions.map((question) => freshQuestionStats(question) || pending.get(cacheKey(question))!));
   return Object.fromEntries(questions.map((question, index) => [question.id, values[index]]));
 }
 let recording = Promise.resolve();
