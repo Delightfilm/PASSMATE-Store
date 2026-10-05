@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "요약노트 | PASSMATE", description: "자격증별 요약노트를 비교하고 내 학습에 맞는 자료를 선택하세요." };
 

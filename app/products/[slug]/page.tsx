@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product-gallery";
-import { getProduct, getStaticProductSlugs } from "@/lib/products";
+import { getProduct } from "@/lib/products";
 import { ProductPurchaseOptions } from "@/components/product-purchase-options";
 import { getServerProductPrices } from "@/lib/server-product-prices";
 import { getPackageSlug } from "@/lib/cart";
@@ -17,10 +17,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!product) return { title: "상품을 찾을 수 없습니다 | PASSMATE" };
   const title = getCoreProductTitle(product.title);
   return { title: `${title} | PASSMATE`, description: `${title} 요약노트의 구성과 구매 정보를 확인하세요.` };
-}
-
-export async function generateStaticParams() {
-  return await getStaticProductSlugs();
 }
 
 export default async function ProductPage({

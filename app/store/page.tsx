@@ -5,6 +5,7 @@ import { getServerProductPrices } from "@/lib/server-product-prices";
 import { getPackageSlug } from "@/lib/cart";
 
 export const metadata: Metadata = { title: "자격증 핵심노트 스토어 | PASSMATE", description: "2027 컴퓨터활용능력 2급 핵심노트와 시험대비 완성패키지의 구성과 가격을 비교하세요." };
+export const dynamic = "force-dynamic";
 
 export default async function StoreHome() {
   const products = await getProducts();
