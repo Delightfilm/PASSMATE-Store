@@ -1,5 +1,11 @@
 # On-demand AI explanations
 
+## Visible preparation feedback — 2026-10-05
+
+An explicit explanation request shows a responsive status card with a rotating indicator and an indeterminate loading bar: `AI 해설을 준비하고 있어요` / `문항에 맞는 해설과 정답 근거를 확인하고 있습니다. 잠시만 기다려 주세요.` It remains visible while the existing request/poll loop is loading and disappears on success or failure. No estimated percentage or extra model/poll request is introduced. Status is announced politely; the decorative spinner is hidden from assistive technology, the bar has no numeric value, and reduced-motion users receive a static indicator. Local full build and existing regression checks passed; the actual component/style visual fixture fits 390px and 1024px without horizontal overflow. This fixture is not a paid/live generation test.
+
+The preceding repair follow-up (#24, `e4be8ece614d867aff4781fcdd9f9e4c2727b5b2`) completed live acceptance on production deployment `dpl_2NazYFunf3pVpaoFYUrBYPRVtDnA` (READY): building-planning `wc20250405` question 2 and rolling-master `caj20180331` question 1 both generated ready explanations and returned identical cached content. The browser displayed the saved hotel explanation; the existing ERD explanation remained ready/cached. Earlier v1 refusals remain stored.
+
 ## Verification labels and diagnostics — 2026-10-05
 
 Production acceptance of PR #23 (`7844213`, `dpl_5j2NXvAy4ykt5RrH7qxhkFJzjTwN`, READY) exercised rolling-master question 1 and building-planning 2025 question 2. Both persisted a final refusal after one revision; neither is a successful explanation acceptance test. Gateway showed four calls for the rolling job and three for the hotel job, with successful transport. The cache retained the original paid refusals and repeated reads reused the upgrade refusals.

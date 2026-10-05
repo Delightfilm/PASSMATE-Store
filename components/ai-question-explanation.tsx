@@ -10,6 +10,18 @@ import { AI_DEVICE_EVENT, AI_DEVICE_STORAGE_KEY, AI_SIGNUP_THRESHOLD, deviceGene
 type Props = {
   question: Question; selectedAnswer?: number; allowGenerate?: boolean; onReport?: () => void;
 };
+function ExplanationProgress() {
+  return <div className="ai-explanation-progress">
+    <div className="ai-explanation-progress-row" role="status" aria-live="polite">
+      <span className="ai-explanation-spinner" aria-hidden="true" />
+      <div className="ai-explanation-progress-copy">
+        <strong>AI 해설을 준비하고 있어요</strong>
+        <p>문항에 맞는 해설과 정답 근거를 확인하고 있습니다. 잠시만 기다려 주세요.</p>
+      </div>
+    </div>
+    <div className="ai-explanation-progress-bar" role="progressbar" aria-label="AI 해설 준비 중" />
+  </div>;
+}
 export function AiQuestionExplanation(props: Props) {
   return <ExplanationPanel key={JSON.stringify(explanationInput(props.question))} {...props} />;
 }
@@ -92,10 +104,10 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
   const explanation = result?.explanation;
   return <div className="ai-question-explanation" aria-busy={loading}>
     <small className="ai-explanation-notice">AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.</small>
-    {!explanation && <><p>등록된 해설이 없습니다. AI 해설로 복습할 수 있습니다.</p>
+    {!explanation && <>{loading ? <ExplanationProgress /> : <><p>등록된 해설이 없습니다. AI 해설로 복습할 수 있습니다.</p>
       {(!result || result.status === "generating" || (["failed", "refused"].includes(result.status) && result.retryable)) && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
-        {loading ? "해설을 작성하고 근거를 검사하고 있습니다…" : result?.status === "refused" && result.retryable ? "해설 보완 생성" : result?.retryable ? "해설 다시 생성" : result ? "해설 상태 확인" : "해설보기"}
-      </button>}
+        {result?.status === "refused" && result.retryable ? "해설 보완 생성" : result?.retryable ? "해설 다시 생성" : result ? "해설 상태 확인" : "해설보기"}
+      </button>}</>}
       <small>등록 정답 기준 · 근거 검사에서 실패하면 한 번 보완하며, 저장된 해설은 함께 재사용합니다.</small></>}
     {error && <p className="ai-explanation-error" role="alert">{error}</p>}
     {loginRequired && <Link className="button button-secondary" href="/account/login/?next=%2Fcbt%2F">로그인</Link>}
@@ -105,7 +117,6 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
       <Link className="button button-primary" href={`/account/signup/?next=${encodeURIComponent(returnPath)}`}>무료 회원가입</Link>
       <Link className="button button-secondary" href={`/account/login/?next=${encodeURIComponent(returnPath)}`}>이미 계정이 있어요</Link>
     </aside>}
-    {result?.status === "generating" && !error && <p role="status">다른 사용자와 함께 사용할 해설을 생성 중입니다.</p>}
     {(result?.status === "refused" || result?.status === "failed") && <p role="status">{result.message}</p>}
     {explanation && <section aria-label="AI 학습 해설"><div className="ai-explanation-heading"><strong>AI 해설</strong><span>{result.cached ? "저장된 해설" : "새로 생성된 해설"}</span></div>
       <p className="ai-explanation-answer">등록된 정답: {question.choices[question.answer].label}</p>
