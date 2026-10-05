@@ -122,7 +122,8 @@ const watched = watchContentRequest(alone, { signal: last.signal }); last.abort(
 await assert.rejects(watched, { name: "AbortError" }); assert.equal(alone.controller.signal.aborted, true);
 
 process.env.NEXT_PUBLIC_QUESTION_BANK_CONTENT_URL = "https://content.example.test";
-const adapter = await import(urlFor(read("../lib/question-bank-content.ts").replace('from "./question-bank-download"', `from "${downloadUrl}"`)));
+const groupUrl = urlFor(read("../lib/question-bank-groups.ts"));
+const adapter = await import(urlFor(read("../lib/question-bank-content.ts").replace('from "./question-bank-download"', `from "${downloadUrl}"`).replace('from "./question-bank-groups"', `from "${groupUrl}"`)));
 const originalFetch = globalThis.fetch;
 const originalNow = Date.now;
 let clock = originalNow(); Date.now = () => clock;
