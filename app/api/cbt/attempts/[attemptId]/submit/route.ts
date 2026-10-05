@@ -34,7 +34,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
   const payload = {
     user_id: auth.user.id,
     client_id: attemptId,
-    config: { ...(attempt.config as Record<string, unknown>), lockedIds: attempt.lockedIds },
+    config: { ...(attempt.config as Record<string, unknown>), lockedIds: attempt.lockedIds,
+      reviewedQuestionIds: Array.isArray(attempt.reviewedQuestionIds) ? attempt.reviewedQuestionIds.filter((id) => typeof id === "string" && attempt.questionIds instanceof Array && attempt.questionIds.includes(id)) : [] },
     question_ids: attempt.questionIds,
     answers: attempt.answers,
     started_at: attempt.startedAt,

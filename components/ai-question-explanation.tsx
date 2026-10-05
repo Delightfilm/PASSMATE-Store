@@ -144,11 +144,11 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
       <Link className="button button-secondary" href={`/account/login/?next=${encodeURIComponent(returnPath)}`}>이미 계정이 있어요</Link>
     </aside>}
     {(result?.status === "refused" || result?.status === "failed") && <p role="status">{result.message}</p>}
-    {explanation && <section aria-label="AI 학습 해설"><div className="ai-explanation-heading"><strong>AI 해설</strong><span>{result.cached ? "저장된 해설" : "새로 생성된 해설"}</span></div>
-      <p className="ai-explanation-answer">등록된 정답: {question.choices[question.answer].label}</p>
+    {explanation && <section aria-label="AI 학습 해설"><div className="ai-explanation-heading"><strong>핵심 해설</strong><span>{result.cached ? "저장된 AI 해설" : "AI 해설"}</span><b className="ai-explanation-answer">정답 {question.choices[question.answer].label}</b></div>
       <p className="ai-explanation-text">{explanation.summary}</p>
-      <ol className="ai-explanation-choices">{explanation.choiceReasons.map((reason, index) => <li key={index} className={index === selectedAnswer && index !== question.answer ? "is-selected-wrong" : ""}>
-        <strong>{question.choices[index].label} {index === question.answer ? "등록 정답" : index === selectedAnswer ? "내가 고른 보기" : "보기 설명"}</strong><p>{reason}</p>
+      <h3 className="ai-explanation-detail-title">보기별 풀이</h3>
+      <ol className="ai-explanation-choices">{explanation.choiceReasons.map((reason, index) => <li key={index} className={index === question.answer ? "is-correct" : index === selectedAnswer ? "is-selected-wrong" : ""}>
+        <strong><span className="ai-reason-number">{question.choices[index].label}</span> {index === question.answer ? "정답 보기" : index === selectedAnswer ? "내가 고른 오답" : "다른 보기"}</strong><p>{reason}</p>
       </li>)}</ol>
     </section>}
     {onReport && result && <button type="button" className="cbt-report-link" onClick={onReport}>해설 오류 신고</button>}

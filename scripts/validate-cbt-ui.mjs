@@ -47,6 +47,7 @@ const clientRequire = (name) => {
   if (name === "@/components/logo") return { CbtMateLogo: () => null };
   if (name === "@/components/site-header") return { SiteHeader: () => null };
   if (name === "@/components/ai-question-explanation") return { AiQuestionExplanation: () => null };
+  if (name === "@/components/cbt-question-review") return { QuestionResponseStats: () => null, QuestionMemo: () => null };
   if (name === "@/components/question-bank-loading") return { QuestionBankLoading: () => null };
   if (name === "@/components/question-choice-content") return { QuestionChoiceContent: ({ choice }) => React.createElement("span", null, choice.text) };
   if (name.startsWith("@/lib/")) return { certSlug: (cert) => cert.name };
