@@ -1,5 +1,6 @@
 import type { Cert, Dataset, Exam, LocalStore, Question, Subject } from "./question-bank";
 import { createContentRequest, readContentJson, watchContentRequest, type ContentRequest, type LoadOptions } from "./question-bank-download";
+import { groupSourceIdsForAttempt, resolveQualificationGroup } from "./question-bank-groups";
 
 export type CatalogEntry = { code: string; title: string; bundle: string; sha256: string; questions: number; exams: number; images: number; uncompressedBytes?: number };
 export type ContentCatalog = { schemaVersion: string; releaseId: string; totals: { questions: number; qualifications: number }; qualifications: CatalogEntry[] };
@@ -67,13 +68,12 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string, o
 export async function loadContentDataset(mode: string, certParam: string, attemptId: string, store: LocalStore, options: LoadOptions = {}): Promise<Dataset> {
   const catalog = await loadContentCatalog(options);
   const certs: Cert[] = catalog.qualifications.map((entry) => ({ id: entry.code, name: entry.title, questionCount: entry.questions, examCount: entry.exams }));
-  const decoded = decodeURIComponent(certParam);
-  const selected = certs.find((cert) => cert.id === decoded || cert.name.trim().replace(/\s+/g, "-") === decoded);
+  const selected = resolveQualificationGroup(certs, certParam);
   const codes = new Set<string>();
-  if (selected) codes.add(selected.id);
-  if (mode === "exam") { const attempt = store.attempts.find((item) => item.id === attemptId); if (attempt) codes.add(attempt.config.certId); }
+  if (selected && mode === "cert") selected.memberIds.forEach((code) => codes.add(code));
+  if (mode === "exam") { const attempt = store.attempts.find((item) => item.id === attemptId); if (attempt) groupSourceIdsForAttempt(certs, attempt.config).forEach((code) => codes.add(code)); }
   if (["history", "bookmarks", "wrong-notes"].includes(mode)) {
-    store.attempts.forEach((attempt) => codes.add(attempt.config.certId));
+    store.attempts.forEach((attempt) => groupSourceIdsForAttempt(certs, attempt.config).forEach((code) => codes.add(code)));
     Object.values(store.questionCerts || {}).forEach((code) => codes.add(code));
   }
   const dataset: Dataset = { certs, subjects: [], exams: [], questions: [], totalQuestions: catalog.totals.questions };

@@ -1,5 +1,6 @@
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { normalizeLiveChoices } from "./question-bank-choices";
+import { resolveQualificationGroup } from "./question-bank-groups";
 
 export type QuestionStatus = "draft" | "needs_review" | "published";
 export type GradeMode = "submit" | "instant";
@@ -15,7 +16,7 @@ export type Subject = { id: string; certId: string; name: string };
 export type Exam = { id: string; certId: string; year: number; round: string; title: string; durationMinutes: number; passScore: number; questionCount: number };
 export type Cert = { id: string; name: string; category?: string; slug?: string; questionCount?: number; examCount?: number };
 export type Dataset = { certs: Cert[]; subjects: Subject[]; exams: Exam[]; questions: Question[]; totalQuestions?: number };
-export type AttemptConfig = { certId: string; certSlug?: string; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null };
+export type AttemptConfig = { certId: string; certSlug?: string; sourceCertIds?: string[]; examIds: string[]; subjectIds: string[]; count: number; order: "ordered" | "random"; target: QuestionTarget; gradeMode: GradeMode; timeLimitMinutes: number | null };
 export type LocalAttempt = { id: string; config: AttemptConfig; questionIds: string[]; answers: Record<string, number>; lockedIds: string[]; reviewedQuestionIds?: string[]; startedAt: string; endAt: string | null; submittedAt?: string; status: "in_progress" | "submitted"; score?: number };
 export type IssueReport = { id: string; questionId: string; qualificationCode?: string; attemptId?: string; kind: "wrong_answer" | "broken_image" | "missing_choice" | "other"; memo: string; createdAt: string; status: "open" | "resolved" };
 export type LocalStore = { attempts: LocalAttempt[]; bookmarks: string[]; wrongNotes: Record<string, { wrongCount: number; lastWrongAt: string; memo: string; mastered: boolean }>; presets: { name: string; config: AttemptConfig }[]; imports: ImportBatch[]; issueReports: IssueReport[]; questionCerts?: Record<string, string> };
@@ -82,7 +83,7 @@ export function writeLocalStore(store: LocalStore) { if (typeof window !== "unde
 export function makeId(prefix: string) { return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`; }
 export function certCategory(name: string) { return ["산업기사", "기능사", "기능장", "기사", "공무원"].find((item) => name.includes(item)) || "기타"; }
 export function certSlug(cert: Cert) { return cert.slug || cert.name.trim().replace(/\s+/g, "-"); }
-export function findCert(dataset: Dataset, value: string) { const decoded = decodeURIComponent(value); return dataset.certs.find((cert) => cert.id === decoded || certSlug(cert) === decoded); }
+export function findCert(dataset: Dataset, value: string) { return resolveQualificationGroup(dataset.certs, value); }
 export function hangulInitials(value: string) { const initials = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"; return Array.from(value).map((char) => { const code = char.charCodeAt(0) - 0xac00; return code >= 0 && code <= 11171 ? initials[Math.floor(code / 588)] : char; }).join(""); }
 export async function submitIssueReport(report: IssueReport) { const supabase = getSupabaseBrowserClient(); const nas = /^[a-f0-9]{20}$/.test(report.questionId); const { error } = await supabase.from("question_bank_issue_reports").insert({ id: report.id, question_id: nas ? null : report.questionId, ...(nas ? { question_ref: report.questionId } : {}), qualification_code: report.qualificationCode || null, attempt_id: report.attemptId || null, kind: report.kind, memo: report.memo, status: report.status }); if (error) throw error; }
 export async function syncAccountStore(store: LocalStore) {

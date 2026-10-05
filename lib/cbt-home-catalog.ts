@@ -1,9 +1,11 @@
 import snapshot from "@/data/cbt-home-catalog.generated.json";
 import { validateSnapshot } from "./cbt-home-catalog-schema.mjs";
+import { qualificationGroups } from "./question-bank-groups";
 export type { HomeQualification, HomeCatalogSnapshot } from "./cbt-home-catalog-schema.mjs";
 
 // Pure local validation also runs when Next loads the server layout for a build.
 export const homeCatalog = validateSnapshot(snapshot);
+const groupedQualifications = qualificationGroups(homeCatalog.qualifications.map(item => ({ id: item.code, name: item.title, questionCount: item.questions, examCount: item.exams }))).map(group => ({ code: group.id, title: group.name, slug: group.slug!, questions: group.questionCount!, exams: group.examCount!, aliases: group.sourceNames, codes: group.memberIds }));
 export function qualificationHref(slug: string) { return `/cbt/${encodeURIComponent(slug)}/`; }
 const initials = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
 export function normalizeSearch(value: string) { return value.normalize("NFKC").toLocaleLowerCase("ko-KR").replace(/\s+/g, ""); }
@@ -16,9 +18,9 @@ function initialSearch(value: string) {
 export function searchQualifications(query: string, limit = 6) {
   const needle = normalizeSearch(query).replace(/컴활/g, "컴퓨터활용능력");
   if (!needle) return [];
-  return homeCatalog.qualifications.filter(item => {
-    const title = normalizeSearch(item.title);
-    return title.includes(needle) || normalizeSearch(initialSearch(title)).includes(needle) || normalizeSearch(item.code).includes(needle);
+  return groupedQualifications.filter(item => {
+    const titles = [item.title, ...item.aliases].map(normalizeSearch);
+    return titles.some(title => title.includes(needle) || normalizeSearch(initialSearch(title)).includes(needle)) || item.codes.some(code => normalizeSearch(code).includes(needle));
   }).slice(0, limit);
 }
-export const quickQualifications = homeCatalog.qualifications.filter(item => item.questions > 0 && item.exams > 0).sort((a, b) => b.questions - a.questions || (a.code < b.code ? -1 : 1)).slice(0, 6);
+export const quickQualifications = groupedQualifications.filter(item => item.questions > 0 && item.exams > 0).sort((a, b) => b.questions - a.questions || (a.code < b.code ? -1 : 1)).slice(0, 6);
