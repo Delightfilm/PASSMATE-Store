@@ -1,0 +1,5097 @@
+{
+  "snapshotSchemaVersion": "passmate.cbt-home-catalog.v1",
+  "releaseId": "2026-10-04-image-choices",
+  "generatedAt": "2026-10-05T08:22:35.362Z",
+  "sourceSha256": "70ef3b68bcfdb64e30725d12b3b4b1b32b8b8ae8255d506de61cb2c6a9c779b5",
+  "qualifications": [
+    {
+      "code": "b2",
+      "title": "바리스타 2급",
+      "slug": "바리스타-2급",
+      "questions": 1320,
+      "exams": 22
+    },
+    {
+      "code": "b4",
+      "title": "대기환경기사",
+      "slug": "대기환경기사",
+      "questions": 6096,
+      "exams": 61
+    },
+    {
+      "code": "b5",
+      "title": "산림기사",
+      "slug": "산림기사",
+      "questions": 5496,
+      "exams": 55
+    },
+    {
+      "code": "b6",
+      "title": "공유압기능사",
+      "slug": "공유압기능사",
+      "questions": 1258,
+      "exams": 21
+    },
+    {
+      "code": "b7",
+      "title": "항공산업기사",
+      "slug": "항공산업기사",
+      "questions": 4479,
+      "exams": 56
+    },
+    {
+      "code": "b8",
+      "title": "무선설비기사",
+      "slug": "무선설비기사",
+      "questions": 6988,
+      "exams": 70
+    },
+    {
+      "code": "b9",
+      "title": "조경기사",
+      "slug": "조경기사",
+      "questions": 7200,
+      "exams": 60
+    },
+    {
+      "code": "bb",
+      "title": "무선설비산업기사",
+      "slug": "무선설비산업기사",
+      "questions": 4879,
+      "exams": 61
+    },
+    {
+      "code": "bc",
+      "title": "산림산업기사",
+      "slug": "산림산업기사",
+      "questions": 3360,
+      "exams": 42
+    },
+    {
+      "code": "bd",
+      "title": "설비보전산업기사",
+      "slug": "설비보전산업기사",
+      "questions": 3839,
+      "exams": 48
+    },
+    {
+      "code": "be",
+      "title": "기계설계산업기사",
+      "slug": "기계설계산업기사",
+      "questions": 4398,
+      "exams": 55
+    },
+    {
+      "code": "bf",
+      "title": "전자기사",
+      "slug": "전자기사",
+      "questions": 5296,
+      "exams": 53
+    },
+    {
+      "code": "bg",
+      "title": "승강기기사",
+      "slug": "승강기기사",
+      "questions": 3677,
+      "exams": 46
+    },
+    {
+      "code": "bh",
+      "title": "산림산업기사(구60문항)",
+      "slug": "산림산업기사(구60문항)",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "bi",
+      "title": "화공기사(구)",
+      "slug": "화공기사(구)",
+      "questions": 2700,
+      "exams": 27
+    },
+    {
+      "code": "bj",
+      "title": "건설안전산업기사",
+      "slug": "건설안전산업기사",
+      "questions": 5699,
+      "exams": 57
+    },
+    {
+      "code": "bk",
+      "title": "임상심리사 2급",
+      "slug": "임상심리사-2급",
+      "questions": 2494,
+      "exams": 25
+    },
+    {
+      "code": "bm",
+      "title": "화공기사(구)(구)",
+      "slug": "화공기사(구)(구)",
+      "questions": 1680,
+      "exams": 14
+    },
+    {
+      "code": "bn",
+      "title": "방송통신산업기사(구)",
+      "slug": "방송통신산업기사(구)",
+      "questions": 3118,
+      "exams": 39
+    },
+    {
+      "code": "bo",
+      "title": "컴퓨터응용가공산업기사",
+      "slug": "컴퓨터응용가공산업기사",
+      "questions": 4480,
+      "exams": 56
+    },
+    {
+      "code": "bp",
+      "title": "품질경영기사",
+      "slug": "품질경영기사",
+      "questions": 3700,
+      "exams": 37
+    },
+    {
+      "code": "bq",
+      "title": "침투비파괴검사기능사",
+      "slug": "침투비파괴검사기능사",
+      "questions": 2639,
+      "exams": 44
+    },
+    {
+      "code": "br",
+      "title": "천장크레인운전기능사",
+      "slug": "천장크레인운전기능사",
+      "questions": 2635,
+      "exams": 44
+    },
+    {
+      "code": "bs",
+      "title": "항공기관정비기능사",
+      "slug": "항공기관정비기능사",
+      "questions": 2760,
+      "exams": 46
+    },
+    {
+      "code": "bt",
+      "title": "건축산업기사",
+      "slug": "건축산업기사",
+      "questions": 5100,
+      "exams": 51
+    },
+    {
+      "code": "bu",
+      "title": "컬러리스트산업기사",
+      "slug": "컬러리스트산업기사",
+      "questions": 4796,
+      "exams": 48
+    },
+    {
+      "code": "bv",
+      "title": "식물보호기사",
+      "slug": "식물보호기사",
+      "questions": 5691,
+      "exams": 57
+    },
+    {
+      "code": "bw",
+      "title": "산업위생관리기사",
+      "slug": "산업위생관리기사",
+      "questions": 5900,
+      "exams": 59
+    },
+    {
+      "code": "bx",
+      "title": "용접산업기사",
+      "slug": "용접산업기사",
+      "questions": 2580,
+      "exams": 43
+    },
+    {
+      "code": "by",
+      "title": "이용사",
+      "slug": "이용사",
+      "questions": 1500,
+      "exams": 25
+    },
+    {
+      "code": "bz",
+      "title": "공조냉동기계기사(구)",
+      "slug": "공조냉동기계기사(구)",
+      "questions": 4899,
+      "exams": 49
+    },
+    {
+      "code": "c1",
+      "title": "컴퓨터활용능력 1급",
+      "slug": "컴퓨터활용능력-1급",
+      "questions": 3478,
+      "exams": 58
+    },
+    {
+      "code": "c2",
+      "title": "컴퓨터활용능력 2급",
+      "slug": "컴퓨터활용능력-2급",
+      "questions": 2517,
+      "exams": 63
+    },
+    {
+      "code": "c3",
+      "title": "컴퓨터활용능력 3급(폐지)",
+      "slug": "컴퓨터활용능력-3급(폐지)",
+      "questions": 1598,
+      "exams": 40
+    },
+    {
+      "code": "c4",
+      "title": "전자상거래운용사",
+      "slug": "전자상거래운용사",
+      "questions": 2356,
+      "exams": 41
+    },
+    {
+      "code": "c5",
+      "title": "기상기사",
+      "slug": "기상기사",
+      "questions": 2500,
+      "exams": 25
+    },
+    {
+      "code": "c6",
+      "title": "금속재료시험기능사",
+      "slug": "금속재료시험기능사",
+      "questions": 1020,
+      "exams": 17
+    },
+    {
+      "code": "c7",
+      "title": "패션머천다이징산업기사",
+      "slug": "패션머천다이징산업기사",
+      "questions": 2999,
+      "exams": 30
+    },
+    {
+      "code": "c8",
+      "title": "패션디자인산업기사",
+      "slug": "패션디자인산업기사",
+      "questions": 1440,
+      "exams": 18
+    },
+    {
+      "code": "c9",
+      "title": "인간공학기사",
+      "slug": "인간공학기사",
+      "questions": 2480,
+      "exams": 31
+    },
+    {
+      "code": "ca",
+      "title": "화약류관리기사",
+      "slug": "화약류관리기사",
+      "questions": 3687,
+      "exams": 37
+    },
+    {
+      "code": "caa",
+      "title": "산업안전지도사",
+      "slug": "산업안전지도사",
+      "questions": 975,
+      "exams": 13
+    },
+    {
+      "code": "cab",
+      "title": "항공전자정비기능사",
+      "slug": "항공전자정비기능사",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "cac",
+      "title": "통신기기기능사(통합변경)",
+      "slug": "통신기기기능사(통합변경)",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "cad",
+      "title": "정보통신기능사",
+      "slug": "정보통신기능사",
+      "questions": 1017,
+      "exams": 17
+    },
+    {
+      "code": "cae",
+      "title": "수산양식기능사",
+      "slug": "수산양식기능사",
+      "questions": 360,
+      "exams": 6
+    },
+    {
+      "code": "caf",
+      "title": "광학기사",
+      "slug": "광학기사",
+      "questions": 960,
+      "exams": 12
+    },
+    {
+      "code": "cag",
+      "title": "미용장",
+      "slug": "미용장",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "cah",
+      "title": "제강기능장",
+      "slug": "제강기능장",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "cai",
+      "title": "제선기능장",
+      "slug": "제선기능장",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "caj",
+      "title": "압연기능장",
+      "slug": "압연기능장",
+      "questions": 1140,
+      "exams": 19
+    },
+    {
+      "code": "cak",
+      "title": "이용장",
+      "slug": "이용장",
+      "questions": 360,
+      "exams": 6
+    },
+    {
+      "code": "cam",
+      "title": "철도차량정비기능장",
+      "slug": "철도차량정비기능장",
+      "questions": 720,
+      "exams": 12
+    },
+    {
+      "code": "can",
+      "title": "건설기계정비기능장",
+      "slug": "건설기계정비기능장",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "cao",
+      "title": "주조기능장",
+      "slug": "주조기능장",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "cap",
+      "title": "건축일반시공기능장",
+      "slug": "건축일반시공기능장",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "caq",
+      "title": "금형제작기능장",
+      "slug": "금형제작기능장",
+      "questions": 780,
+      "exams": 13
+    },
+    {
+      "code": "car",
+      "title": "표면처리기능장",
+      "slug": "표면처리기능장",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "cas",
+      "title": "판금제관기능장",
+      "slug": "판금제관기능장",
+      "questions": 360,
+      "exams": 6
+    },
+    {
+      "code": "cat",
+      "title": "건축목재시공기능장",
+      "slug": "건축목재시공기능장",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "cau",
+      "title": "귀금속가공기능장",
+      "slug": "귀금속가공기능장",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "cav",
+      "title": "귀금속가공산업기사",
+      "slug": "귀금속가공산업기사",
+      "questions": 400,
+      "exams": 5
+    },
+    {
+      "code": "caw",
+      "title": "임업종묘기능사",
+      "slug": "임업종묘기능사",
+      "questions": 780,
+      "exams": 13
+    },
+    {
+      "code": "cay",
+      "title": "한복산업기사",
+      "slug": "한복산업기사",
+      "questions": 180,
+      "exams": 3
+    },
+    {
+      "code": "caz",
+      "title": "표면처리산업기사",
+      "slug": "표면처리산업기사",
+      "questions": 360,
+      "exams": 6
+    },
+    {
+      "code": "cc",
+      "title": "주택관리사보 1차",
+      "slug": "주택관리사보-1차",
+      "questions": 2159,
+      "exams": 18
+    },
+    {
+      "code": "cca",
+      "title": "반도체커스텀레이아웃산업기사",
+      "slug": "반도체커스텀레이아웃산업기사",
+      "questions": 560,
+      "exams": 7
+    },
+    {
+      "code": "ccb",
+      "title": "제품응용모델링기능사",
+      "slug": "제품응용모델링기능사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "ccc",
+      "title": "항로표지기능사",
+      "slug": "항로표지기능사",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "ccd",
+      "title": "정밀측정기능사",
+      "slug": "정밀측정기능사",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "cce",
+      "title": "선체건조기능사",
+      "slug": "선체건조기능사",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "ccf",
+      "title": "의류기사",
+      "slug": "의류기사",
+      "questions": 500,
+      "exams": 5
+    },
+    {
+      "code": "ccg",
+      "title": "피아노조율기능사",
+      "slug": "피아노조율기능사",
+      "questions": 900,
+      "exams": 15
+    },
+    {
+      "code": "cch",
+      "title": "조선기사",
+      "slug": "조선기사",
+      "questions": 500,
+      "exams": 5
+    },
+    {
+      "code": "cci",
+      "title": "건축일반시공산업기사",
+      "slug": "건축일반시공산업기사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "ccj",
+      "title": "원자력기사",
+      "slug": "원자력기사",
+      "questions": 1693,
+      "exams": 17
+    },
+    {
+      "code": "cck",
+      "title": "주조기능사",
+      "slug": "주조기능사",
+      "questions": 180,
+      "exams": 3
+    },
+    {
+      "code": "ccm",
+      "title": "건축목공산업기사",
+      "slug": "건축목공산업기사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "ccn",
+      "title": "철도운송산업기사",
+      "slug": "철도운송산업기사",
+      "questions": 1259,
+      "exams": 21
+    },
+    {
+      "code": "cco",
+      "title": "IoT지식능력검정",
+      "slug": "IoT지식능력검정",
+      "questions": 439,
+      "exams": 9
+    },
+    {
+      "code": "ccp",
+      "title": "인쇄설계기사",
+      "slug": "인쇄설계기사",
+      "questions": 1400,
+      "exams": 14
+    },
+    {
+      "code": "ccq",
+      "title": "치공구설계산업기사",
+      "slug": "치공구설계산업기사",
+      "questions": 400,
+      "exams": 5
+    },
+    {
+      "code": "ccr",
+      "title": "시설원예기사",
+      "slug": "시설원예기사",
+      "questions": 900,
+      "exams": 9
+    },
+    {
+      "code": "ccs",
+      "title": "디지털인쇄산업기사",
+      "slug": "디지털인쇄산업기사",
+      "questions": 1119,
+      "exams": 14
+    },
+    {
+      "code": "cct",
+      "title": "제품디자인산업기사",
+      "slug": "제품디자인산업기사",
+      "questions": 560,
+      "exams": 7
+    },
+    {
+      "code": "ccu",
+      "title": "목공예기능사",
+      "slug": "목공예기능사",
+      "questions": 540,
+      "exams": 9
+    },
+    {
+      "code": "ccv",
+      "title": "농산물품질관리사 1차",
+      "slug": "농산물품질관리사-1차",
+      "questions": 1391,
+      "exams": 14
+    },
+    {
+      "code": "ccw",
+      "title": "정보보안기사",
+      "slug": "정보보안기사",
+      "questions": 2089,
+      "exams": 21
+    },
+    {
+      "code": "ccx",
+      "title": "조선산업기사",
+      "slug": "조선산업기사",
+      "questions": 400,
+      "exams": 5
+    },
+    {
+      "code": "ccy",
+      "title": "항공기사",
+      "slug": "항공기사",
+      "questions": 497,
+      "exams": 5
+    },
+    {
+      "code": "ccz",
+      "title": "항로표지산업기사",
+      "slug": "항로표지산업기사",
+      "questions": 400,
+      "exams": 5
+    },
+    {
+      "code": "cd",
+      "title": "주택관리사보 2차",
+      "slug": "주택관리사보-2차",
+      "questions": 1432,
+      "exams": 18
+    },
+    {
+      "code": "cda",
+      "title": "경영지도사 1차 1교시",
+      "slug": "경영지도사-1차-1교시",
+      "questions": 150,
+      "exams": 2
+    },
+    {
+      "code": "cdb",
+      "title": "경영지도사 1차 2교시",
+      "slug": "경영지도사-1차-2교시",
+      "questions": 100,
+      "exams": 2
+    },
+    {
+      "code": "cdc",
+      "title": "연삭기능사",
+      "slug": "연삭기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "cdd",
+      "title": "피아노조율산업기사",
+      "slug": "피아노조율산업기사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "cde",
+      "title": "교통산업기사",
+      "slug": "교통산업기사",
+      "questions": 300,
+      "exams": 3
+    },
+    {
+      "code": "cdf",
+      "title": "철도토목산업기사",
+      "slug": "철도토목산업기사",
+      "questions": 500,
+      "exams": 5
+    },
+    {
+      "code": "cdg",
+      "title": "수산제조기사",
+      "slug": "수산제조기사",
+      "questions": 400,
+      "exams": 4
+    },
+    {
+      "code": "cdh",
+      "title": "선체설계기능사",
+      "slug": "선체설계기능사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "cdi",
+      "title": "철도토목기능사",
+      "slug": "철도토목기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "cdj",
+      "title": "제품디자인기사",
+      "slug": "제품디자인기사",
+      "questions": 200,
+      "exams": 2
+    },
+    {
+      "code": "cdk",
+      "title": "주조산업기사",
+      "slug": "주조산업기사",
+      "questions": 400,
+      "exams": 5
+    },
+    {
+      "code": "cdm",
+      "title": "섬유디자인산업기사",
+      "slug": "섬유디자인산업기사",
+      "questions": 240,
+      "exams": 3
+    },
+    {
+      "code": "cdo",
+      "title": "광고도장기능사",
+      "slug": "광고도장기능사",
+      "questions": 780,
+      "exams": 13
+    },
+    {
+      "code": "cdp",
+      "title": "포장기사",
+      "slug": "포장기사",
+      "questions": 200,
+      "exams": 2
+    },
+    {
+      "code": "cdq",
+      "title": "해양자원개발기사",
+      "slug": "해양자원개발기사",
+      "questions": 1000,
+      "exams": 10
+    },
+    {
+      "code": "cdr",
+      "title": "해양공학기사",
+      "slug": "해양공학기사",
+      "questions": 900,
+      "exams": 9
+    },
+    {
+      "code": "cds",
+      "title": "신발류제조기능사",
+      "slug": "신발류제조기능사",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "cdt",
+      "title": "농업기계기사",
+      "slug": "농업기계기사",
+      "questions": 400,
+      "exams": 4
+    },
+    {
+      "code": "cdu",
+      "title": "임산가공산업기사",
+      "slug": "임산가공산업기사",
+      "questions": 240,
+      "exams": 3
+    },
+    {
+      "code": "cdv",
+      "title": "포장산업기사",
+      "slug": "포장산업기사",
+      "questions": 320,
+      "exams": 4
+    },
+    {
+      "code": "cdw",
+      "title": "원형기능사",
+      "slug": "원형기능사",
+      "questions": 180,
+      "exams": 3
+    },
+    {
+      "code": "cdx",
+      "title": "철도차량기사",
+      "slug": "철도차량기사",
+      "questions": 599,
+      "exams": 6
+    },
+    {
+      "code": "cdy",
+      "title": "농림토양평가관리산업기사",
+      "slug": "농림토양평가관리산업기사",
+      "questions": 240,
+      "exams": 3
+    },
+    {
+      "code": "cdz",
+      "title": "보석가공기능사",
+      "slug": "보석가공기능사",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "ce",
+      "title": "손해평가사",
+      "slug": "손해평가사",
+      "questions": 820,
+      "exams": 11
+    },
+    {
+      "code": "cea",
+      "title": "염색기능사",
+      "slug": "염색기능사",
+      "questions": 180,
+      "exams": 3
+    },
+    {
+      "code": "ceb",
+      "title": "판금제관산업기사",
+      "slug": "판금제관산업기사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "cec",
+      "title": "광학기능사",
+      "slug": "광학기능사",
+      "questions": 360,
+      "exams": 6
+    },
+    {
+      "code": "ced",
+      "title": "선박기관정비기능사",
+      "slug": "선박기관정비기능사",
+      "questions": 180,
+      "exams": 3
+    },
+    {
+      "code": "cee",
+      "title": "수산물품질관리사 1차",
+      "slug": "수산물품질관리사-1차",
+      "questions": 1100,
+      "exams": 11
+    },
+    {
+      "code": "cef",
+      "title": "석공예기능사",
+      "slug": "석공예기능사",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "ceg",
+      "title": "모터그레이더운전기능사",
+      "slug": "모터그레이더운전기능사",
+      "questions": 540,
+      "exams": 9
+    },
+    {
+      "code": "ceh",
+      "title": "무선설비기능사",
+      "slug": "무선설비기능사",
+      "questions": 959,
+      "exams": 16
+    },
+    {
+      "code": "cei",
+      "title": "방송통신기능사",
+      "slug": "방송통신기능사",
+      "questions": 900,
+      "exams": 15
+    },
+    {
+      "code": "cej",
+      "title": "식육가공기사",
+      "slug": "식육가공기사",
+      "questions": 200,
+      "exams": 2
+    },
+    {
+      "code": "cek",
+      "title": "감정평가사 1차 1교시",
+      "slug": "감정평가사-1차-1교시",
+      "questions": 1197,
+      "exams": 10
+    },
+    {
+      "code": "cem",
+      "title": "감정평가사 1차 2교시",
+      "slug": "감정평가사-1차-2교시",
+      "questions": 1359,
+      "exams": 17
+    },
+    {
+      "code": "cen",
+      "title": "감정평가사 1차 1교시(구)",
+      "slug": "감정평가사-1차-1교시(구)",
+      "questions": 558,
+      "exams": 7
+    },
+    {
+      "code": "ceo",
+      "title": "전자계산기제어산업기사(구)",
+      "slug": "전자계산기제어산업기사(구)",
+      "questions": 1099,
+      "exams": 11
+    },
+    {
+      "code": "cep",
+      "title": "전자계산기제어산업기사",
+      "slug": "전자계산기제어산업기사",
+      "questions": 1120,
+      "exams": 14
+    },
+    {
+      "code": "ceq",
+      "title": "임업종묘기사",
+      "slug": "임업종묘기사",
+      "questions": 1036,
+      "exams": 13
+    },
+    {
+      "code": "cer",
+      "title": "공조냉동기계기사",
+      "slug": "공조냉동기계기사",
+      "questions": 160,
+      "exams": 2
+    },
+    {
+      "code": "ces",
+      "title": "통신선로산업기사(통합편입)",
+      "slug": "통신선로산업기사(통합편입)",
+      "questions": 1200,
+      "exams": 15
+    },
+    {
+      "code": "cet",
+      "title": "설비보전기사",
+      "slug": "설비보전기사",
+      "questions": 160,
+      "exams": 2
+    },
+    {
+      "code": "ceu",
+      "title": "자연생태복원기사",
+      "slug": "자연생태복원기사",
+      "questions": 160,
+      "exams": 2
+    },
+    {
+      "code": "cev",
+      "title": "화공기사",
+      "slug": "화공기사",
+      "questions": 160,
+      "exams": 2
+    },
+    {
+      "code": "cew",
+      "title": "실내건축기사",
+      "slug": "실내건축기사",
+      "questions": 160,
+      "exams": 2
+    },
+    {
+      "code": "cex",
+      "title": "컨벤션기획사 2급",
+      "slug": "컨벤션기획사-2급",
+      "questions": 160,
+      "exams": 2
+    },
+    {
+      "code": "cey",
+      "title": "정보통신기사",
+      "slug": "정보통신기사",
+      "questions": 499,
+      "exams": 5
+    },
+    {
+      "code": "cez",
+      "title": "소음진동기사",
+      "slug": "소음진동기사",
+      "questions": 80,
+      "exams": 1
+    },
+    {
+      "code": "cf",
+      "title": "국내여행안내사 1차",
+      "slug": "국내여행안내사-1차",
+      "questions": 591,
+      "exams": 12
+    },
+    {
+      "code": "cfa",
+      "title": "법조윤리",
+      "slug": "법조윤리",
+      "questions": 608,
+      "exams": 16
+    },
+    {
+      "code": "cfb",
+      "title": "방재기사",
+      "slug": "방재기사",
+      "questions": 500,
+      "exams": 5
+    },
+    {
+      "code": "cfc",
+      "title": "연구실안전관리사",
+      "slug": "연구실안전관리사",
+      "questions": 504,
+      "exams": 4
+    },
+    {
+      "code": "cfd",
+      "title": "제강기능사",
+      "slug": "제강기능사",
+      "questions": 780,
+      "exams": 13
+    },
+    {
+      "code": "cfe",
+      "title": "계리직 공무원 우편",
+      "slug": "계리직-공무원-우편",
+      "questions": 20,
+      "exams": 1
+    },
+    {
+      "code": "cff",
+      "title": "계리직 공무원 금융상식",
+      "slug": "계리직-공무원-금융상식",
+      "questions": 20,
+      "exams": 1
+    },
+    {
+      "code": "cfg",
+      "title": "방송통신기사",
+      "slug": "방송통신기사",
+      "questions": 100,
+      "exams": 1
+    },
+    {
+      "code": "cfh",
+      "title": "철도차량정비기능사(구)",
+      "slug": "철도차량정비기능사(구)",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "cfi",
+      "title": "철도차량정비기능사",
+      "slug": "철도차량정비기능사",
+      "questions": 120,
+      "exams": 2
+    },
+    {
+      "code": "cfj",
+      "title": "방송통신산업기사",
+      "slug": "방송통신산업기사",
+      "questions": 80,
+      "exams": 1
+    },
+    {
+      "code": "cfk",
+      "title": "육상무선통신사",
+      "slug": "육상무선통신사",
+      "questions": 1100,
+      "exams": 22
+    },
+    {
+      "code": "cfm",
+      "title": "경영지도사 1차",
+      "slug": "경영지도사-1차",
+      "questions": 375,
+      "exams": 3
+    },
+    {
+      "code": "cfn",
+      "title": "공인노무사 1차(노동법1)(구)",
+      "slug": "공인노무사-1차(노동법1)(구)",
+      "questions": 400,
+      "exams": 16
+    },
+    {
+      "code": "cfo",
+      "title": "공인노무사 1차(노동법2)(구)",
+      "slug": "공인노무사-1차(노동법2)(구)",
+      "questions": 396,
+      "exams": 16
+    },
+    {
+      "code": "cfp",
+      "title": "공인노무사 1차(민법)(구)",
+      "slug": "공인노무사-1차(민법)(구)",
+      "questions": 400,
+      "exams": 16
+    },
+    {
+      "code": "cfq",
+      "title": "공인노무사 1차(사회보험법)(구)",
+      "slug": "공인노무사-1차(사회보험법)(구)",
+      "questions": 248,
+      "exams": 10
+    },
+    {
+      "code": "cfr",
+      "title": "공인노무사 1차(경제학원론)(구)",
+      "slug": "공인노무사-1차(경제학원론)(구)",
+      "questions": 395,
+      "exams": 16
+    },
+    {
+      "code": "cfs",
+      "title": "공인노무사 1차(경영학개론)(구)",
+      "slug": "공인노무사-1차(경영학개론)(구)",
+      "questions": 250,
+      "exams": 10
+    },
+    {
+      "code": "cft",
+      "title": "해상무선통신사",
+      "slug": "해상무선통신사",
+      "questions": 180,
+      "exams": 3
+    },
+    {
+      "code": "cfu",
+      "title": "관광통역안내사",
+      "slug": "관광통역안내사",
+      "questions": 299,
+      "exams": 3
+    },
+    {
+      "code": "cfv",
+      "title": "소방공무원(공개,경력) 소방학개론",
+      "slug": "소방공무원(공개,경력)-소방학개론",
+      "questions": 75,
+      "exams": 3
+    },
+    {
+      "code": "cfw",
+      "title": "소방공무원(경력) 소방관계법규",
+      "slug": "소방공무원(경력)-소방관계법규",
+      "questions": 120,
+      "exams": 3
+    },
+    {
+      "code": "cfx",
+      "title": "소방공무원(경력) 응급처치학개론",
+      "slug": "소방공무원(경력)-응급처치학개론",
+      "questions": 120,
+      "exams": 3
+    },
+    {
+      "code": "cfy",
+      "title": "소방공무원(경력) 화학개론",
+      "slug": "소방공무원(경력)-화학개론",
+      "questions": 120,
+      "exams": 3
+    },
+    {
+      "code": "cfz",
+      "title": "소방공무원(경력) 컴퓨터일반",
+      "slug": "소방공무원(경력)-컴퓨터일반",
+      "questions": 117,
+      "exams": 3
+    },
+    {
+      "code": "cg",
+      "title": "관광통역안내사 1교시(구)",
+      "slug": "관광통역안내사-1교시(구)",
+      "questions": 627,
+      "exams": 13
+    },
+    {
+      "code": "cga",
+      "title": "소방공무원(공개) 소방관계법규",
+      "slug": "소방공무원(공개)-소방관계법규",
+      "questions": 75,
+      "exams": 3
+    },
+    {
+      "code": "cgb",
+      "title": "소방공무원(공개) 행정법총론",
+      "slug": "소방공무원(공개)-행정법총론",
+      "questions": 75,
+      "exams": 3
+    },
+    {
+      "code": "cgc",
+      "title": "지능형홈관리사",
+      "slug": "지능형홈관리사",
+      "questions": 781,
+      "exams": 20
+    },
+    {
+      "code": "cgd",
+      "title": "영상정보관리사",
+      "slug": "영상정보관리사",
+      "questions": 678,
+      "exams": 17
+    },
+    {
+      "code": "cge",
+      "title": "공인노무사 1차(노동법1)",
+      "slug": "공인노무사-1차(노동법1)",
+      "questions": 80,
+      "exams": 2
+    },
+    {
+      "code": "cgf",
+      "title": "공인노무사 1차(노동법2)",
+      "slug": "공인노무사-1차(노동법2)",
+      "questions": 77,
+      "exams": 2
+    },
+    {
+      "code": "cgg",
+      "title": "공인노무사 1차(민법)",
+      "slug": "공인노무사-1차(민법)",
+      "questions": 80,
+      "exams": 2
+    },
+    {
+      "code": "cgh",
+      "title": "공인노무사 1차(사회보험법)",
+      "slug": "공인노무사-1차(사회보험법)",
+      "questions": 80,
+      "exams": 2
+    },
+    {
+      "code": "cgi",
+      "title": "공인노무사 1차(경제학원론)",
+      "slug": "공인노무사-1차(경제학원론)",
+      "questions": 80,
+      "exams": 2
+    },
+    {
+      "code": "cgj",
+      "title": "공인노무사 1차(경영학개론)",
+      "slug": "공인노무사-1차(경영학개론)",
+      "questions": 80,
+      "exams": 2
+    },
+    {
+      "code": "cgk",
+      "title": "정수시설운영관리사 1급 1차",
+      "slug": "정수시설운영관리사-1급-1차",
+      "questions": 1119,
+      "exams": 14
+    },
+    {
+      "code": "cgm",
+      "title": "정수시설운영관리사 2급 1차",
+      "slug": "정수시설운영관리사-2급-1차",
+      "questions": 960,
+      "exams": 12
+    },
+    {
+      "code": "cgn",
+      "title": "정수시설운영관리사 3급 1차",
+      "slug": "정수시설운영관리사-3급-1차",
+      "questions": 960,
+      "exams": 12
+    },
+    {
+      "code": "cgp",
+      "title": "건설기계정비기사",
+      "slug": "건설기계정비기사",
+      "questions": 300,
+      "exams": 3
+    },
+    {
+      "code": "cgq",
+      "title": "전자상거래관리사 1급",
+      "slug": "전자상거래관리사-1급",
+      "questions": 995,
+      "exams": 11
+    },
+    {
+      "code": "cgr",
+      "title": "전자상거래관리사 2급",
+      "slug": "전자상거래관리사-2급",
+      "questions": 779,
+      "exams": 11
+    },
+    {
+      "code": "cgs",
+      "title": "검량사",
+      "slug": "검량사",
+      "questions": 789,
+      "exams": 11
+    },
+    {
+      "code": "cgt",
+      "title": "어업생산관리기사",
+      "slug": "어업생산관리기사",
+      "questions": 599,
+      "exams": 6
+    },
+    {
+      "code": "cgu",
+      "title": "관세사 관세법개론",
+      "slug": "관세사-관세법개론",
+      "questions": 434,
+      "exams": 11
+    },
+    {
+      "code": "cgv",
+      "title": "관세사 무역영어",
+      "slug": "관세사-무역영어",
+      "questions": 434,
+      "exams": 11
+    },
+    {
+      "code": "cgw",
+      "title": "관세사 내국소비세법",
+      "slug": "관세사-내국소비세법",
+      "questions": 440,
+      "exams": 11
+    },
+    {
+      "code": "cgx",
+      "title": "관세사 회계학",
+      "slug": "관세사-회계학",
+      "questions": 440,
+      "exams": 11
+    },
+    {
+      "code": "ci",
+      "title": "관광통역안내사 2교시(구)",
+      "slug": "관광통역안내사-2교시(구)",
+      "questions": 694,
+      "exams": 14
+    },
+    {
+      "code": "cj",
+      "title": "의료전자기능사",
+      "slug": "의료전자기능사",
+      "questions": 600,
+      "exams": 10
+    },
+    {
+      "code": "ck",
+      "title": "응용지질기사",
+      "slug": "응용지질기사",
+      "questions": 3999,
+      "exams": 40
+    },
+    {
+      "code": "cm",
+      "title": "정밀측정산업기사",
+      "slug": "정밀측정산업기사",
+      "questions": 480,
+      "exams": 6
+    },
+    {
+      "code": "cn",
+      "title": "9급 국가직 공무원 전기기기",
+      "slug": "9급-국가직-공무원-전기기기",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "co",
+      "title": "9급 국가직 공무원 전기이론",
+      "slug": "9급-국가직-공무원-전기이론",
+      "questions": 379,
+      "exams": 19
+    },
+    {
+      "code": "cp",
+      "title": "9급 국가직 공무원 전자공학개론",
+      "slug": "9급-국가직-공무원-전자공학개론",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "cr",
+      "title": "9급 국가직 공무원 정보보호론",
+      "slug": "9급-국가직-공무원-정보보호론",
+      "questions": 238,
+      "exams": 12
+    },
+    {
+      "code": "cs",
+      "title": "9급 국가직 공무원 정보시스템보안",
+      "slug": "9급-국가직-공무원-정보시스템보안",
+      "questions": 197,
+      "exams": 10
+    },
+    {
+      "code": "ct",
+      "title": "9급 국가직 공무원 조림",
+      "slug": "9급-국가직-공무원-조림",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "cu",
+      "title": "9급 국가직 공무원 직업상담심리학개론",
+      "slug": "9급-국가직-공무원-직업상담심리학개론",
+      "questions": 160,
+      "exams": 8
+    },
+    {
+      "code": "cv",
+      "title": "9급 국가직 공무원 컴퓨터일반",
+      "slug": "9급-국가직-공무원-컴퓨터일반",
+      "questions": 397,
+      "exams": 20
+    },
+    {
+      "code": "cw",
+      "title": "9급 국가직 공무원 토목설계",
+      "slug": "9급-국가직-공무원-토목설계",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "cx",
+      "title": "9급 국가직 공무원 통계학개론",
+      "slug": "9급-국가직-공무원-통계학개론",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "cy",
+      "title": "9급 국가직 공무원 행정법총론",
+      "slug": "9급-국가직-공무원-행정법총론",
+      "questions": 416,
+      "exams": 21
+    },
+    {
+      "code": "cz",
+      "title": "9급 국가직 공무원 행정학개론",
+      "slug": "9급-국가직-공무원-행정학개론",
+      "questions": 440,
+      "exams": 22
+    },
+    {
+      "code": "d1",
+      "title": "DIAT 정보통신상식(구)",
+      "slug": "DIAT-정보통신상식(구)",
+      "questions": 2600,
+      "exams": 52
+    },
+    {
+      "code": "d2",
+      "title": "DIAT 정보통신상식",
+      "slug": "DIAT-정보통신상식",
+      "questions": 2992,
+      "exams": 76
+    },
+    {
+      "code": "d3",
+      "title": "멀티미디어콘텐츠제작전문가(구)",
+      "slug": "멀티미디어콘텐츠제작전문가(구)",
+      "questions": 2499,
+      "exams": 25
+    },
+    {
+      "code": "d4",
+      "title": "멀티미디어콘텐츠제작전문가",
+      "slug": "멀티미디어콘텐츠제작전문가",
+      "questions": 1439,
+      "exams": 18
+    },
+    {
+      "code": "d5",
+      "title": "화학분석기사(구)",
+      "slug": "화학분석기사(구)",
+      "questions": 1760,
+      "exams": 22
+    },
+    {
+      "code": "d6",
+      "title": "실내건축기능사",
+      "slug": "실내건축기능사",
+      "questions": 3660,
+      "exams": 61
+    },
+    {
+      "code": "d7",
+      "title": "조경산업기사",
+      "slug": "조경산업기사",
+      "questions": 4479,
+      "exams": 56
+    },
+    {
+      "code": "d8",
+      "title": "종자기사",
+      "slug": "종자기사",
+      "questions": 5457,
+      "exams": 55
+    },
+    {
+      "code": "d9",
+      "title": "유기농업기능사",
+      "slug": "유기농업기능사",
+      "questions": 1320,
+      "exams": 22
+    },
+    {
+      "code": "da",
+      "title": "기계가공조립기능사",
+      "slug": "기계가공조립기능사",
+      "questions": 1080,
+      "exams": 18
+    },
+    {
+      "code": "dc",
+      "title": "실내건축기사(구)",
+      "slug": "실내건축기사(구)",
+      "questions": 6000,
+      "exams": 50
+    },
+    {
+      "code": "dd",
+      "title": "에너지관리기사",
+      "slug": "에너지관리기사",
+      "questions": 5400,
+      "exams": 54
+    },
+    {
+      "code": "de",
+      "title": "설비보전기사(구)",
+      "slug": "설비보전기사(구)",
+      "questions": 2499,
+      "exams": 25
+    },
+    {
+      "code": "df",
+      "title": "가스기사",
+      "slug": "가스기사",
+      "questions": 5600,
+      "exams": 56
+    },
+    {
+      "code": "dg",
+      "title": "수질환경산업기사",
+      "slug": "수질환경산업기사",
+      "questions": 4399,
+      "exams": 55
+    },
+    {
+      "code": "dh",
+      "title": "컬러리스트기사",
+      "slug": "컬러리스트기사",
+      "questions": 5300,
+      "exams": 53
+    },
+    {
+      "code": "di",
+      "title": "버섯종균기능사",
+      "slug": "버섯종균기능사",
+      "questions": 960,
+      "exams": 16
+    },
+    {
+      "code": "dj",
+      "title": "폐기물처리기사",
+      "slug": "폐기물처리기사",
+      "questions": 5699,
+      "exams": 57
+    },
+    {
+      "code": "dk",
+      "title": "측량기능사",
+      "slug": "측량기능사",
+      "questions": 1560,
+      "exams": 26
+    },
+    {
+      "code": "dm",
+      "title": "자기비파괴검사기능사",
+      "slug": "자기비파괴검사기능사",
+      "questions": 2099,
+      "exams": 35
+    },
+    {
+      "code": "dn",
+      "title": "자동차보수도장기능사",
+      "slug": "자동차보수도장기능사",
+      "questions": 1080,
+      "exams": 18
+    },
+    {
+      "code": "do",
+      "title": "건설재료시험기사",
+      "slug": "건설재료시험기사",
+      "questions": 4399,
+      "exams": 55
+    },
+    {
+      "code": "dp",
+      "title": "실내건축산업기사",
+      "slug": "실내건축산업기사",
+      "questions": 3359,
+      "exams": 42
+    },
+    {
+      "code": "dq",
+      "title": "식품산업기사(구)",
+      "slug": "식품산업기사(구)",
+      "questions": 2240,
+      "exams": 28
+    },
+    {
+      "code": "dr",
+      "title": "콘크리트기능사",
+      "slug": "콘크리트기능사",
+      "questions": 1859,
+      "exams": 31
+    },
+    {
+      "code": "ds",
+      "title": "금속재료산업기사",
+      "slug": "금속재료산업기사",
+      "questions": 3280,
+      "exams": 41
+    },
+    {
+      "code": "dt",
+      "title": "신재생에너지발전설비기사(구)",
+      "slug": "신재생에너지발전설비기사(구)",
+      "questions": 1498,
+      "exams": 15
+    },
+    {
+      "code": "du",
+      "title": "건축설비기사",
+      "slug": "건축설비기사",
+      "questions": 5198,
+      "exams": 52
+    },
+    {
+      "code": "dv",
+      "title": "측량및지형공간정보기사",
+      "slug": "측량및지형공간정보기사",
+      "questions": 5897,
+      "exams": 59
+    },
+    {
+      "code": "dw",
+      "title": "초음파비파괴검사기능사",
+      "slug": "초음파비파괴검사기능사",
+      "questions": 2459,
+      "exams": 41
+    },
+    {
+      "code": "dx",
+      "title": "플라스틱창호기능사",
+      "slug": "플라스틱창호기능사",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "dy",
+      "title": "도시계획기사",
+      "slug": "도시계획기사",
+      "questions": 5900,
+      "exams": 59
+    },
+    {
+      "code": "dz",
+      "title": "산업위생관리산업기사",
+      "slug": "산업위생관리산업기사",
+      "questions": 3839,
+      "exams": 48
+    },
+    {
+      "code": "e1",
+      "title": "콘크리트기사",
+      "slug": "콘크리트기사",
+      "questions": 2560,
+      "exams": 32
+    },
+    {
+      "code": "e2",
+      "title": "제선기능사",
+      "slug": "제선기능사",
+      "questions": 720,
+      "exams": 12
+    },
+    {
+      "code": "e3",
+      "title": "토목산업기사",
+      "slug": "토목산업기사",
+      "questions": 4919,
+      "exams": 41
+    },
+    {
+      "code": "e4",
+      "title": "지적산업기사",
+      "slug": "지적산업기사",
+      "questions": 4300,
+      "exams": 43
+    },
+    {
+      "code": "e5",
+      "title": "침투비파괴검사기사",
+      "slug": "침투비파괴검사기사",
+      "questions": 1760,
+      "exams": 22
+    },
+    {
+      "code": "e6",
+      "title": "건설기계정비기능사",
+      "slug": "건설기계정비기능사",
+      "questions": 1140,
+      "exams": 19
+    },
+    {
+      "code": "e7",
+      "title": "건설기계설비기사",
+      "slug": "건설기계설비기사",
+      "questions": 3500,
+      "exams": 35
+    },
+    {
+      "code": "e8",
+      "title": "생산자동화산업기사",
+      "slug": "생산자동화산업기사",
+      "questions": 3840,
+      "exams": 48
+    },
+    {
+      "code": "e9",
+      "title": "축산기사",
+      "slug": "축산기사",
+      "questions": 3989,
+      "exams": 40
+    },
+    {
+      "code": "ea",
+      "title": "지적기사",
+      "slug": "지적기사",
+      "questions": 5299,
+      "exams": 53
+    },
+    {
+      "code": "eb",
+      "title": "유기농업기사",
+      "slug": "유기농업기사",
+      "questions": 4175,
+      "exams": 42
+    },
+    {
+      "code": "ec",
+      "title": "여성복기능사",
+      "slug": "여성복기능사",
+      "questions": 2280,
+      "exams": 38
+    },
+    {
+      "code": "ed",
+      "title": "자동차차체수리기능사",
+      "slug": "자동차차체수리기능사",
+      "questions": 1740,
+      "exams": 29
+    },
+    {
+      "code": "ee",
+      "title": "건설재료시험기능사",
+      "slug": "건설재료시험기능사",
+      "questions": 1080,
+      "exams": 18
+    },
+    {
+      "code": "ef",
+      "title": "침투비파괴검사기사(구)",
+      "slug": "침투비파괴검사기사(구)",
+      "questions": 2200,
+      "exams": 22
+    },
+    {
+      "code": "eg",
+      "title": "자연생태복원기사(구)",
+      "slug": "자연생태복원기사(구)",
+      "questions": 4398,
+      "exams": 44
+    },
+    {
+      "code": "eh",
+      "title": "토양환경기사",
+      "slug": "토양환경기사",
+      "questions": 3198,
+      "exams": 40
+    },
+    {
+      "code": "ei",
+      "title": "자기비파괴검사기사",
+      "slug": "자기비파괴검사기사",
+      "questions": 1279,
+      "exams": 16
+    },
+    {
+      "code": "ej",
+      "title": "초음파비파괴검사기사",
+      "slug": "초음파비파괴검사기사",
+      "questions": 1280,
+      "exams": 16
+    },
+    {
+      "code": "ek",
+      "title": "종자기능사",
+      "slug": "종자기능사",
+      "questions": 1800,
+      "exams": 30
+    },
+    {
+      "code": "em",
+      "title": "에너지관리산업기사",
+      "slug": "에너지관리산업기사",
+      "questions": 2640,
+      "exams": 33
+    },
+    {
+      "code": "en",
+      "title": "방사선비파괴검사기능사",
+      "slug": "방사선비파괴검사기능사",
+      "questions": 2400,
+      "exams": 40
+    },
+    {
+      "code": "eo",
+      "title": "화학분석기능사",
+      "slug": "화학분석기능사",
+      "questions": 540,
+      "exams": 9
+    },
+    {
+      "code": "ep",
+      "title": "품질경영산업기사",
+      "slug": "품질경영산업기사",
+      "questions": 1600,
+      "exams": 20
+    },
+    {
+      "code": "eq",
+      "title": "식물보호산업기사",
+      "slug": "식물보호산업기사",
+      "questions": 2878,
+      "exams": 36
+    },
+    {
+      "code": "er",
+      "title": "자기비파괴검사기사(구)",
+      "slug": "자기비파괴검사기사(구)",
+      "questions": 2200,
+      "exams": 22
+    },
+    {
+      "code": "es",
+      "title": "초음파비파괴검사기사(구)",
+      "slug": "초음파비파괴검사기사(구)",
+      "questions": 2100,
+      "exams": 21
+    },
+    {
+      "code": "et",
+      "title": "식품산업기사",
+      "slug": "식품산업기사",
+      "questions": 2500,
+      "exams": 25
+    },
+    {
+      "code": "eu",
+      "title": "한국수어교원자격검정",
+      "slug": "한국수어교원자격검정",
+      "questions": 40,
+      "exams": 1
+    },
+    {
+      "code": "ev",
+      "title": "컨벤션기획사 2급(구)",
+      "slug": "컨벤션기획사-2급(구)",
+      "questions": 1354,
+      "exams": 14
+    },
+    {
+      "code": "ew",
+      "title": "화재감식평가기사",
+      "slug": "화재감식평가기사",
+      "questions": 1300,
+      "exams": 13
+    },
+    {
+      "code": "ex",
+      "title": "측량및지형공간정보산업기사",
+      "slug": "측량및지형공간정보산업기사",
+      "questions": 4559,
+      "exams": 57
+    },
+    {
+      "code": "ey",
+      "title": "압연기능사",
+      "slug": "압연기능사",
+      "questions": 960,
+      "exams": 16
+    },
+    {
+      "code": "ez",
+      "title": "대기환경산업기사",
+      "slug": "대기환경산업기사",
+      "questions": 4558,
+      "exams": 57
+    },
+    {
+      "code": "f1",
+      "title": "사회복지사 1급(1교시)",
+      "slug": "사회복지사-1급(1교시)",
+      "questions": 598,
+      "exams": 12
+    },
+    {
+      "code": "f2",
+      "title": "사회복지사 1급(2교시)",
+      "slug": "사회복지사-1급(2교시)",
+      "questions": 900,
+      "exams": 12
+    },
+    {
+      "code": "f3",
+      "title": "사회복지사 1급(3교시)",
+      "slug": "사회복지사-1급(3교시)",
+      "questions": 900,
+      "exams": 12
+    },
+    {
+      "code": "f4",
+      "title": "사회복지사 1급(1교시)(구)",
+      "slug": "사회복지사-1급(1교시)(구)",
+      "questions": 120,
+      "exams": 2
+    },
+    {
+      "code": "f5",
+      "title": "사회복지사 1급(2교시)(구)",
+      "slug": "사회복지사-1급(2교시)(구)",
+      "questions": 179,
+      "exams": 2
+    },
+    {
+      "code": "f6",
+      "title": "사회복지사 1급(3교시)(구)",
+      "slug": "사회복지사-1급(3교시)(구)",
+      "questions": 180,
+      "exams": 2
+    },
+    {
+      "code": "f7",
+      "title": "열처리기능사",
+      "slug": "열처리기능사",
+      "questions": 1020,
+      "exams": 17
+    },
+    {
+      "code": "f8",
+      "title": "잠수기능사",
+      "slug": "잠수기능사",
+      "questions": 1200,
+      "exams": 20
+    },
+    {
+      "code": "f9",
+      "title": "항공장비정비기능사",
+      "slug": "항공장비정비기능사",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "fa",
+      "title": "농업기계정비기능사",
+      "slug": "농업기계정비기능사",
+      "questions": 1620,
+      "exams": 27
+    },
+    {
+      "code": "fb",
+      "title": "시각디자인산업기사",
+      "slug": "시각디자인산업기사",
+      "questions": 4318,
+      "exams": 54
+    },
+    {
+      "code": "fc",
+      "title": "폐기물처리산업기사",
+      "slug": "폐기물처리산업기사",
+      "questions": 3997,
+      "exams": 50
+    },
+    {
+      "code": "fd",
+      "title": "온실가스관리기사",
+      "slug": "온실가스관리기사",
+      "questions": 1500,
+      "exams": 15
+    },
+    {
+      "code": "fe",
+      "title": "건축설비산업기사",
+      "slug": "건축설비산업기사",
+      "questions": 3680,
+      "exams": 46
+    },
+    {
+      "code": "ff",
+      "title": "교통기사",
+      "slug": "교통기사",
+      "questions": 5997,
+      "exams": 50
+    },
+    {
+      "code": "fg",
+      "title": "침투비파괴검사산업기사",
+      "slug": "침투비파괴검사산업기사",
+      "questions": 840,
+      "exams": 14
+    },
+    {
+      "code": "fh",
+      "title": "침투비파괴검사산업기사(구)",
+      "slug": "침투비파괴검사산업기사(구)",
+      "questions": 1760,
+      "exams": 22
+    },
+    {
+      "code": "fi",
+      "title": "신재생에너지발전설비산업기사",
+      "slug": "신재생에너지발전설비산업기사",
+      "questions": 960,
+      "exams": 12
+    },
+    {
+      "code": "fj",
+      "title": "화재감식평가산업기사",
+      "slug": "화재감식평가산업기사",
+      "questions": 240,
+      "exams": 3
+    },
+    {
+      "code": "fk",
+      "title": "축산산업기사",
+      "slug": "축산산업기사",
+      "questions": 2635,
+      "exams": 33
+    },
+    {
+      "code": "fm",
+      "title": "방사선비파괴검사기사",
+      "slug": "방사선비파괴검사기사",
+      "questions": 1120,
+      "exams": 14
+    },
+    {
+      "code": "fn",
+      "title": "방사선비파괴검사기사(구)",
+      "slug": "방사선비파괴검사기사(구)",
+      "questions": 2000,
+      "exams": 20
+    },
+    {
+      "code": "fo",
+      "title": "의공기사",
+      "slug": "의공기사",
+      "questions": 1899,
+      "exams": 19
+    },
+    {
+      "code": "fp",
+      "title": "식품가공기능사",
+      "slug": "식품가공기능사",
+      "questions": 600,
+      "exams": 10
+    },
+    {
+      "code": "fq",
+      "title": "지적기능사",
+      "slug": "지적기능사",
+      "questions": 1318,
+      "exams": 22
+    },
+    {
+      "code": "fr",
+      "title": "수산양식기사",
+      "slug": "수산양식기사",
+      "questions": 3599,
+      "exams": 36
+    },
+    {
+      "code": "fs",
+      "title": "가스기능장",
+      "slug": "가스기능장",
+      "questions": 1980,
+      "exams": 33
+    },
+    {
+      "code": "ft",
+      "title": "소방시설관리사",
+      "slug": "소방시설관리사",
+      "questions": 1874,
+      "exams": 15
+    },
+    {
+      "code": "fu",
+      "title": "정보통신산업기사",
+      "slug": "정보통신산업기사",
+      "questions": 5027,
+      "exams": 63
+    },
+    {
+      "code": "fv",
+      "title": "전파전자기능사(구)",
+      "slug": "전파전자기능사(구)",
+      "questions": 1124,
+      "exams": 19
+    },
+    {
+      "code": "fw",
+      "title": "전파전자통신기능사",
+      "slug": "전파전자통신기능사",
+      "questions": 1310,
+      "exams": 22
+    },
+    {
+      "code": "fx",
+      "title": "전파통신기능사(구)",
+      "slug": "전파통신기능사(구)",
+      "questions": 179,
+      "exams": 3
+    },
+    {
+      "code": "fy",
+      "title": "타워크레인운전기능사",
+      "slug": "타워크레인운전기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "fz",
+      "title": "스포츠경영관리사",
+      "slug": "스포츠경영관리사",
+      "questions": 697,
+      "exams": 7
+    },
+    {
+      "code": "g1",
+      "title": "공인중개사 1차",
+      "slug": "공인중개사-1차",
+      "questions": 1597,
+      "exams": 20
+    },
+    {
+      "code": "g2",
+      "title": "공인중개사 2차",
+      "slug": "공인중개사-2차",
+      "questions": 2397,
+      "exams": 20
+    },
+    {
+      "code": "g3",
+      "title": "9급 국가직 공무원 국어",
+      "slug": "9급-국가직-공무원-국어",
+      "questions": 422,
+      "exams": 22
+    },
+    {
+      "code": "g4",
+      "title": "농기계운전기능사",
+      "slug": "농기계운전기능사",
+      "questions": 720,
+      "exams": 12
+    },
+    {
+      "code": "g5",
+      "title": "사출(프레스)금형산업기사",
+      "slug": "사출(프레스)금형산업기사",
+      "questions": 2339,
+      "exams": 39
+    },
+    {
+      "code": "g6",
+      "title": "위험물기능장",
+      "slug": "위험물기능장",
+      "questions": 1980,
+      "exams": 33
+    },
+    {
+      "code": "g7",
+      "title": "배관기능장",
+      "slug": "배관기능장",
+      "questions": 1620,
+      "exams": 27
+    },
+    {
+      "code": "g8",
+      "title": "전산회계운용사 1급",
+      "slug": "전산회계운용사-1급",
+      "questions": 720,
+      "exams": 12
+    },
+    {
+      "code": "g9",
+      "title": "전산회계운용사 2급",
+      "slug": "전산회계운용사-2급",
+      "questions": 718,
+      "exams": 18
+    },
+    {
+      "code": "ga",
+      "title": "전산회계운용사 3급",
+      "slug": "전산회계운용사-3급",
+      "questions": 447,
+      "exams": 18
+    },
+    {
+      "code": "gb",
+      "title": "소비자전문상담사 2급",
+      "slug": "소비자전문상담사-2급",
+      "questions": 1984,
+      "exams": 20
+    },
+    {
+      "code": "gc",
+      "title": "배관기능사",
+      "slug": "배관기능사",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "gd",
+      "title": "표면실장장비기능사",
+      "slug": "표면실장장비기능사",
+      "questions": 600,
+      "exams": 10
+    },
+    {
+      "code": "ge",
+      "title": "건설재료시험산업기사",
+      "slug": "건설재료시험산업기사",
+      "questions": 2320,
+      "exams": 29
+    },
+    {
+      "code": "gf",
+      "title": "보석감정사(기능사)",
+      "slug": "보석감정사(기능사)",
+      "questions": 1800,
+      "exams": 30
+    },
+    {
+      "code": "gg",
+      "title": "조리산업기사(공통)",
+      "slug": "조리산업기사(공통)",
+      "questions": 1040,
+      "exams": 13
+    },
+    {
+      "code": "gh",
+      "title": "승강기산업기사",
+      "slug": "승강기산업기사",
+      "questions": 2398,
+      "exams": 30
+    },
+    {
+      "code": "gj",
+      "title": "콘크리트산업기사",
+      "slug": "콘크리트산업기사",
+      "questions": 2160,
+      "exams": 27
+    },
+    {
+      "code": "gk",
+      "title": "축산기능사",
+      "slug": "축산기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "gm",
+      "title": "자동차정비기능장",
+      "slug": "자동차정비기능장",
+      "questions": 1620,
+      "exams": 27
+    },
+    {
+      "code": "gn",
+      "title": "자기비파괴검사산업기사",
+      "slug": "자기비파괴검사산업기사",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "go",
+      "title": "자기비파괴검사산업기사(구)",
+      "slug": "자기비파괴검사산업기사(구)",
+      "questions": 1440,
+      "exams": 18
+    },
+    {
+      "code": "gp",
+      "title": "용접기능장",
+      "slug": "용접기능장",
+      "questions": 1200,
+      "exams": 20
+    },
+    {
+      "code": "gq",
+      "title": "소음진동기사(구)",
+      "slug": "소음진동기사(구)",
+      "questions": 3400,
+      "exams": 34
+    },
+    {
+      "code": "gr",
+      "title": "소음진동산업기사",
+      "slug": "소음진동산업기사",
+      "questions": 1120,
+      "exams": 14
+    },
+    {
+      "code": "gs",
+      "title": "사출(프레스)금형설계기사",
+      "slug": "사출(프레스)금형설계기사",
+      "questions": 800,
+      "exams": 10
+    },
+    {
+      "code": "gt",
+      "title": "금형기능사",
+      "slug": "금형기능사",
+      "questions": 840,
+      "exams": 14
+    },
+    {
+      "code": "gu",
+      "title": "컨테이너크레인운전기능사",
+      "slug": "컨테이너크레인운전기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "gv",
+      "title": "초음파비파괴검사산업기사",
+      "slug": "초음파비파괴검사산업기사",
+      "questions": 720,
+      "exams": 12
+    },
+    {
+      "code": "gw",
+      "title": "건설기계정비산업기사",
+      "slug": "건설기계정비산업기사",
+      "questions": 1199,
+      "exams": 15
+    },
+    {
+      "code": "gx",
+      "title": "기계조립산업기사",
+      "slug": "기계조립산업기사",
+      "questions": 1500,
+      "exams": 25
+    },
+    {
+      "code": "gy",
+      "title": "초음파비파괴검사산업기사(구)",
+      "slug": "초음파비파괴검사산업기사(구)",
+      "questions": 1839,
+      "exams": 23
+    },
+    {
+      "code": "gz",
+      "title": "종자산업기사",
+      "slug": "종자산업기사",
+      "questions": 2473,
+      "exams": 31
+    },
+    {
+      "code": "h1",
+      "title": "전산회계 1급",
+      "slug": "전산회계-1급",
+      "questions": 1455,
+      "exams": 97
+    },
+    {
+      "code": "h2",
+      "title": "전산회계 2급",
+      "slug": "전산회계-2급",
+      "questions": 1440,
+      "exams": 96
+    },
+    {
+      "code": "h3",
+      "title": "전산세무 2급",
+      "slug": "전산세무-2급",
+      "questions": 1665,
+      "exams": 111
+    },
+    {
+      "code": "h4",
+      "title": "전산세무 1급",
+      "slug": "전산세무-1급",
+      "questions": 1245,
+      "exams": 83
+    },
+    {
+      "code": "h5",
+      "title": "9급 국가직 공무원 형법",
+      "slug": "9급-국가직-공무원-형법",
+      "questions": 290,
+      "exams": 15
+    },
+    {
+      "code": "h6",
+      "title": "9급 국가직 공무원 형법총론",
+      "slug": "9급-국가직-공무원-형법총론",
+      "questions": 372,
+      "exams": 19
+    },
+    {
+      "code": "h7",
+      "title": "9급 국가직 공무원 형사소송법개론",
+      "slug": "9급-국가직-공무원-형사소송법개론",
+      "questions": 372,
+      "exams": 19
+    },
+    {
+      "code": "h8",
+      "title": "9급 국가직 공무원 형사소송법",
+      "slug": "9급-국가직-공무원-형사소송법",
+      "questions": 296,
+      "exams": 15
+    },
+    {
+      "code": "h9",
+      "title": "9급 국가직 공무원 화학공학일반",
+      "slug": "9급-국가직-공무원-화학공학일반",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "hb",
+      "title": "9급 국가직 공무원 회계원리",
+      "slug": "9급-국가직-공무원-회계원리",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "hc",
+      "title": "9급 국가직 공무원 회계학",
+      "slug": "9급-국가직-공무원-회계학",
+      "questions": 420,
+      "exams": 21
+    },
+    {
+      "code": "hd",
+      "title": "철도신호기사",
+      "slug": "철도신호기사",
+      "questions": 2640,
+      "exams": 33
+    },
+    {
+      "code": "he",
+      "title": "사회조사분석사 1급",
+      "slug": "사회조사분석사-1급",
+      "questions": 796,
+      "exams": 8
+    },
+    {
+      "code": "hf",
+      "title": "디지털영상편집 2급",
+      "slug": "디지털영상편집-2급",
+      "questions": 273,
+      "exams": 11
+    },
+    {
+      "code": "hg",
+      "title": "디지털영상편집 1급",
+      "slug": "디지털영상편집-1급",
+      "questions": 299,
+      "exams": 10
+    },
+    {
+      "code": "hh",
+      "title": "물류관리사 1교시",
+      "slug": "물류관리사-1교시",
+      "questions": 2277,
+      "exams": 19
+    },
+    {
+      "code": "hi",
+      "title": "물류관리사 2교시",
+      "slug": "물류관리사-2교시",
+      "questions": 1519,
+      "exams": 19
+    },
+    {
+      "code": "hj",
+      "title": "변리사 1차(1교시)",
+      "slug": "변리사-1차(1교시)",
+      "questions": 637,
+      "exams": 16
+    },
+    {
+      "code": "hk",
+      "title": "변리사 1차(2교시)",
+      "slug": "변리사-1차(2교시)",
+      "questions": 640,
+      "exams": 16
+    },
+    {
+      "code": "hm",
+      "title": "변리사 1차(3교시)",
+      "slug": "변리사-1차(3교시)",
+      "questions": 640,
+      "exams": 16
+    },
+    {
+      "code": "hn",
+      "title": "금속재료기사",
+      "slug": "금속재료기사",
+      "questions": 1500,
+      "exams": 15
+    },
+    {
+      "code": "hp",
+      "title": "금속도장기능사",
+      "slug": "금속도장기능사",
+      "questions": 1140,
+      "exams": 19
+    },
+    {
+      "code": "hq",
+      "title": "귀금속가공기능사",
+      "slug": "귀금속가공기능사",
+      "questions": 540,
+      "exams": 9
+    },
+    {
+      "code": "hr",
+      "title": "항공무선통신사",
+      "slug": "항공무선통신사",
+      "questions": 1516,
+      "exams": 22
+    },
+    {
+      "code": "hs",
+      "title": "청소년상담사 1급(1교시)",
+      "slug": "청소년상담사-1급(1교시)",
+      "questions": 749,
+      "exams": 10
+    },
+    {
+      "code": "ht",
+      "title": "청소년상담사 1급(2교시)",
+      "slug": "청소년상담사-1급(2교시)",
+      "questions": 994,
+      "exams": 10
+    },
+    {
+      "code": "hu",
+      "title": "청소년상담사 2급(1교시)",
+      "slug": "청소년상담사-2급(1교시)",
+      "questions": 995,
+      "exams": 10
+    },
+    {
+      "code": "hv",
+      "title": "청소년상담사 2급(2교시)",
+      "slug": "청소년상담사-2급(2교시)",
+      "questions": 998,
+      "exams": 10
+    },
+    {
+      "code": "hw",
+      "title": "청소년상담사 3급(1교시)",
+      "slug": "청소년상담사-3급(1교시)",
+      "questions": 999,
+      "exams": 10
+    },
+    {
+      "code": "hx",
+      "title": "청소년상담사 3급(2교시)",
+      "slug": "청소년상담사-3급(2교시)",
+      "questions": 745,
+      "exams": 10
+    },
+    {
+      "code": "hy",
+      "title": "청소년상담사 1급(1교시)(구)",
+      "slug": "청소년상담사-1급(1교시)(구)",
+      "questions": 269,
+      "exams": 3
+    },
+    {
+      "code": "hz",
+      "title": "청소년상담사 1급(2교시)(구)",
+      "slug": "청소년상담사-1급(2교시)(구)",
+      "questions": 358,
+      "exams": 3
+    },
+    {
+      "code": "i2",
+      "title": "인터넷보안전문가 2급",
+      "slug": "인터넷보안전문가-2급",
+      "questions": 2340,
+      "exams": 39
+    },
+    {
+      "code": "iz",
+      "title": "정보처리기사",
+      "slug": "정보처리기사",
+      "questions": 790,
+      "exams": 8
+    },
+    {
+      "code": "j1",
+      "title": "프로그래밍기능사",
+      "slug": "프로그래밍기능사",
+      "questions": 2579,
+      "exams": 43
+    },
+    {
+      "code": "j2",
+      "title": "정보기기운용기능사",
+      "slug": "정보기기운용기능사",
+      "questions": 2571,
+      "exams": 43
+    },
+    {
+      "code": "j3",
+      "title": "정보처리산업기사",
+      "slug": "정보처리산업기사",
+      "questions": 6797,
+      "exams": 68
+    },
+    {
+      "code": "j4",
+      "title": "정보처리기사(구)",
+      "slug": "정보처리기사(구)",
+      "questions": 5796,
+      "exams": 58
+    },
+    {
+      "code": "j5",
+      "title": "컴퓨터그래픽스기능사",
+      "slug": "컴퓨터그래픽스기능사",
+      "questions": 3060,
+      "exams": 51
+    },
+    {
+      "code": "j6",
+      "title": "사무자동화산업기사",
+      "slug": "사무자동화산업기사",
+      "questions": 4800,
+      "exams": 60
+    },
+    {
+      "code": "j7",
+      "title": "제과기능사",
+      "slug": "제과기능사",
+      "questions": 2400,
+      "exams": 40
+    },
+    {
+      "code": "j8",
+      "title": "제빵기능사",
+      "slug": "제빵기능사",
+      "questions": 2399,
+      "exams": 40
+    },
+    {
+      "code": "j9",
+      "title": "웹디자인개발기능사",
+      "slug": "웹디자인개발기능사",
+      "questions": 2281,
+      "exams": 39
+    },
+    {
+      "code": "ja",
+      "title": "한식조리기능사",
+      "slug": "한식조리기능사",
+      "questions": 2819,
+      "exams": 47
+    },
+    {
+      "code": "jb",
+      "title": "정보처리기능사 실기(베타)",
+      "slug": "정보처리기능사-실기(베타)",
+      "questions": 465,
+      "exams": 31
+    },
+    {
+      "code": "jc",
+      "title": "미용사(일반)",
+      "slug": "미용사(일반)",
+      "questions": 1920,
+      "exams": 32
+    },
+    {
+      "code": "jd",
+      "title": "PC정비사 1급",
+      "slug": "PC정비사-1급",
+      "questions": 2879,
+      "exams": 48
+    },
+    {
+      "code": "je",
+      "title": "PC정비사 2급",
+      "slug": "PC정비사-2급",
+      "questions": 4398,
+      "exams": 88
+    },
+    {
+      "code": "jf",
+      "title": "네트워크관리사 2급",
+      "slug": "네트워크관리사-2급",
+      "questions": 4393,
+      "exams": 88
+    },
+    {
+      "code": "jg",
+      "title": "지게차운전기능사",
+      "slug": "지게차운전기능사",
+      "questions": 1920,
+      "exams": 32
+    },
+    {
+      "code": "jh",
+      "title": "굴착기운전기능사",
+      "slug": "굴착기운전기능사",
+      "questions": 1860,
+      "exams": 31
+    },
+    {
+      "code": "ji",
+      "title": "컴퓨터시스템기사(A형)",
+      "slug": "컴퓨터시스템기사(A형)",
+      "questions": 3997,
+      "exams": 40
+    },
+    {
+      "code": "jj",
+      "title": "전산응용건축제도기능사",
+      "slug": "전산응용건축제도기능사",
+      "questions": 3299,
+      "exams": 55
+    },
+    {
+      "code": "jk",
+      "title": "전산응용기계제도기능사",
+      "slug": "전산응용기계제도기능사",
+      "questions": 3300,
+      "exams": 55
+    },
+    {
+      "code": "jm",
+      "title": "미용사(피부)",
+      "slug": "미용사(피부)",
+      "questions": 780,
+      "exams": 13
+    },
+    {
+      "code": "jn",
+      "title": "네트워크관리사 1급",
+      "slug": "네트워크관리사-1급",
+      "questions": 2637,
+      "exams": 44
+    },
+    {
+      "code": "jo",
+      "title": "전기기능사",
+      "slug": "전기기능사",
+      "questions": 3420,
+      "exams": 57
+    },
+    {
+      "code": "jp",
+      "title": "전자출판기능사",
+      "slug": "전자출판기능사",
+      "questions": 1980,
+      "exams": 33
+    },
+    {
+      "code": "jq",
+      "title": "자동차정비기능사",
+      "slug": "자동차정비기능사",
+      "questions": 3060,
+      "exams": 51
+    },
+    {
+      "code": "jr",
+      "title": "용접기능사",
+      "slug": "용접기능사",
+      "questions": 1740,
+      "exams": 29
+    },
+    {
+      "code": "js",
+      "title": "특수용접기능사",
+      "slug": "특수용접기능사",
+      "questions": 3299,
+      "exams": 55
+    },
+    {
+      "code": "jt",
+      "title": "컴퓨터응용선반기능사",
+      "slug": "컴퓨터응용선반기능사",
+      "questions": 2100,
+      "exams": 35
+    },
+    {
+      "code": "ju",
+      "title": "컴퓨터응용밀링기능사",
+      "slug": "컴퓨터응용밀링기능사",
+      "questions": 1740,
+      "exams": 29
+    },
+    {
+      "code": "jv",
+      "title": "RFID-GL",
+      "slug": "RFID-GL",
+      "questions": 715,
+      "exams": 9
+    },
+    {
+      "code": "jw",
+      "title": "전기산업기사",
+      "slug": "전기산업기사",
+      "questions": 5600,
+      "exams": 56
+    },
+    {
+      "code": "jx",
+      "title": "조경기능사",
+      "slug": "조경기능사",
+      "questions": 3000,
+      "exams": 50
+    },
+    {
+      "code": "jy",
+      "title": "위험물기능사",
+      "slug": "위험물기능사",
+      "questions": 3718,
+      "exams": 62
+    },
+    {
+      "code": "jz",
+      "title": "임베디드기능사",
+      "slug": "임베디드기능사",
+      "questions": 2039,
+      "exams": 34
+    },
+    {
+      "code": "k1",
+      "title": "한국사능력검정시험 심화",
+      "slug": "한국사능력검정시험-심화",
+      "questions": 3402,
+      "exams": 71
+    },
+    {
+      "code": "k2",
+      "title": "한국사능력검정시험 중급(폐지)",
+      "slug": "한국사능력검정시험-중급(폐지)",
+      "questions": 1757,
+      "exams": 36
+    },
+    {
+      "code": "k3",
+      "title": "한국사능력검정시험 초급(폐지)",
+      "slug": "한국사능력검정시험-초급(폐지)",
+      "questions": 1544,
+      "exams": 41
+    },
+    {
+      "code": "k4",
+      "title": "미용사(네일)",
+      "slug": "미용사(네일)",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "k5",
+      "title": "승강기기능사",
+      "slug": "승강기기능사",
+      "questions": 2760,
+      "exams": 46
+    },
+    {
+      "code": "k6",
+      "title": "조주기능사",
+      "slug": "조주기능사",
+      "questions": 3337,
+      "exams": 56
+    },
+    {
+      "code": "k7",
+      "title": "인터넷정보관리사 2급",
+      "slug": "인터넷정보관리사-2급",
+      "questions": 3749,
+      "exams": 47
+    },
+    {
+      "code": "k8",
+      "title": "텔레마케팅관리사",
+      "slug": "텔레마케팅관리사",
+      "questions": 4186,
+      "exams": 42
+    },
+    {
+      "code": "k9",
+      "title": "FAT 2급",
+      "slug": "FAT-2급",
+      "questions": 630,
+      "exams": 42
+    },
+    {
+      "code": "ka",
+      "title": "FAT 2급(구)",
+      "slug": "FAT-2급(구)",
+      "questions": 70,
+      "exams": 7
+    },
+    {
+      "code": "kb",
+      "title": "FAT 1급",
+      "slug": "FAT-1급",
+      "questions": 630,
+      "exams": 42
+    },
+    {
+      "code": "kc",
+      "title": "FAT 1급(구)",
+      "slug": "FAT-1급(구)",
+      "questions": 70,
+      "exams": 7
+    },
+    {
+      "code": "kd",
+      "title": "TAT 1급",
+      "slug": "TAT-1급",
+      "questions": 630,
+      "exams": 42
+    },
+    {
+      "code": "ke",
+      "title": "TAT 2급",
+      "slug": "TAT-2급",
+      "questions": 630,
+      "exams": 42
+    },
+    {
+      "code": "kf",
+      "title": "ERP 인사 2급 이론",
+      "slug": "ERP-인사-2급-이론",
+      "questions": 459,
+      "exams": 23
+    },
+    {
+      "code": "kg",
+      "title": "ERP 회계 2급 이론",
+      "slug": "ERP-회계-2급-이론",
+      "questions": 455,
+      "exams": 23
+    },
+    {
+      "code": "kh",
+      "title": "TAT 2급(구)",
+      "slug": "TAT-2급(구)",
+      "questions": 70,
+      "exams": 7
+    },
+    {
+      "code": "ki",
+      "title": "ERP 인사 2급 실무",
+      "slug": "ERP-인사-2급-실무",
+      "questions": 340,
+      "exams": 17
+    },
+    {
+      "code": "kj",
+      "title": "ERP 회계 2급 실무",
+      "slug": "ERP-회계-2급-실무",
+      "questions": 320,
+      "exams": 16
+    },
+    {
+      "code": "kk",
+      "title": "사진기능사",
+      "slug": "사진기능사",
+      "questions": 2100,
+      "exams": 35
+    },
+    {
+      "code": "kn",
+      "title": "세탁기능사",
+      "slug": "세탁기능사",
+      "questions": 2099,
+      "exams": 35
+    },
+    {
+      "code": "ko",
+      "title": "화훼장식기능사",
+      "slug": "화훼장식기능사",
+      "questions": 1678,
+      "exams": 28
+    },
+    {
+      "code": "kp",
+      "title": "에너지관리기능사",
+      "slug": "에너지관리기능사",
+      "questions": 3540,
+      "exams": 59
+    },
+    {
+      "code": "kr",
+      "title": "환경기능사",
+      "slug": "환경기능사",
+      "questions": 2759,
+      "exams": 46
+    },
+    {
+      "code": "ks",
+      "title": "가스기능사",
+      "slug": "가스기능사",
+      "questions": 3479,
+      "exams": 58
+    },
+    {
+      "code": "kt",
+      "title": "전기기사",
+      "slug": "전기기사",
+      "questions": 5900,
+      "exams": 59
+    },
+    {
+      "code": "ku",
+      "title": "산업안전기사",
+      "slug": "산업안전기사",
+      "questions": 7200,
+      "exams": 60
+    },
+    {
+      "code": "kv",
+      "title": "산업안전산업기사",
+      "slug": "산업안전산업기사",
+      "questions": 5500,
+      "exams": 55
+    },
+    {
+      "code": "kw",
+      "title": "항공기체정비기능사",
+      "slug": "항공기체정비기능사",
+      "questions": 2699,
+      "exams": 45
+    },
+    {
+      "code": "kx",
+      "title": "컴퓨터시스템기사(B형)",
+      "slug": "컴퓨터시스템기사(B형)",
+      "questions": 2398,
+      "exams": 24
+    },
+    {
+      "code": "ky",
+      "title": "전자산업기사",
+      "slug": "전자산업기사",
+      "questions": 4159,
+      "exams": 52
+    },
+    {
+      "code": "kz",
+      "title": "방송통신기사(구)",
+      "slug": "방송통신기사(구)",
+      "questions": 3999,
+      "exams": 40
+    },
+    {
+      "code": "m1",
+      "title": "청소년상담사 2급(1교시)(구)",
+      "slug": "청소년상담사-2급(1교시)(구)",
+      "questions": 359,
+      "exams": 3
+    },
+    {
+      "code": "m2",
+      "title": "청소년상담사 2급(2교시)(구)",
+      "slug": "청소년상담사-2급(2교시)(구)",
+      "questions": 360,
+      "exams": 3
+    },
+    {
+      "code": "m3",
+      "title": "청소년상담사 3급(1교시)(구)",
+      "slug": "청소년상담사-3급(1교시)(구)",
+      "questions": 360,
+      "exams": 3
+    },
+    {
+      "code": "m4",
+      "title": "청소년상담사 3급(2교시)(구)",
+      "slug": "청소년상담사-3급(2교시)(구)",
+      "questions": 270,
+      "exams": 3
+    },
+    {
+      "code": "m5",
+      "title": "한복기능사",
+      "slug": "한복기능사",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "m6",
+      "title": "도자기공예기능사",
+      "slug": "도자기공예기능사",
+      "questions": 420,
+      "exams": 7
+    },
+    {
+      "code": "m7",
+      "title": "원예기능사",
+      "slug": "원예기능사",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "m8",
+      "title": "화훼장식기사",
+      "slug": "화훼장식기사",
+      "questions": 1299,
+      "exams": 13
+    },
+    {
+      "code": "m9",
+      "title": "의공산업기사",
+      "slug": "의공산업기사",
+      "questions": 1299,
+      "exams": 13
+    },
+    {
+      "code": "ma",
+      "title": "임산가공기능사",
+      "slug": "임산가공기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "mb",
+      "title": "철도신호산업기사",
+      "slug": "철도신호산업기사",
+      "questions": 1199,
+      "exams": 15
+    },
+    {
+      "code": "mc",
+      "title": "한국사능력검정시험 기본",
+      "slug": "한국사능력검정시험-기본",
+      "questions": 925,
+      "exams": 20
+    },
+    {
+      "code": "md",
+      "title": "어로산업기사",
+      "slug": "어로산업기사",
+      "questions": 1120,
+      "exams": 14
+    },
+    {
+      "code": "me",
+      "title": "방사선비파괴검사산업기사",
+      "slug": "방사선비파괴검사산업기사",
+      "questions": 660,
+      "exams": 11
+    },
+    {
+      "code": "mf",
+      "title": "방사선비파괴검사산업기사(구)",
+      "slug": "방사선비파괴검사산업기사(구)",
+      "questions": 1600,
+      "exams": 20
+    },
+    {
+      "code": "mg",
+      "title": "해양환경기사",
+      "slug": "해양환경기사",
+      "questions": 1900,
+      "exams": 19
+    },
+    {
+      "code": "mi",
+      "title": "직업상담사 1급(구)",
+      "slug": "직업상담사-1급(구)",
+      "questions": 300,
+      "exams": 3
+    },
+    {
+      "code": "mj",
+      "title": "계리직공무원 한국사",
+      "slug": "계리직공무원-한국사",
+      "questions": 178,
+      "exams": 9
+    },
+    {
+      "code": "mk",
+      "title": "계리직공무원 우편 및 금융상식",
+      "slug": "계리직공무원-우편-및-금융상식",
+      "questions": 160,
+      "exams": 8
+    },
+    {
+      "code": "mm",
+      "title": "계리직공무원 컴퓨터 일반",
+      "slug": "계리직공무원-컴퓨터-일반",
+      "questions": 179,
+      "exams": 9
+    },
+    {
+      "code": "mn",
+      "title": "가구제작기능사",
+      "slug": "가구제작기능사",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "mo",
+      "title": "임상심리사 1급",
+      "slug": "임상심리사-1급",
+      "questions": 598,
+      "exams": 6
+    },
+    {
+      "code": "mp",
+      "title": "해양조사산업기사",
+      "slug": "해양조사산업기사",
+      "questions": 1360,
+      "exams": 17
+    },
+    {
+      "code": "mq",
+      "title": "잠수산업기사",
+      "slug": "잠수산업기사",
+      "questions": 320,
+      "exams": 4
+    },
+    {
+      "code": "mr",
+      "title": "농업기계산업기사",
+      "slug": "농업기계산업기사",
+      "questions": 560,
+      "exams": 7
+    },
+    {
+      "code": "ms",
+      "title": "축로기능사",
+      "slug": "축로기능사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "mt",
+      "title": "화약류관리산업기사",
+      "slug": "화약류관리산업기사",
+      "questions": 2399,
+      "exams": 30
+    },
+    {
+      "code": "mu",
+      "title": "자연생태복원산업기사",
+      "slug": "자연생태복원산업기사",
+      "questions": 1040,
+      "exams": 13
+    },
+    {
+      "code": "mv",
+      "title": "기계정비기능사",
+      "slug": "기계정비기능사",
+      "questions": 360,
+      "exams": 6
+    },
+    {
+      "code": "mw",
+      "title": "인쇄기능사",
+      "slug": "인쇄기능사",
+      "questions": 900,
+      "exams": 15
+    },
+    {
+      "code": "mx",
+      "title": "건설기계설비산업기사",
+      "slug": "건설기계설비산업기사",
+      "questions": 1919,
+      "exams": 24
+    },
+    {
+      "code": "my",
+      "title": "전기철도기사",
+      "slug": "전기철도기사",
+      "questions": 2480,
+      "exams": 31
+    },
+    {
+      "code": "mz",
+      "title": "기계설계기사",
+      "slug": "기계설계기사",
+      "questions": 879,
+      "exams": 11
+    },
+    {
+      "code": "n1",
+      "title": "토목기사",
+      "slug": "토목기사",
+      "questions": 6837,
+      "exams": 57
+    },
+    {
+      "code": "n2",
+      "title": "전산응용토목제도기능사",
+      "slug": "전산응용토목제도기능사",
+      "questions": 1799,
+      "exams": 30
+    },
+    {
+      "code": "n3",
+      "title": "직업상담사 2급",
+      "slug": "직업상담사-2급",
+      "questions": 3886,
+      "exams": 39
+    },
+    {
+      "code": "n4",
+      "title": "직업상담사 2급(구)",
+      "slug": "직업상담사-2급(구)",
+      "questions": 1597,
+      "exams": 16
+    },
+    {
+      "code": "n5",
+      "title": "공조냉동기계기능사",
+      "slug": "공조냉동기계기능사",
+      "questions": 3478,
+      "exams": 58
+    },
+    {
+      "code": "n6",
+      "title": "전자기능사",
+      "slug": "전자기능사",
+      "questions": 3539,
+      "exams": 59
+    },
+    {
+      "code": "n7",
+      "title": "전자캐드기능사",
+      "slug": "전자캐드기능사",
+      "questions": 2039,
+      "exams": 34
+    },
+    {
+      "code": "n8",
+      "title": "생산자동화기능사",
+      "slug": "생산자동화기능사",
+      "questions": 1380,
+      "exams": 23
+    },
+    {
+      "code": "n9",
+      "title": "신재생에너지발전설비기능사",
+      "slug": "신재생에너지발전설비기능사",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "na",
+      "title": "전자기능장",
+      "slug": "전자기능장",
+      "questions": 1499,
+      "exams": 25
+    },
+    {
+      "code": "nb",
+      "title": "통신설비기능장",
+      "slug": "통신설비기능장",
+      "questions": 2094,
+      "exams": 35
+    },
+    {
+      "code": "nc",
+      "title": "소방설비기사(전기분야)",
+      "slug": "소방설비기사(전기분야)",
+      "questions": 4718,
+      "exams": 59
+    },
+    {
+      "code": "nd",
+      "title": "소방설비기사(기계분야)",
+      "slug": "소방설비기사(기계분야)",
+      "questions": 4719,
+      "exams": 59
+    },
+    {
+      "code": "ne",
+      "title": "식품안전기사",
+      "slug": "식품안전기사",
+      "questions": 6000,
+      "exams": 60
+    },
+    {
+      "code": "nf",
+      "title": "건축기사",
+      "slug": "건축기사",
+      "questions": 5799,
+      "exams": 58
+    },
+    {
+      "code": "ng",
+      "title": "위험물산업기사",
+      "slug": "위험물산업기사",
+      "questions": 3420,
+      "exams": 57
+    },
+    {
+      "code": "nh",
+      "title": "전기철도산업기사",
+      "slug": "전기철도산업기사",
+      "questions": 480,
+      "exams": 6
+    },
+    {
+      "code": "ni",
+      "title": "전기공사기사",
+      "slug": "전기공사기사",
+      "questions": 5799,
+      "exams": 58
+    },
+    {
+      "code": "nj",
+      "title": "건설안전기사",
+      "slug": "건설안전기사",
+      "questions": 7080,
+      "exams": 59
+    },
+    {
+      "code": "nk",
+      "title": "수질환경기사",
+      "slug": "수질환경기사",
+      "questions": 5900,
+      "exams": 59
+    },
+    {
+      "code": "nm",
+      "title": "설비보전기능사",
+      "slug": "설비보전기능사",
+      "questions": 1080,
+      "exams": 18
+    },
+    {
+      "code": "nn",
+      "title": "자동차정비산업기사",
+      "slug": "자동차정비산업기사",
+      "questions": 2080,
+      "exams": 26
+    },
+    {
+      "code": "no",
+      "title": "가스산업기사",
+      "slug": "가스산업기사",
+      "questions": 4319,
+      "exams": 54
+    },
+    {
+      "code": "np",
+      "title": "용접기사",
+      "slug": "용접기사",
+      "questions": 3400,
+      "exams": 34
+    },
+    {
+      "code": "nq",
+      "title": "공조냉동기계산업기사",
+      "slug": "공조냉동기계산업기사",
+      "questions": 4160,
+      "exams": 52
+    },
+    {
+      "code": "nr",
+      "title": "전기공사산업기사",
+      "slug": "전기공사산업기사",
+      "questions": 4900,
+      "exams": 49
+    },
+    {
+      "code": "ns",
+      "title": "정보통신기사(구)",
+      "slug": "정보통신기사(구)",
+      "questions": 5987,
+      "exams": 60
+    },
+    {
+      "code": "nt",
+      "title": "자동차정비기사",
+      "slug": "자동차정비기사",
+      "questions": 3200,
+      "exams": 32
+    },
+    {
+      "code": "nu",
+      "title": "전기기능장",
+      "slug": "전기기능장",
+      "questions": 1499,
+      "exams": 25
+    },
+    {
+      "code": "nv",
+      "title": "소방설비산업기사(전기)",
+      "slug": "소방설비산업기사(전기)",
+      "questions": 4156,
+      "exams": 52
+    },
+    {
+      "code": "nw",
+      "title": "소방설비산업기사(기계)",
+      "slug": "소방설비산업기사(기계)",
+      "questions": 4478,
+      "exams": 56
+    },
+    {
+      "code": "nx",
+      "title": "지게차유사(롤러,기중기등)",
+      "slug": "지게차유사(롤러,기중기등)",
+      "questions": 1140,
+      "exams": 19
+    },
+    {
+      "code": "ny",
+      "title": "일반기계기사",
+      "slug": "일반기계기사",
+      "questions": 5100,
+      "exams": 51
+    },
+    {
+      "code": "nz",
+      "title": "산림기능사",
+      "slug": "산림기능사",
+      "questions": 2160,
+      "exams": 36
+    },
+    {
+      "code": "p1",
+      "title": "경찰공무원(순경) 한국사",
+      "slug": "경찰공무원(순경)-한국사",
+      "questions": 456,
+      "exams": 23
+    },
+    {
+      "code": "p2",
+      "title": "경찰공무원(순경) 영어",
+      "slug": "경찰공무원(순경)-영어",
+      "questions": 376,
+      "exams": 28
+    },
+    {
+      "code": "p3",
+      "title": "경찰공무원(순경) 형법",
+      "slug": "경찰공무원(순경)-형법",
+      "questions": 513,
+      "exams": 28
+    },
+    {
+      "code": "p4",
+      "title": "경찰공무원(순경) 형사소송법",
+      "slug": "경찰공무원(순경)-형사소송법",
+      "questions": 558,
+      "exams": 28
+    },
+    {
+      "code": "p5",
+      "title": "경찰공무원(순경) 경찰학개론",
+      "slug": "경찰공무원(순경)-경찰학개론",
+      "questions": 558,
+      "exams": 28
+    },
+    {
+      "code": "p6",
+      "title": "경찰공무원(순경) 국어",
+      "slug": "경찰공무원(순경)-국어",
+      "questions": 321,
+      "exams": 18
+    },
+    {
+      "code": "p7",
+      "title": "경찰공무원(순경) 수학",
+      "slug": "경찰공무원(순경)-수학",
+      "questions": 359,
+      "exams": 18
+    },
+    {
+      "code": "p8",
+      "title": "경찰공무원(순경) 사회",
+      "slug": "경찰공무원(순경)-사회",
+      "questions": 358,
+      "exams": 18
+    },
+    {
+      "code": "p9",
+      "title": "경찰공무원(순경) 과학",
+      "slug": "경찰공무원(순경)-과학",
+      "questions": 360,
+      "exams": 18
+    },
+    {
+      "code": "pa",
+      "title": "경찰공무원(순경) 수사",
+      "slug": "경찰공무원(순경)-수사",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "pb",
+      "title": "경찰공무원(순경) 행정법",
+      "slug": "경찰공무원(순경)-행정법",
+      "questions": 220,
+      "exams": 11
+    },
+    {
+      "code": "pd",
+      "title": "경비지도사 1차(법학개론,민간경비론)",
+      "slug": "경비지도사-1차(법학개론,민간경비론)",
+      "questions": 1595,
+      "exams": 20
+    },
+    {
+      "code": "pe",
+      "title": "경비지도사 2차(경비업법)",
+      "slug": "경비지도사-2차(경비업법)",
+      "questions": 799,
+      "exams": 20
+    },
+    {
+      "code": "pf",
+      "title": "경비지도사 2차(기계경비개론)",
+      "slug": "경비지도사-2차(기계경비개론)",
+      "questions": 758,
+      "exams": 19
+    },
+    {
+      "code": "pg",
+      "title": "경비지도사 2차(기계경비기획및설계)",
+      "slug": "경비지도사-2차(기계경비기획및설계)",
+      "questions": 760,
+      "exams": 19
+    },
+    {
+      "code": "ph",
+      "title": "경비지도사 2차(경호학)",
+      "slug": "경비지도사-2차(경호학)",
+      "questions": 798,
+      "exams": 20
+    },
+    {
+      "code": "pi",
+      "title": "경비지도사 2차(범죄학)",
+      "slug": "경비지도사-2차(범죄학)",
+      "questions": 759,
+      "exams": 19
+    },
+    {
+      "code": "pj",
+      "title": "경비지도사 2차(소방학)",
+      "slug": "경비지도사-2차(소방학)",
+      "questions": 760,
+      "exams": 19
+    },
+    {
+      "code": "pk",
+      "title": "소방공무원(공개,경력) 국어(구)",
+      "slug": "소방공무원(공개,경력)-국어(구)",
+      "questions": 122,
+      "exams": 7
+    },
+    {
+      "code": "pm",
+      "title": "소방공무원(공개) 한국사(구)",
+      "slug": "소방공무원(공개)-한국사(구)",
+      "questions": 135,
+      "exams": 7
+    },
+    {
+      "code": "pn",
+      "title": "소방공무원(공개,경력) 영어(구)",
+      "slug": "소방공무원(공개,경력)-영어(구)",
+      "questions": 65,
+      "exams": 5
+    },
+    {
+      "code": "po",
+      "title": "소방공무원(공개,경력) 소방학개론(구)",
+      "slug": "소방공무원(공개,경력)-소방학개론(구)",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "pq",
+      "title": "소방공무원(공개) 행정법총론(구)",
+      "slug": "소방공무원(공개)-행정법총론(구)",
+      "questions": 97,
+      "exams": 5
+    },
+    {
+      "code": "pr",
+      "title": "소방공무원(공개) 소방관계법규(구)",
+      "slug": "소방공무원(공개)-소방관계법규(구)",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "ps",
+      "title": "소방공무원(공개) 사회(구)",
+      "slug": "소방공무원(공개)-사회(구)",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "pt",
+      "title": "소방공무원(공개) 과학(구)",
+      "slug": "소방공무원(공개)-과학(구)",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "pu",
+      "title": "소방공무원(공개) 수학(구)",
+      "slug": "소방공무원(공개)-수학(구)",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "pv",
+      "title": "소방공무원(경력) 생활영어(구)",
+      "slug": "소방공무원(경력)-생활영어(구)",
+      "questions": 50,
+      "exams": 5
+    },
+    {
+      "code": "pw",
+      "title": "소방공무원(경력) 소방관계법규(구)",
+      "slug": "소방공무원(경력)-소방관계법규(구)",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "px",
+      "title": "농작업안전보건기사",
+      "slug": "농작업안전보건기사",
+      "questions": 319,
+      "exams": 4
+    },
+    {
+      "code": "py",
+      "title": "누설비파괴검사기사(구)",
+      "slug": "누설비파괴검사기사(구)",
+      "questions": 600,
+      "exams": 6
+    },
+    {
+      "code": "pz",
+      "title": "누설비파괴검사기사",
+      "slug": "누설비파괴검사기사",
+      "questions": 1120,
+      "exams": 14
+    },
+    {
+      "code": "q1",
+      "title": "표면처리기능사",
+      "slug": "표면처리기능사",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "q2",
+      "title": "시각디자인기사",
+      "slug": "시각디자인기사",
+      "questions": 1899,
+      "exams": 19
+    },
+    {
+      "code": "q3",
+      "title": "화약취급기능사",
+      "slug": "화약취급기능사",
+      "questions": 1320,
+      "exams": 22
+    },
+    {
+      "code": "q4",
+      "title": "임산가공기사",
+      "slug": "임산가공기사",
+      "questions": 798,
+      "exams": 8
+    },
+    {
+      "code": "q5",
+      "title": "와전류비파괴검사기사",
+      "slug": "와전류비파괴검사기사",
+      "questions": 640,
+      "exams": 8
+    },
+    {
+      "code": "q6",
+      "title": "유기농업산업기사",
+      "slug": "유기농업산업기사",
+      "questions": 795,
+      "exams": 10
+    },
+    {
+      "code": "q7",
+      "title": "양화장치운전기능사",
+      "slug": "양화장치운전기능사",
+      "questions": 840,
+      "exams": 14
+    },
+    {
+      "code": "q8",
+      "title": "잠수산업기사(구)",
+      "slug": "잠수산업기사(구)",
+      "questions": 300,
+      "exams": 5
+    },
+    {
+      "code": "q9",
+      "title": "와전류비파괴검사기사(구)",
+      "slug": "와전류비파괴검사기사(구)",
+      "questions": 800,
+      "exams": 8
+    },
+    {
+      "code": "qa",
+      "title": "생물분류기사(동물)",
+      "slug": "생물분류기사(동물)",
+      "questions": 1099,
+      "exams": 11
+    },
+    {
+      "code": "qb",
+      "title": "생물분류기사(식물)",
+      "slug": "생물분류기사(식물)",
+      "questions": 997,
+      "exams": 10
+    },
+    {
+      "code": "qc",
+      "title": "PSAT 상황판단",
+      "slug": "PSAT-상황판단",
+      "questions": 352,
+      "exams": 13
+    },
+    {
+      "code": "qd",
+      "title": "PSAT 언어논리",
+      "slug": "PSAT-언어논리",
+      "questions": 358,
+      "exams": 13
+    },
+    {
+      "code": "qe",
+      "title": "PSAT 자료해석",
+      "slug": "PSAT-자료해석",
+      "questions": 456,
+      "exams": 12
+    },
+    {
+      "code": "qf",
+      "title": "PSAT 헌법",
+      "slug": "PSAT-헌법",
+      "questions": 200,
+      "exams": 8
+    },
+    {
+      "code": "qg",
+      "title": "9급 지방직 공무원 간호관리",
+      "slug": "9급-지방직-공무원-간호관리",
+      "questions": 260,
+      "exams": 13
+    },
+    {
+      "code": "qh",
+      "title": "9급 지방직 공무원 건축계획",
+      "slug": "9급-지방직-공무원-건축계획",
+      "questions": 320,
+      "exams": 16
+    },
+    {
+      "code": "qi",
+      "title": "9급 지방직 공무원 건축구조",
+      "slug": "9급-지방직-공무원-건축구조",
+      "questions": 320,
+      "exams": 16
+    },
+    {
+      "code": "qj",
+      "title": "9급 지방직 공무원 공업화학",
+      "slug": "9급-지방직-공무원-공업화학",
+      "questions": 259,
+      "exams": 13
+    },
+    {
+      "code": "qk",
+      "title": "9급 지방직 공무원 과학",
+      "slug": "9급-지방직-공무원-과학",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "qm",
+      "title": "9급 지방직 공무원 교육학개론",
+      "slug": "9급-지방직-공무원-교육학개론",
+      "questions": 159,
+      "exams": 8
+    },
+    {
+      "code": "qn",
+      "title": "9급 지방직 공무원 국어",
+      "slug": "9급-지방직-공무원-국어",
+      "questions": 400,
+      "exams": 21
+    },
+    {
+      "code": "qo",
+      "title": "9급 지방직 공무원 기계설계",
+      "slug": "9급-지방직-공무원-기계설계",
+      "questions": 320,
+      "exams": 16
+    },
+    {
+      "code": "qp",
+      "title": "9급 지방직 공무원 기계일반",
+      "slug": "9급-지방직-공무원-기계일반",
+      "questions": 320,
+      "exams": 16
+    },
+    {
+      "code": "qq",
+      "title": "9급 지방직 공무원 사회",
+      "slug": "9급-지방직-공무원-사회",
+      "questions": 278,
+      "exams": 14
+    },
+    {
+      "code": "qr",
+      "title": "9급 지방직 공무원 사회복지학개론",
+      "slug": "9급-지방직-공무원-사회복지학개론",
+      "questions": 300,
+      "exams": 15
+    },
+    {
+      "code": "qs",
+      "title": "9급 지방직 공무원 수학",
+      "slug": "9급-지방직-공무원-수학",
+      "questions": 259,
+      "exams": 13
+    },
+    {
+      "code": "qt",
+      "title": "9급 지방직 공무원 식용작물",
+      "slug": "9급-지방직-공무원-식용작물",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "qu",
+      "title": "9급 지방직 공무원 안전관리론",
+      "slug": "9급-지방직-공무원-안전관리론",
+      "questions": 200,
+      "exams": 10
+    },
+    {
+      "code": "qv",
+      "title": "9급 지방직 공무원 영어",
+      "slug": "9급-지방직-공무원-영어",
+      "questions": 287,
+      "exams": 21
+    },
+    {
+      "code": "qw",
+      "title": "9급 지방직 공무원 응용역학개론",
+      "slug": "9급-지방직-공무원-응용역학개론",
+      "questions": 320,
+      "exams": 16
+    },
+    {
+      "code": "qx",
+      "title": "9급 지방직 공무원 임업경영",
+      "slug": "9급-지방직-공무원-임업경영",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "qy",
+      "title": "9급 지방직 공무원 자료조직개론",
+      "slug": "9급-지방직-공무원-자료조직개론",
+      "questions": 300,
+      "exams": 15
+    },
+    {
+      "code": "qz",
+      "title": "9급 지방직 공무원 재난관리론",
+      "slug": "9급-지방직-공무원-재난관리론",
+      "questions": 200,
+      "exams": 10
+    },
+    {
+      "code": "r1",
+      "title": "리눅스마스터 1급",
+      "slug": "리눅스마스터-1급",
+      "questions": 4187,
+      "exams": 43
+    },
+    {
+      "code": "r2",
+      "title": "리눅스마스터 2급",
+      "slug": "리눅스마스터-2급",
+      "questions": 4702,
+      "exams": 61
+    },
+    {
+      "code": "r3",
+      "title": "9급 지방직 공무원 재배학개론",
+      "slug": "9급-지방직-공무원-재배학개론",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "r4",
+      "title": "9급 지방직 공무원 전기기기",
+      "slug": "9급-지방직-공무원-전기기기",
+      "questions": 260,
+      "exams": 13
+    },
+    {
+      "code": "r5",
+      "title": "9급 지방직 공무원 전기이론",
+      "slug": "9급-지방직-공무원-전기이론",
+      "questions": 260,
+      "exams": 13
+    },
+    {
+      "code": "r6",
+      "title": "9급 지방직 공무원 정보보호론",
+      "slug": "9급-지방직-공무원-정보보호론",
+      "questions": 218,
+      "exams": 11
+    },
+    {
+      "code": "r7",
+      "title": "9급 지방직 공무원 정보봉사개론",
+      "slug": "9급-지방직-공무원-정보봉사개론",
+      "questions": 300,
+      "exams": 15
+    },
+    {
+      "code": "r8",
+      "title": "9급 지방직 공무원 조림",
+      "slug": "9급-지방직-공무원-조림",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "r9",
+      "title": "9급 지방직 공무원 지방세법",
+      "slug": "9급-지방직-공무원-지방세법",
+      "questions": 277,
+      "exams": 14
+    },
+    {
+      "code": "ra",
+      "title": "수산양식산업기사",
+      "slug": "수산양식산업기사",
+      "questions": 1100,
+      "exams": 11
+    },
+    {
+      "code": "rb",
+      "title": "9급 지방직 공무원 지역사회간호학",
+      "slug": "9급-지방직-공무원-지역사회간호학",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "rc",
+      "title": "9급 지방직 공무원 지적전산학개론",
+      "slug": "9급-지방직-공무원-지적전산학개론",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "rd",
+      "title": "9급 지방직 공무원 지적측량",
+      "slug": "9급-지방직-공무원-지적측량",
+      "questions": 280,
+      "exams": 14
+    },
+    {
+      "code": "re",
+      "title": "9급 지방직 공무원 컴퓨터일반",
+      "slug": "9급-지방직-공무원-컴퓨터일반",
+      "questions": 298,
+      "exams": 15
+    },
+    {
+      "code": "rf",
+      "title": "9급 지방직 공무원 토목설계",
+      "slug": "9급-지방직-공무원-토목설계",
+      "questions": 300,
+      "exams": 15
+    },
+    {
+      "code": "rg",
+      "title": "9급 지방직 공무원 한국사",
+      "slug": "9급-지방직-공무원-한국사",
+      "questions": 411,
+      "exams": 21
+    },
+    {
+      "code": "rh",
+      "title": "9급 지방직 공무원 행정법총론",
+      "slug": "9급-지방직-공무원-행정법총론",
+      "questions": 416,
+      "exams": 21
+    },
+    {
+      "code": "ri",
+      "title": "9급 지방직 공무원 행정학개론",
+      "slug": "9급-지방직-공무원-행정학개론",
+      "questions": 420,
+      "exams": 21
+    },
+    {
+      "code": "rj",
+      "title": "9급 지방직 공무원 화학",
+      "slug": "9급-지방직-공무원-화학",
+      "questions": 279,
+      "exams": 14
+    },
+    {
+      "code": "rk",
+      "title": "9급 지방직 공무원 화학공학일반",
+      "slug": "9급-지방직-공무원-화학공학일반",
+      "questions": 260,
+      "exams": 13
+    },
+    {
+      "code": "rm",
+      "title": "9급 지방직 공무원 환경공학개론",
+      "slug": "9급-지방직-공무원-환경공학개론",
+      "questions": 240,
+      "exams": 12
+    },
+    {
+      "code": "rn",
+      "title": "9급 지방직 공무원 회계학",
+      "slug": "9급-지방직-공무원-회계학",
+      "questions": 300,
+      "exams": 15
+    },
+    {
+      "code": "ro",
+      "title": "바이오화학제품제조기사",
+      "slug": "바이오화학제품제조기사",
+      "questions": 1899,
+      "exams": 19
+    },
+    {
+      "code": "rp",
+      "title": "가맹거래사",
+      "slug": "가맹거래사",
+      "questions": 2157,
+      "exams": 18
+    },
+    {
+      "code": "rq",
+      "title": "9급 지방직 공무원 서울시 자동차구조원리(유공자)",
+      "slug": "9급-지방직-공무원-서울시-자동차구조원리(유공자)",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "rr",
+      "title": "신재생에너지발전설비기사",
+      "slug": "신재생에너지발전설비기사",
+      "questions": 640,
+      "exams": 8
+    },
+    {
+      "code": "rs",
+      "title": "전파전자통신기사",
+      "slug": "전파전자통신기사",
+      "questions": 1792,
+      "exams": 18
+    },
+    {
+      "code": "rt",
+      "title": "경영지도사 1차 1교시(구)",
+      "slug": "경영지도사-1차-1교시(구)",
+      "questions": 958,
+      "exams": 8
+    },
+    {
+      "code": "ru",
+      "title": "경영지도사 1차 2교시(구)",
+      "slug": "경영지도사-1차-2교시(구)",
+      "questions": 829,
+      "exams": 8
+    },
+    {
+      "code": "rv",
+      "title": "영사기능사",
+      "slug": "영사기능사",
+      "questions": 900,
+      "exams": 15
+    },
+    {
+      "code": "rw",
+      "title": "남성복기능사",
+      "slug": "남성복기능사",
+      "questions": 240,
+      "exams": 4
+    },
+    {
+      "code": "rx",
+      "title": "에너지관리기능장",
+      "slug": "에너지관리기능장",
+      "questions": 1560,
+      "exams": 26
+    },
+    {
+      "code": "ry",
+      "title": "화학분석기사",
+      "slug": "화학분석기사",
+      "questions": 800,
+      "exams": 8
+    },
+    {
+      "code": "rz",
+      "title": "기계가공기능장",
+      "slug": "기계가공기능장",
+      "questions": 1680,
+      "exams": 28
+    },
+    {
+      "code": "s2",
+      "title": "사회조사분석사 2급",
+      "slug": "사회조사분석사-2급",
+      "questions": 4590,
+      "exams": 46
+    },
+    {
+      "code": "s3",
+      "title": "수능(한국사)",
+      "slug": "수능(한국사)",
+      "questions": 507,
+      "exams": 26
+    },
+    {
+      "code": "s4",
+      "title": "수능(국사)",
+      "slug": "수능(국사)",
+      "questions": 672,
+      "exams": 34
+    },
+    {
+      "code": "s5",
+      "title": "수능(한국근ㆍ현대사)",
+      "slug": "수능(한국근ㆍ현대사)",
+      "questions": 673,
+      "exams": 34
+    },
+    {
+      "code": "s6",
+      "title": "수능(생활과윤리)",
+      "slug": "수능(생활과윤리)",
+      "questions": 533,
+      "exams": 27
+    },
+    {
+      "code": "s7",
+      "title": "수능(윤리와사상)",
+      "slug": "수능(윤리와사상)",
+      "questions": 535,
+      "exams": 27
+    },
+    {
+      "code": "s8",
+      "title": "수능(한국지리)",
+      "slug": "수능(한국지리)",
+      "questions": 1496,
+      "exams": 75
+    },
+    {
+      "code": "s9",
+      "title": "수능(세계지리)",
+      "slug": "수능(세계지리)",
+      "questions": 1045,
+      "exams": 53
+    },
+    {
+      "code": "sa",
+      "title": "수능(동아시아사)",
+      "slug": "수능(동아시아사)",
+      "questions": 508,
+      "exams": 26
+    },
+    {
+      "code": "sb",
+      "title": "수능(세계사)",
+      "slug": "수능(세계사)",
+      "questions": 642,
+      "exams": 33
+    },
+    {
+      "code": "sc",
+      "title": "수능(법과정치)",
+      "slug": "수능(법과정치)",
+      "questions": 499,
+      "exams": 26
+    },
+    {
+      "code": "sd",
+      "title": "수능(경제)",
+      "slug": "수능(경제)",
+      "questions": 641,
+      "exams": 33
+    },
+    {
+      "code": "se",
+      "title": "수능(물리I)",
+      "slug": "수능(물리I)",
+      "questions": 1435,
+      "exams": 72
+    },
+    {
+      "code": "sg",
+      "title": "수능(물리II)",
+      "slug": "수능(물리II)",
+      "questions": 1246,
+      "exams": 63
+    },
+    {
+      "code": "sh",
+      "title": "수능(화학I)",
+      "slug": "수능(화학I)",
+      "questions": 1417,
+      "exams": 71
+    },
+    {
+      "code": "si",
+      "title": "수능(화학II)",
+      "slug": "수능(화학II)",
+      "questions": 1269,
+      "exams": 64
+    },
+    {
+      "code": "sj",
+      "title": "수능(생명과학I)",
+      "slug": "수능(생명과학I)",
+      "questions": 940,
+      "exams": 47
+    },
+    {
+      "code": "sk",
+      "title": "수능(생명과학II)",
+      "slug": "수능(생명과학II)",
+      "questions": 835,
+      "exams": 42
+    },
+    {
+      "code": "sm",
+      "title": "수능(지구과학I)",
+      "slug": "수능(지구과학I)",
+      "questions": 959,
+      "exams": 48
+    },
+    {
+      "code": "sn",
+      "title": "수능(지구과학II)",
+      "slug": "수능(지구과학II)",
+      "questions": 836,
+      "exams": 42
+    },
+    {
+      "code": "so",
+      "title": "수능(국어영역)",
+      "slug": "수능(국어영역)",
+      "questions": 897,
+      "exams": 28
+    },
+    {
+      "code": "u1",
+      "title": "9급 지방직 공무원 서울시 간호관리(8급)",
+      "slug": "9급-지방직-공무원-서울시-간호관리(8급)",
+      "questions": 160,
+      "exams": 8
+    },
+    {
+      "code": "u2",
+      "title": "9급 지방직 공무원 서울시 건축계획",
+      "slug": "9급-지방직-공무원-서울시-건축계획",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "u3",
+      "title": "9급 지방직 공무원 서울시 건축구조",
+      "slug": "9급-지방직-공무원-서울시-건축구조",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "u4",
+      "title": "9급 지방직 공무원 서울시 공업화학",
+      "slug": "9급-지방직-공무원-서울시-공업화학",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "u5",
+      "title": "9급 지방직 공무원 서울시 공중보건",
+      "slug": "9급-지방직-공무원-서울시-공중보건",
+      "questions": 160,
+      "exams": 8
+    },
+    {
+      "code": "u6",
+      "title": "9급 지방직 공무원 서울시 과학",
+      "slug": "9급-지방직-공무원-서울시-과학",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "u7",
+      "title": "9급 지방직 공무원 서울시 국어",
+      "slug": "9급-지방직-공무원-서울시-국어",
+      "questions": 218,
+      "exams": 11
+    },
+    {
+      "code": "u8",
+      "title": "9급 지방직 공무원 서울시 기계설계",
+      "slug": "9급-지방직-공무원-서울시-기계설계",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "u9",
+      "title": "9급 지방직 공무원 서울시 기계일반",
+      "slug": "9급-지방직-공무원-서울시-기계일반",
+      "questions": 220,
+      "exams": 11
+    },
+    {
+      "code": "ua",
+      "title": "9급 지방직 공무원 서울시 물리",
+      "slug": "9급-지방직-공무원-서울시-물리",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "ub",
+      "title": "9급 지방직 공무원 서울시 보건행정",
+      "slug": "9급-지방직-공무원-서울시-보건행정",
+      "questions": 139,
+      "exams": 7
+    },
+    {
+      "code": "uc",
+      "title": "9급 지방직 공무원 서울시 사회(유공자)",
+      "slug": "9급-지방직-공무원-서울시-사회(유공자)",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "ud",
+      "title": "9급 지방직 공무원 서울시 사회",
+      "slug": "9급-지방직-공무원-서울시-사회",
+      "questions": 197,
+      "exams": 10
+    },
+    {
+      "code": "ue",
+      "title": "9급 지방직 공무원 서울시 사회복지학개론",
+      "slug": "9급-지방직-공무원-서울시-사회복지학개론",
+      "questions": 60,
+      "exams": 3
+    },
+    {
+      "code": "uf",
+      "title": "9급 지방직 공무원 서울시 생물",
+      "slug": "9급-지방직-공무원-서울시-생물",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "ug",
+      "title": "9급 지방직 공무원 서울시 선박일반",
+      "slug": "9급-지방직-공무원-서울시-선박일반",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "uh",
+      "title": "9급 지방직 공무원 서울시 수학",
+      "slug": "9급-지방직-공무원-서울시-수학",
+      "questions": 179,
+      "exams": 9
+    },
+    {
+      "code": "ui",
+      "title": "9급 지방직 공무원 서울시 수학(지적)",
+      "slug": "9급-지방직-공무원-서울시-수학(지적)",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "uj",
+      "title": "9급 지방직 공무원 서울시 식용작물",
+      "slug": "9급-지방직-공무원-서울시-식용작물",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "uk",
+      "title": "9급 지방직 공무원 서울시 안전관리론",
+      "slug": "9급-지방직-공무원-서울시-안전관리론",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "um",
+      "title": "9급 지방직 공무원 서울시 영어",
+      "slug": "9급-지방직-공무원-서울시-영어",
+      "questions": 87,
+      "exams": 7
+    },
+    {
+      "code": "un",
+      "title": "9급 지방직 공무원 서울시 응용역학개론",
+      "slug": "9급-지방직-공무원-서울시-응용역학개론",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "uo",
+      "title": "9급 지방직 공무원 서울시 의료관계법규",
+      "slug": "9급-지방직-공무원-서울시-의료관계법규",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "up",
+      "title": "9급 지방직 공무원 서울시 임업경영",
+      "slug": "9급-지방직-공무원-서울시-임업경영",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "uq",
+      "title": "9급 지방직 공무원 서울시 자동차구조원리",
+      "slug": "9급-지방직-공무원-서울시-자동차구조원리",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "ur",
+      "title": "9급 지방직 공무원 서울시 자료조직개론",
+      "slug": "9급-지방직-공무원-서울시-자료조직개론",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "us",
+      "title": "9급 지방직 공무원 서울시 재난관리론",
+      "slug": "9급-지방직-공무원-서울시-재난관리론",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "ut",
+      "title": "9급 지방직 공무원 서울시 재배학개론",
+      "slug": "9급-지방직-공무원-서울시-재배학개론",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "uu",
+      "title": "9급 지방직 공무원 서울시 전기기기",
+      "slug": "9급-지방직-공무원-서울시-전기기기",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "uv",
+      "title": "9급 지방직 공무원 서울시 전기이론",
+      "slug": "9급-지방직-공무원-서울시-전기이론",
+      "questions": 200,
+      "exams": 10
+    },
+    {
+      "code": "uw",
+      "title": "9급 지방직 공무원 서울시 전자공학개론",
+      "slug": "9급-지방직-공무원-서울시-전자공학개론",
+      "questions": 139,
+      "exams": 7
+    },
+    {
+      "code": "ux",
+      "title": "9급 지방직 공무원 서울시 정보보호론",
+      "slug": "9급-지방직-공무원-서울시-정보보호론",
+      "questions": 99,
+      "exams": 5
+    },
+    {
+      "code": "uy",
+      "title": "9급 지방직 공무원 서울시 정보봉사개론",
+      "slug": "9급-지방직-공무원-서울시-정보봉사개론",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "uz",
+      "title": "9급 지방직 공무원 서울시 조경계획및생태관리",
+      "slug": "9급-지방직-공무원-서울시-조경계획및생태관리",
+      "questions": 180,
+      "exams": 9
+    },
+    {
+      "code": "v1",
+      "title": "9급 지방직 공무원 서울시 조경학",
+      "slug": "9급-지방직-공무원-서울시-조경학",
+      "questions": 159,
+      "exams": 8
+    },
+    {
+      "code": "v2",
+      "title": "9급 지방직 공무원 서울시 조림",
+      "slug": "9급-지방직-공무원-서울시-조림",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "v3",
+      "title": "9급 지방직 공무원 서울시 지방세법",
+      "slug": "9급-지방직-공무원-서울시-지방세법",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "v4",
+      "title": "9급 지방직 공무원 서울시 지역사회간호",
+      "slug": "9급-지방직-공무원-서울시-지역사회간호",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "v5",
+      "title": "9급 지방직 공무원 서울시 지적법규",
+      "slug": "9급-지방직-공무원-서울시-지적법규",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "v6",
+      "title": "9급 지방직 공무원 서울시 지적측량",
+      "slug": "9급-지방직-공무원-서울시-지적측량",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "v7",
+      "title": "9급 지방직 공무원 서울시 컴퓨터일반",
+      "slug": "9급-지방직-공무원-서울시-컴퓨터일반",
+      "questions": 99,
+      "exams": 5
+    },
+    {
+      "code": "v8",
+      "title": "9급 지방직 공무원 서울시 토목설계",
+      "slug": "9급-지방직-공무원-서울시-토목설계",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "v9",
+      "title": "9급 지방직 공무원 서울시 통신이론",
+      "slug": "9급-지방직-공무원-서울시-통신이론",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "va",
+      "title": "9급 지방직 공무원 서울시 한국사(유공자)",
+      "slug": "9급-지방직-공무원-서울시-한국사(유공자)",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "vb",
+      "title": "9급 지방직 공무원 서울시 한국사",
+      "slug": "9급-지방직-공무원-서울시-한국사",
+      "questions": 219,
+      "exams": 11
+    },
+    {
+      "code": "vc",
+      "title": "9급 지방직 공무원 서울시 항해",
+      "slug": "9급-지방직-공무원-서울시-항해",
+      "questions": 79,
+      "exams": 4
+    },
+    {
+      "code": "vd",
+      "title": "9급 지방직 공무원 서울시 행정법총론",
+      "slug": "9급-지방직-공무원-서울시-행정법총론",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "ve",
+      "title": "9급 지방직 공무원 서울시 행정학개론",
+      "slug": "9급-지방직-공무원-서울시-행정학개론",
+      "questions": 140,
+      "exams": 7
+    },
+    {
+      "code": "vf",
+      "title": "9급 지방직 공무원 서울시 화학",
+      "slug": "9급-지방직-공무원-서울시-화학",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "vg",
+      "title": "9급 지방직 공무원 서울시 화학공학일반",
+      "slug": "9급-지방직-공무원-서울시-화학공학일반",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "vh",
+      "title": "9급 지방직 공무원 서울시 환경공학개론",
+      "slug": "9급-지방직-공무원-서울시-환경공학개론",
+      "questions": 80,
+      "exams": 4
+    },
+    {
+      "code": "vi",
+      "title": "9급 지방직 공무원 서울시 회계학",
+      "slug": "9급-지방직-공무원-서울시-회계학",
+      "questions": 100,
+      "exams": 5
+    },
+    {
+      "code": "vj",
+      "title": "조리기능장",
+      "slug": "조리기능장",
+      "questions": 540,
+      "exams": 9
+    },
+    {
+      "code": "vk",
+      "title": "금속재료기능장",
+      "slug": "금속재료기능장",
+      "questions": 1320,
+      "exams": 22
+    },
+    {
+      "code": "vm",
+      "title": "제과기능장",
+      "slug": "제과기능장",
+      "questions": 480,
+      "exams": 8
+    },
+    {
+      "code": "vn",
+      "title": "방수산업기사",
+      "slug": "방수산업기사",
+      "questions": 559,
+      "exams": 7
+    },
+    {
+      "code": "vo",
+      "title": "항로표지기사",
+      "slug": "항로표지기사",
+      "questions": 1200,
+      "exams": 15
+    },
+    {
+      "code": "vp",
+      "title": "운전면허 학과시험(필기) 1종 2종(2020년판)",
+      "slug": "운전면허-학과시험(필기)-1종-2종(2020년판)",
+      "questions": 907,
+      "exams": 10
+    },
+    {
+      "code": "vq",
+      "title": "운전면허 학과시험(필기) 2종 소형 이륜(2020년판)",
+      "slug": "운전면허-학과시험(필기)-2종-소형-이륜(2020년판)",
+      "questions": 458,
+      "exams": 5
+    },
+    {
+      "code": "vr",
+      "title": "9급 국가직 공무원 조경학",
+      "slug": "9급-국가직-공무원-조경학",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "vs",
+      "title": "9급 국가직 공무원 조경계획및설계",
+      "slug": "9급-국가직-공무원-조경계획및설계",
+      "questions": 120,
+      "exams": 6
+    },
+    {
+      "code": "vt",
+      "title": "유통관리사 1급",
+      "slug": "유통관리사-1급",
+      "questions": 1293,
+      "exams": 13
+    },
+    {
+      "code": "vu",
+      "title": "유통관리사 2급",
+      "slug": "유통관리사-2급",
+      "questions": 3484,
+      "exams": 39
+    },
+    {
+      "code": "vv",
+      "title": "유통관리사 3급",
+      "slug": "유통관리사-3급",
+      "questions": 1475,
+      "exams": 33
+    },
+    {
+      "code": "vw",
+      "title": "산업보건지도사",
+      "slug": "산업보건지도사",
+      "questions": 975,
+      "exams": 13
+    },
+    {
+      "code": "w1",
+      "title": "워드프로세서 (구 1급)",
+      "slug": "워드프로세서-(구-1급)",
+      "questions": 3832,
+      "exams": 64
+    },
+    {
+      "code": "w2",
+      "title": "워드프로세서 2급(폐지)",
+      "slug": "워드프로세서-2급(폐지)",
+      "questions": 2457,
+      "exams": 41
+    },
+    {
+      "code": "w3",
+      "title": "워드프로세서 3급(폐지)",
+      "slug": "워드프로세서-3급(폐지)",
+      "questions": 1599,
+      "exams": 40
+    },
+    {
+      "code": "w4",
+      "title": "비서 1급",
+      "slug": "비서-1급",
+      "questions": 1167,
+      "exams": 15
+    },
+    {
+      "code": "w5",
+      "title": "비서 2급",
+      "slug": "비서-2급",
+      "questions": 1180,
+      "exams": 15
+    },
+    {
+      "code": "w6",
+      "title": "비서 3급",
+      "slug": "비서-3급",
+      "questions": 769,
+      "exams": 13
+    },
+    {
+      "code": "w7",
+      "title": "9급 국가직 공무원 한국사",
+      "slug": "9급-국가직-공무원-한국사",
+      "questions": 435,
+      "exams": 22
+    },
+    {
+      "code": "w8",
+      "title": "9급 국가직 공무원 수학",
+      "slug": "9급-국가직-공무원-수학",
+      "questions": 179,
+      "exams": 9
+    },
+    {
+      "code": "w9",
+      "title": "9급 국가직 공무원 영어",
+      "slug": "9급-국가직-공무원-영어",
+      "questions": 300,
+      "exams": 22
+    },
+    {
+      "code": "wa",
+      "title": "9급 국가직 공무원 과학",
+      "slug": "9급-국가직-공무원-과학",
+      "questions": 180,
+      "exams": 9
+    },
+    {
+      "code": "wb",
+      "title": "9급 국가직 공무원 사회",
+      "slug": "9급-국가직-공무원-사회",
+      "questions": 179,
+      "exams": 9
+    },
+    {
+      "code": "wc",
+      "title": "9급 국가직 공무원 건축계획",
+      "slug": "9급-국가직-공무원-건축계획",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wd",
+      "title": "9급 국가직 공무원 건축구조",
+      "slug": "9급-국가직-공무원-건축구조",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "we",
+      "title": "9급 국가직 공무원 경제학개론",
+      "slug": "9급-국가직-공무원-경제학개론",
+      "questions": 298,
+      "exams": 15
+    },
+    {
+      "code": "wf",
+      "title": "9급 국가직 공무원 공업화학",
+      "slug": "9급-국가직-공무원-공업화학",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wg",
+      "title": "9급 국가직 공무원 공직선거법",
+      "slug": "9급-국가직-공무원-공직선거법",
+      "questions": 260,
+      "exams": 13
+    },
+    {
+      "code": "wh",
+      "title": "9급 국가직 공무원 관세법개론",
+      "slug": "9급-국가직-공무원-관세법개론",
+      "questions": 377,
+      "exams": 19
+    },
+    {
+      "code": "wi",
+      "title": "9급 국가직 공무원 교육학개론",
+      "slug": "9급-국가직-공무원-교육학개론",
+      "questions": 377,
+      "exams": 19
+    },
+    {
+      "code": "wj",
+      "title": "9급 국가직 공무원 교정학개론",
+      "slug": "9급-국가직-공무원-교정학개론",
+      "questions": 420,
+      "exams": 21
+    },
+    {
+      "code": "wk",
+      "title": "9급 국가직 공무원 국제법개론",
+      "slug": "9급-국가직-공무원-국제법개론",
+      "questions": 378,
+      "exams": 19
+    },
+    {
+      "code": "wm",
+      "title": "9급 국가직 공무원 기계설계",
+      "slug": "9급-국가직-공무원-기계설계",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wn",
+      "title": "9급 국가직 공무원 기계일반",
+      "slug": "9급-국가직-공무원-기계일반",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wo",
+      "title": "9급 국가직 공무원 네트워크보안",
+      "slug": "9급-국가직-공무원-네트워크보안",
+      "questions": 199,
+      "exams": 10
+    },
+    {
+      "code": "wp",
+      "title": "9급 국가직 공무원 노동법개론",
+      "slug": "9급-국가직-공무원-노동법개론",
+      "questions": 160,
+      "exams": 8
+    },
+    {
+      "code": "wq",
+      "title": "9급 국가직 공무원 무선공학개론",
+      "slug": "9급-국가직-공무원-무선공학개론",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wr",
+      "title": "9급 국가직 공무원 사회복지학개론",
+      "slug": "9급-국가직-공무원-사회복지학개론",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "ws",
+      "title": "9급 국가직 공무원 세법개론",
+      "slug": "9급-국가직-공무원-세법개론",
+      "questions": 420,
+      "exams": 21
+    },
+    {
+      "code": "wt",
+      "title": "9급 국가직 공무원 식용작물",
+      "slug": "9급-국가직-공무원-식용작물",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wu",
+      "title": "9급 국가직 공무원 안전관리론",
+      "slug": "9급-국가직-공무원-안전관리론",
+      "questions": 220,
+      "exams": 11
+    },
+    {
+      "code": "wv",
+      "title": "9급 국가직 공무원 응용역학개론",
+      "slug": "9급-국가직-공무원-응용역학개론",
+      "questions": 379,
+      "exams": 19
+    },
+    {
+      "code": "wx",
+      "title": "9급 국가직 공무원 임업경영",
+      "slug": "9급-국가직-공무원-임업경영",
+      "questions": 380,
+      "exams": 19
+    },
+    {
+      "code": "wy",
+      "title": "9급 국가직 공무원 재난관리론",
+      "slug": "9급-국가직-공무원-재난관리론",
+      "questions": 220,
+      "exams": 11
+    },
+    {
+      "code": "wz",
+      "title": "9급 국가직 공무원 재배학개론",
+      "slug": "9급-국가직-공무원-재배학개론",
+      "questions": 360,
+      "exams": 18
+    }
+  ]
+}
