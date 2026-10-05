@@ -1,9 +1,20 @@
-/* Business footer only; pending policies do not create public routes or links. */
-.site-footer .business-information { color: var(--muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
-.site-footer .business-information p { margin: 0; font-size: 14px; line-height: 1.6; }
-.site-footer .business-information a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: var(--blue-dark); }
-.footer-business-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
-body .site-footer--business :is(.footer-copy, .footer-meta, .footer-meta p) { font-size: 14px; }
-.site-footer .footer-business-block p.footer-copyright { margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
-body .site-footer.site-footer--business { padding-bottom: calc(var(--footer-clearance, 32px) + var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px)); }
+/* Footer-only tokens and selectors; unpublished policies do not create links. */
+body .site-footer.site-footer--business { background: var(--footer-surface); color: var(--footer-foreground); border-top-color: var(--footer-border); padding-top: 24px; padding-bottom: calc(var(--footer-clearance, 32px) + var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px)); }
+.site-footer--business .footer-topline { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 24px; }
+body .site-footer.site-footer--business p.footer-copyright { margin: 0; font-size: 14px; line-height: 1.6; color: var(--footer-foreground); }
+.site-footer--business .footer-navigation { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+body .site-footer.site-footer--business a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: var(--footer-link); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.site-footer--business a:hover { text-decoration: underline; }
+.site-footer--business a:focus-visible { outline-color: var(--footer-link); }
+.site-footer--business .footer-business-block { margin-top: 12px; padding-top: 0; border-top: 0; }
+.site-footer--business .business-information { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+body .site-footer.site-footer--business .business-information p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--footer-secondary); }
+.site-footer--business .business-information-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 0 16px; }
+.site-footer--business .business-information-meta span { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 4px; max-width: 100%; }
 body:has(.mobile-purchase-bar) .site-footer.site-footer--business { --footer-clearance: 152px; }
+@media (max-width: 767px) {
+  .site-footer--business .footer-topline { display: block; }
+  .site-footer--business .footer-navigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; margin-top: 8px; }
+  .site-footer--business .business-information-meta { display: block; }
+  .site-footer--business .business-information-meta span { display: flex; }
+}
