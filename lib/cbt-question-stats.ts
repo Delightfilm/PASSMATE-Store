@@ -6,10 +6,10 @@ export function questionStatsInput(question: Question) {
     stem: question.stem, choices: question.choices, answer: question.answer, images: question.images };
 }
 export function statsPresentation(stats: QuestionStats) {
-  if (!stats.total) return { label: "응답을 모으고 있어요", tone: "neutral", rate: null };
+  if (!stats.total) return { label: "응답을 모으고 있어요", tone: "neutral", rate: null, lowSample: false };
   const rate = Math.round(stats.correct / stats.total * 100);
-  return { rate, tone: stats.total < 20 ? "neutral" : rate <= 30 ? "hard" : rate <= 60 ? "careful" : "easy",
-    label: stats.total < 20 ? "아직 표본이 적어요" : rate <= 30 ? "많이 틀리는 문제" : rate <= 60 ? "주의해서 풀어보세요" : "정답률이 높은 문제" };
+  return { rate, lowSample: stats.total < 20, tone: rate >= 70 ? "high" : rate >= 50 ? "good" : rate >= 40 ? "careful" : "hard",
+    label: rate >= 70 ? "많이 맞히는 문제예요" : rate >= 50 ? "대체로 잘 맞혀요" : rate >= 40 ? "많이 헷갈려하는 문제예요" : "많이 틀리는 문제예요" };
 }
 export async function questionStatsRequest(questions: Question[], answers?: Record<string, number>, signal?: AbortSignal) {
   const rows = await Promise.all(questions.map(async (question) => ({ questionId: question.id, qualificationCode: question.certId,
