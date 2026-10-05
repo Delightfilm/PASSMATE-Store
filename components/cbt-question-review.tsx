@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { questionStatsRequest, statsPresentation, type QuestionStats } from "@/lib/cbt-question-stats";
+import { cachedQuestionStats, loadQuestionStats, statsPresentation, type QuestionStats } from "@/lib/cbt-question-stats";
 import type { Question } from "@/lib/question-bank";
 
-export function QuestionResponseStats({ question, refresh }: { question: Question; refresh?: number }) {
-  return <ResponseStats key={question.id} question={question} refresh={refresh} />;
+export function QuestionResponseStats({ question, refresh, prefetch }: { question: Question; refresh?: number; prefetch?: Question[] }) {
+  return <ResponseStats key={question.id} question={question} refresh={refresh} prefetch={prefetch} />;
 }
-function ResponseStats({ question, refresh }: { question: Question; refresh?: number }) {
-  const [stats, setStats] = useState<QuestionStats | null>(null);
+function ResponseStats({ question, refresh, prefetch }: { question: Question; refresh?: number; prefetch?: Question[] }) {
+  const [stats, setStats] = useState<QuestionStats | null>(() => cachedQuestionStats(question));
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const update = (event: Event) => { if ((event as CustomEvent<string[]>).detail?.includes(question.id)) setVersion((value) => value + 1); };
@@ -16,17 +16,18 @@ function ResponseStats({ question, refresh }: { question: Question; refresh?: nu
     return () => window.removeEventListener("cbt-stats-updated", update);
   }, [question.id]);
   useEffect(() => {
-    const abort = new AbortController();
-    void questionStatsRequest([question], undefined, AbortSignal.any([abort.signal, AbortSignal.timeout(15_000)]))
-      .then((body) => { if (!abort.signal.aborted) setStats(body.stats[question.id] || { total: 0, correct: 0 }); })
+    let active = true;
+    setStats(cachedQuestionStats(question));
+    void loadQuestionStats(prefetch || [question])
+      .then((body) => { if (active) setStats(body[question.id]); })
       .catch(() => {});
-    return () => abort.abort();
-  }, [question, refresh, version]);
+    return () => { active = false; };
+  }, [question, refresh, version, prefetch]);
   const display = stats ? statsPresentation(stats) : null;
   if (!stats || !display) return null;
   return <div className={`cbt-question-stats is-${display?.tone || "neutral"}`} aria-label="문항 응답 통계">
-    <strong>{display.rate === null ? "첫 응답 통계" : `정답률 ${display.rate}%`}</strong><span>{display.label}</span>
-    <small>{stats.total ? `응답 ${stats.total.toLocaleString()}개 중 ${(stats.total - stats.correct).toLocaleString()}개 오답` : "아직 집계된 응답이 없습니다."}{display.lowSample && " · 아직 표본이 적어요"}</small>
+    <strong>{display.rate === null ? "첫 응답 통계" : `정답률 ${display.rate}%`}<span>{display.label}</span></strong>
+    <small>{stats.total ? `응답 ${stats.total.toLocaleString()}개 중 ${(stats.total - stats.correct).toLocaleString()}개 오답` : "아직 집계된 응답이 없습니다."}</small>
   </div>;
 }
 
