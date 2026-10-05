@@ -1,5 +1,7 @@
 # 스토어 모바일 최적화 — 2026-10-04
 
+> 2026-10-05 학습 홈 전환: 기존 스토어 홈은 `/store/`로 보존했습니다. 최신 검증·캡처·커밋별 롤백은 [LEARNING_HOME_RELEASE_QA.md](./LEARNING_HOME_RELEASE_QA.md)에 이어서 정리했습니다. 미확정 정책 본문과 결제 동의 DB 변경은 제외했습니다.
+
 ## 변경 전 운영 화면
 
 360 / 390 / 430px에서 홈, 상품 목록, 상품 상세, 내 자료 경로를 캡처했다. 원본과 측정값은 워크스페이스 PASSMATE의 `tmp/store-mobile/before-*.png`, `before-metrics.json`에 보관한다.
