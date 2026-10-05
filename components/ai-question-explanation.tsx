@@ -35,6 +35,8 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
   const [returnPath, setReturnPath] = useState("/cbt/");
   const busy = useRef(false);
   const controller = useRef<AbortController | null>(null);
+  const savedExplanation = useRef<ExplanationReply | null>(null);
+  const lookup = useRef<Promise<ExplanationReply | null> | null>(null);
   useEffect(() => () => { controller.current?.abort(); }, []);
   useEffect(() => {
     function updateCount() {
@@ -54,13 +56,38 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
       window.removeEventListener(AI_DEVICE_EVENT, updateCount);
     };
   }, []);
-  // No automatic lookup/generation on wrong-answer selection or component mount.
+  useEffect(() => {
+    if (!allowGenerate || question.explanation.trim()) return;
+    const abort = new AbortController();
+    savedExplanation.current = null;
+    lookup.current = (async () => {
+      try {
+        const revision = await sourceHash(explanationInput(question));
+        if (abort.signal.aborted) return null;
+        const response = await fetch("/api/cbt/explanations/", { method: "POST", cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]),
+          body: JSON.stringify({ questionId: question.id, qualificationCode: question.certId, revision, readOnly: true }) });
+        if (!response.ok) return null;
+        const body = await response.json();
+        if (body.status !== "ready" || abort.signal.aborted) return null;
+        const ready: ExplanationReply = { ...body, explanation: validateExplanation(body.explanation, question.answer) };
+        savedExplanation.current = ready;
+        return ready;
+      } catch { return null; } // Optional cache lookup must never block explicit generation.
+    })();
+    return () => abort.abort();
+  }, [question, allowGenerate]);
 
   async function showExplanation() {
     if (busy.current) return;
+    if (savedExplanation.current) { setResult(savedExplanation.current); setError(""); setLoginRequired(false); return; }
     busy.current = true; setLoading(true); setError(""); setLoginRequired(false);
     const abort = new AbortController(); controller.current = abort;
     try {
+      const saved = await lookup.current;
+      if (abort.signal.aborted) return;
+      if (saved) { setResult(saved); return; }
       const revision = await sourceHash(explanationInput(question));
       const { data } = await getSupabaseBrowserClient().auth.getSession();
       setGuest(!data.session);
@@ -100,15 +127,14 @@ function ExplanationPanel({ question, selectedAnswer, allowGenerate = true, onRe
   }
 
   if (question.explanation.trim()) return <p>{question.explanation}</p>;
-  if (!allowGenerate) return <p>등록된 해설이 없습니다.</p>;
+  if (!allowGenerate) return null;
   const explanation = result?.explanation;
   return <div className="ai-question-explanation" aria-busy={loading}>
     <small className="ai-explanation-notice">AI가 생성한 해설로, 부정확한 내용이 포함될 수 있습니다.</small>
-    {!explanation && <>{loading ? <ExplanationProgress /> : <><p>등록된 해설이 없습니다. AI 해설로 복습할 수 있습니다.</p>
+    {!explanation && <>{loading ? <ExplanationProgress /> : <>
       {(!result || result.status === "generating" || (["failed", "refused"].includes(result.status) && result.retryable)) && <button type="button" className="button button-secondary" disabled={loading} onClick={showExplanation}>
         {result?.status === "refused" && result.retryable ? "해설 보완 생성" : result?.retryable ? "해설 다시 생성" : result ? "해설 상태 확인" : "해설보기"}
-      </button>}</>}
-      <small>등록 정답 기준 · 근거 검사에서 실패하면 한 번 보완하며, 저장된 해설은 함께 재사용합니다.</small></>}
+      </button>}</>}</>}
     {error && <p className="ai-explanation-error" role="alert">{error}</p>}
     {loginRequired && <Link className="button button-secondary" href="/account/login/?next=%2Fcbt%2F">로그인</Link>}
     {guest && createdCount >= AI_SIGNUP_THRESHOLD && <aside className="ai-explanation-signup" aria-label="회원가입 안내">
