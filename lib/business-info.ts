@@ -6,6 +6,6 @@ export const businessInfo = {
   "address": "서울특별시 노원구 상계로 35길 15-8",
   "email": "report@mypassmate.com",
   "phone": "",
-  "commerceRegistration": "2026-서울노원1344",
+  "commerceRegistration": "2026-서울노원-1344",
   "supportHours": ""
 } as const;

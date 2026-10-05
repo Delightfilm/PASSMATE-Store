@@ -368,3 +368,15 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 - `npm run check`, `npx tsc --noEmit`, `npx next build` 통과. 법적 검사의 경고 6개는 기존 미확정 정책 4개·비공개 전화·미확정 운영시간이다.
 - 전/후 PNG 및 JSON: 워크스페이스 `reports/learning-home-release-20261005/`의 `footer-contact-*`(전), `footer-light-*`(후). 운영 배포/최종 캡처 결과는 해당 폴더의 `FOOTER_LAYOUT_REVISION.md`에 기록한다.
 - 이번 푸터 수정 커밋만 revert하면 이전 어두운 푸터로 돌아간다. 학습 홈·스토어·사업자 정보 값·메일 전달 설정에는 영향을 주지 않는다.
+
+## 사용자 첨부 HTML 푸터 적용 — 2026-10-05 (최신)
+
+`PASSMATE Home.dc.html`의 푸터 배치를 적용했다. 짙은 배경의 상단 저작권/실제 메뉴 링크 → 구분선 → 항목별 사업자 정보 격자다. 로고·슬로건·하단 별도 저작권은 첨부안에 맞춰 제거했다. 통신판매업 신고번호는 `lib/business-info.ts`에서 사용자 정정값 **2026-서울노원-1344**로 변경했다. 그 외 사업자 정보·메일 전달·결제·인증·다운로드·시험 계약은 보존했다.
+
+- 최대 폭 1120px, PC 좌우 24px / ≤767px 좌우 16px. 최소 240px 열의 자동 격자로 360/390/430px에서는 1열, 1280px에서는 4열이다. 모바일 메뉴는 2열이다.
+- 첨부안의 13px 대신 기존 최소 14px 기준을 유지했다. 푸터 전용 색상 토큰 사용, 터치 44px·safe-area·시험 푸터 숨김을 유지했다. 미확정 정책과 빈 전화/운영시간은 렌더링하지 않았다.
+- `npm run check`, `npx tsc --noEmit`, `npx next build` 통과. 기존 법적 미확정 항목 6개는 경고로 남았다.
+- 로컬 홈/스토어/CBT Chromium 12건(360/390/430/1280px), WebKit 9건(모바일): 가로 넘침·검사 대상 터치/폰트 위반·페이지 오류 0건.
+- 푸터 `dt/dd`를 포함한 전체 텍스트와 모든 링크를 양 엔진 360/390/430/1280px에서 별도로 측정: 최소 글자 14px, 최소 대비 **6.99:1**, 터치 위반 0건, `#` 링크 0건, 정정 신고번호 표시 확인.
+- Chromium 로컬 전체 페이지 CLS 최대 0.052. WebKit은 관측 API 미지원으로 측정 불가. 운영 결과와 전/후 캡처는 워크스페이스 `reports/learning-home-release-20261005/FOOTER_HTML_UPDATE.md`에 기록한다. `footer-html-local-*` PNG/JSON에 이번 로컬 결과를 보관했다.
+- 변경 파일: 푸터/사업자 정보 컴포넌트, `app/legal.css`, `app/tokens.css`, `lib/business-info.ts`, 디자인/상태/이 QA 문서. 이 수정 커밋만 revert하면 직전 밝은 푸터와 이전 신고번호 값으로 돌아간다.

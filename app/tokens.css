@@ -48,11 +48,11 @@
   --line:#d1d5db;
   --soft:#f9fafb;
   --white:#fff;
-  --footer-surface: var(--white);
-  --footer-foreground: var(--ink);
-  --footer-secondary: var(--muted);
-  --footer-link: var(--blue-dark);
-  --footer-border: var(--line);
+  --footer-surface: var(--charcoal);
+  --footer-foreground: var(--color-e5e7eb);
+  --footer-secondary: #9ca3af;
+  --footer-link: #93c5fd;
+  --footer-border: #374151;
   --success:#257343;
   --success-soft:#eff9f1;
   --error:#b5473c;
