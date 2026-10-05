@@ -1,0 +1,44 @@
+.learning-home { padding: 64px 0 72px; background: var(--white); color: var(--ink); }
+.learning-home .learning-home-container { max-width: 920px; }
+.learning-hero { max-width: 720px; }
+.learning-home h1 { margin: 0; font-size: clamp(32px, 4.8vw, 48px); font-weight: 700; line-height: 1.3; letter-spacing: -.025em; word-break: keep-all; }
+.learning-home .learning-home-description { margin: 18px 0 28px; font-size: 16px; font-weight: 400; line-height: 1.6; color: var(--muted); }
+.learning-search { position: relative; max-width: 640px; }
+.learning-search-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.learning-search-field { position: relative; }
+.learning-search-field input { display: block; box-sizing: border-box; width: 100%; min-width: 0; min-height: 52px; padding: 14px 52px 14px 16px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--white); font: inherit; font-size: 16px; line-height: 1.4; }
+.learning-search-field input::placeholder { color: var(--muted); opacity: 1; }
+.learning-search-field svg { position: absolute; right: 17px; top: 15px; color: var(--blue); pointer-events: none; }
+.learning-search-field input:focus-visible, .learning-home a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.learning-search-popup { position: absolute; z-index: 20; top: calc(100% + 8px); left: 0; right: 0; max-height: 360px; overflow-y: auto; padding: 8px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.learning-search-popup ul { margin: 0; padding: 0; list-style: none; }
+.learning-search-popup a { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; justify-content: space-between; min-height: 52px; padding: 12px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.learning-search-popup strong { font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.learning-search-popup span { font-size: 14px; color: var(--muted); }
+.learning-search-popup a:hover, .learning-search-popup a[aria-selected="true"] { background: var(--blue-soft); }
+.learning-search-popup p { margin: 8px; font-size: 15px; line-height: 1.6; color: var(--muted); }
+.learning-quick { margin-top: 36px; }
+.learning-home h2 { margin: 0 0 16px; font-size: 20px; font-weight: 600; line-height: 1.4; }
+.learning-quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.learning-quick-grid a { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-width: 0; min-height: 88px; padding: 16px; color: var(--ink); border: 1px solid var(--line); border-radius: 12px; background: var(--white); text-decoration: none; }
+.learning-quick-grid a:hover { border-color: var(--blue); background: var(--blue-soft); }
+.learning-quick-grid strong { font-size: 16px; font-weight: 600; line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+.learning-quick-grid span { font-size: 14px; font-weight: 400; line-height: 1.6; color: var(--muted); }
+.learning-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.learning-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-width: 44px; min-height: 48px; padding: 12px 20px; border: 1px solid var(--blue); border-radius: 10px; font-size: 14px; font-weight: 600; line-height: 1.4; text-decoration: none; }
+.learning-actions .learning-all { background: var(--blue); color: var(--white); }
+.learning-actions .learning-store { background: var(--white); color: var(--blue-dark); }
+@media (max-width: 767px) {
+  .learning-home { padding: 24px 0 36px; }
+  .learning-home .learning-home-container { width: calc(100% - 32px); padding: 0; }
+  .learning-home h1 { font-size: 32px; }
+  .learning-home .learning-home-description { margin: 12px 0 20px; }
+  .learning-quick { margin-top: 24px; }
+  .learning-home h2 { font-size: 18px; margin-bottom: 12px; }
+  .learning-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .learning-quick-grid a { min-height: 74px; padding: 12px; gap: 4px; }
+  .learning-quick-grid a:nth-child(n+5) { display: none; }
+  .learning-quick-grid strong { font-size: 16px; }
+  .learning-actions { margin-top: 20px; gap: 10px; }
+  .learning-actions a { flex: 1; padding-inline: 12px; }
+}

@@ -14,11 +14,11 @@ function initialSearch(value: string) {
   }).join("");
 }
 export function searchQualifications(query: string, limit = 6) {
-  const needle = normalizeSearch(query);
+  const needle = normalizeSearch(query).replace(/컴활/g, "컴퓨터활용능력");
   if (!needle) return [];
   return homeCatalog.qualifications.filter(item => {
     const title = normalizeSearch(item.title);
-    return title.includes(needle) || initialSearch(title).includes(needle) || normalizeSearch(item.code).includes(needle);
+    return title.includes(needle) || normalizeSearch(initialSearch(title)).includes(needle) || normalizeSearch(item.code).includes(needle);
   }).slice(0, limit);
 }
-export const quickQualifications = homeCatalog.qualifications.filter(item => item.questions > 0 && item.exams > 0).slice(0, 6);
+export const quickQualifications = homeCatalog.qualifications.filter(item => item.questions > 0 && item.exams > 0).sort((a, b) => b.questions - a.questions || (a.code < b.code ? -1 : 1)).slice(0, 6);

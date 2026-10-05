@@ -1,6 +1,6 @@
 // The mobile deadline starts in <head>, before DOMContentLoaded can be delayed.
 export const storeFontGuard = `(() => {
-  if (!matchMedia('(max-width:767px)').matches || !(location.pathname === '/' || ['/products','/library'].some(p => location.pathname === p || location.pathname.startsWith(p + '/')) || location.pathname.startsWith('/account/login'))) return;
+  if (!matchMedia('(max-width:767px)').matches || !(['/store','/products','/library'].some(p => location.pathname === p || location.pathname.startsWith(p + '/')) || location.pathname.startsWith('/account/login'))) return;
   const root = document.documentElement;
   let shown = false;
   const reveal = fallback => {
