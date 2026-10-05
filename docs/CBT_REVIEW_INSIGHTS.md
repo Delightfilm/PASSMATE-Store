@@ -26,4 +26,6 @@ Local full build/type checking and existing contracts passed. New executable che
 
 The statistics-speed follow-up passes full build/type checking and checks for source-free aggregate reads, pending-request coalescing, navigation without new reads, correction-isolated cache entries, 60-second expiry, failed-request retry and protection against an older read overwriting a just-recorded aggregate. Production timing and badge geometry are checked after deployment.
 
+PR #32 is merged and live at `957492fb242908a25ce2564fd24457d8dae36f29` (`dpl_5wqF8ZhvRxghgVehpQGuMUimKb9p`). A production QA attempt loaded all 20 real aggregates in one read (2,203ms), then displayed the next question's statistics with zero additional requests. The low-sample copy is absent and the description shares the colored percentage badge. Live geometry exposed a higher-specificity shared-header gap of 8px; the spacing follow-up explicitly overrides that gap to 24px without changing the mobile flex-basis rule.
+
 Migration `20261005084944_cbt_question_answer_statistics` and Edge function version 1 are live. The original review UI reached production in PR #27, with final answer colors verified after PR #29. Memo-disclosure acceptance is tracked in its follow-up PR.
