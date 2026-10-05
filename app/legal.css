@@ -15,6 +15,7 @@ body .site-footer.site-footer--business a { display: inline-flex; align-items: c
 .site-footer--business .business-information dd a { margin-block: -10.8px; }
 body:has(.mobile-purchase-bar) .site-footer.site-footer--business { --footer-clearance: 152px; }
 @media (max-width: 767px) {
+  body:has(.mobile-cbt-nav) .site-footer.site-footer--business { --bottom-nav-height: 56px; }
   .site-footer--business .footer-container { padding-inline: 16px; }
   .site-footer--business .footer-topline { display: block; }
   .site-footer--business .footer-navigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; margin-top: 12px; }

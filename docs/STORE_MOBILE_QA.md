@@ -380,3 +380,4 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 - 푸터 `dt/dd`를 포함한 전체 텍스트와 모든 링크를 양 엔진 360/390/430/1280px에서 별도로 측정: 최소 글자 14px, 최소 대비 **6.99:1**, 터치 위반 0건, `#` 링크 0건, 정정 신고번호 표시 확인.
 - Chromium 로컬 전체 페이지 CLS 최대 0.052. WebKit은 관측 API 미지원으로 측정 불가. 운영 결과와 전/후 캡처는 워크스페이스 `reports/learning-home-release-20261005/FOOTER_HTML_UPDATE.md`에 기록한다. `footer-html-local-*` PNG/JSON에 이번 로컬 결과를 보관했다.
 - 변경 파일: 푸터/사업자 정보 컴포넌트, `app/legal.css`, `app/tokens.css`, `lib/business-info.ts`, 디자인/상태/이 QA 문서. 이 수정 커밋만 revert하면 직전 밝은 푸터와 이전 신고번호 값으로 돌아간다.
+- 추가 확인에서 기존 CBT 모바일 하단 메뉴(56px)가 푸터 기본 여백(44px)과 겹칠 수 있어, 메뉴가 실제로 있는 ≤767px 화면에서 `--bottom-nav-height: 56px`을 적용했다. 하단 메뉴 기능은 변경하지 않았으며 safe-area는 기존 계산에 더한다.
