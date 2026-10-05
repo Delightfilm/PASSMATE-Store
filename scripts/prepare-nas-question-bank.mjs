@@ -141,11 +141,14 @@ for (let index = 0; index < files.length; index += 1) {
     if (choices.some((choice) => !choice.text && !choice.images?.length)) reasons.push("empty_choice_without_image");
     if (answer < 0 || answer >= choices.length) reasons.push("answer_out_of_range");
     const images = [];
+    if (row.display_mode && !["text", "source_image"].includes(row.display_mode)) reasons.push("invalid_display_mode");
     for (const asset of Array.isArray(row.visual_assets) ? row.visual_assets : []) {
       const relative = materializeImage(asset, usedImages);
       if (!relative) reasons.push("missing_stem_image_asset");
       else if (!images.includes(relative)) images.push(relative);
     }
+    if (row.display_mode === "source_image" && !images.length) reasons.push("source_presentation_image_missing");
+    if (row.display_mode === "text" && images.length) reasons.push("evidence_image_in_text_presentation");
     if (reasons.length) {
       excludedRows.push({ qualificationCode: code, row: rowIndex + 1, questionId: id, examId, questionNo: Number(row.question_no ?? row.no) || null, reasons: [...new Set(reasons)] });
       continue;
@@ -159,6 +162,7 @@ for (let index = 0; index < files.length; index += 1) {
       no: Number(row.question_no ?? row.no),
       subjectId: safeText(row.subject_id),
       stem,
+      ...(row.display_mode ? { displayMode: row.display_mode } : {}),
       images,
       choices,
       answer,

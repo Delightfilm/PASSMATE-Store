@@ -13,7 +13,8 @@ function ChoiceImage({ src, label }: { src: string; label: string }) {
     unoptimized style={{ width: "auto", height: "auto", maxWidth: "100%" }} onError={() => setFailed(true)} /></span>;
 }
 
-export function QuestionChoiceContent({ choice }: { choice: Choice }) {
+export function QuestionChoiceContent({ choice, sourceImage = false }: { choice: Choice; sourceImage?: boolean }) {
+  if (sourceImage) return <span className="question-choice-content"><span aria-hidden="true">원문 보기</span><span className="sr-only">{choice.text || `${choice.label}번 보기`}</span></span>;
   return <span className="question-choice-content">{choice.text && <span>{choice.text}</span>}
     {(choice.images || []).map((src, index) => <ChoiceImage key={src} src={src} label={`${choice.label}번 보기 이미지 ${index + 1}`} />)}
   </span>;

@@ -6,6 +6,21 @@
 
 ## Current Focus
 
+### Official parser/presentation review — 2026-10-05, local verification complete
+
+- Confirmed full-source-crop duplication in stage questions and some driving questions.
+- Rechecked all 18,054 admitted official questions. Separate audited display modes:
+  12,358 text questions without duplicate evidence images; 5,696 original-image
+  questions displayed once with numbered answer controls.
+- Repaired driving 965's preceding-explanation crop overlap and stage audio grade
+  1 round 10 major question 19's clipped 1/3 numerator. Original assets and repair
+  history retained, MASTER/staging backups created; source text, IDs, choices and
+  all grading/candidate metadata unchanged.
+- Source checks, full real-data rendering regression and final application build
+  passed. Matching NAS package prepared; code/data production activation and live
+  browser verification pending the NAS browser connection. See
+  `OFFICIAL_PARSER_REVIEW.md`. This does not supersede the currently deployed code.
+
 ### Learning home stage 1 — 2026-10-05
 
 - Implemented synchronous `/` learning shell, local certification search and source-derived shortcuts. Preserved the previous store home at `/store/`; the main body and service switcher link there.

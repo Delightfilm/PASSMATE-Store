@@ -50,6 +50,7 @@ const clientRequire = (name) => {
   if (name === "@/components/cbt-question-review") return { QuestionResponseStats: () => null, QuestionMemo: () => null };
   if (name === "@/components/question-bank-loading") return { QuestionBankLoading: () => null };
   if (name === "@/components/question-answer-info") return { QuestionAnswerInfo: () => null };
+  if (name === "@/components/question-body") return { QuestionBody: ({ question }) => React.createElement("h1", null, question.stem) };
   if (name === "@/components/question-choice-content") return { QuestionChoiceContent: ({ choice }) => React.createElement("span", null, choice.text) };
   if (name.startsWith("@/lib/")) return { certSlug: (cert) => cert.name };
   return createRequire(clientPath)(name);
