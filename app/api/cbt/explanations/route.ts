@@ -43,6 +43,9 @@ export async function POST(request: Request) {
     cacheConfig(); // Fail closed: never call the model without durable NAS storage.
     stage = "question";
     const question = await trustedQuestion(qualificationCode, questionId);
+    if (question.choices.length !== 4 || question.answerComparison === "disagree" || (question.acceptedAnswers?.length || 0) > 1) {
+      return reply({ error: "답안 정보를 참고해 복습해 주세요. 이 문항의 해설은 준비 중입니다." }, 422);
+    }
     key = fingerprint(question);
     if (revision !== key) return reply({ error: "문제가 수정되었습니다. 페이지를 새로고침한 뒤 해설을 확인해 주세요." }, 409);
     if (question.explanation.trim()) return reply({ error: "등록된 해설이 있습니다. 페이지를 새로고침해 주세요." }, 409);
