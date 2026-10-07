@@ -3,7 +3,7 @@ import type { Question } from "@/lib/question-bank";
 // An official full-question crop already contains its stem and every option.
 // Display it once. Text-only questions and legacy diagram assets keep their
 // usual presentation; the audited bundle explicitly selects the mode.
-export function QuestionBody({ question, heading: Heading = "h1" }: { question: Question; heading?: "h1" | "h3" }) {
+export function QuestionBody({ question, heading: Heading = "h1" }: { question: Pick<Question, "stem" | "images" | "displayMode">; heading?: "h1" | "h3" }) {
   const original = question.displayMode === "source_image" && question.images.length > 0;
   const images = question.images.length > 0 && <div className="question-image-list">
     {question.images.map((src, index) => <img src={src} key={src}

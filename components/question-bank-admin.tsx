@@ -140,7 +140,7 @@ export function QuestionBankAdmin() {
 
   async function saveReview(patch: ReviewContent, reason: string, resolve: boolean) {
     if (reviewLocked || (!editing && !manualQuestion) || !reviewData) return;
-    setReviewBusy(true); setReviewFailure("");
+    setReviewBusy(true); setReviewFailure(""); setReviewNotice("");
     try {
       const result = await callQuestionBankAdmin<{ version: number }>({ action: editing ? "save_report_question" : "save_question", reportId: editing?.id, questionRef: reviewData.question.id, qualificationCode: qualificationCode, patch, reason, resolve, expectedVersion: reviewData.version, sourceHash: reviewData.sourceHash });
       if (resolve && editing) { setReports((items) => items.filter((item) => item.id !== editing.id)); setEditing(null); setReviewData(null); }
@@ -149,6 +149,12 @@ export function QuestionBankAdmin() {
       await loadReports();
     } catch (error) { setReviewFailure(reviewError(error)); }
     finally { setReviewBusy(false); }
+  }
+
+  function closeReview() {
+    if (reviewLocked) return;
+    if (!window.confirm("편집을 닫을까요? 저장하지 않은 입력은 사라집니다.")) return;
+    setEditing(null); setManualQuestion(null); setReviewData(null);
   }
 
   async function importFile(file?: File) {
@@ -246,7 +252,7 @@ export function QuestionBankAdmin() {
     URL.revokeObjectURL(url);
   }
 
-  return <section className="store-admin-view">
+  return <section className="store-admin-view" tabIndex={-1} data-question-editor-return>
     <div className="admin-overview admin-overview--four">
       <Metric label="검수 대기" value={batch?.status === "needs_review" ? batch.rows.length : 0} />
       <Metric label="오류 행" value={batch?.errors.length || 0} />
@@ -287,7 +293,7 @@ export function QuestionBankAdmin() {
       <div className="import-preview-table"><div className="import-preview-head"><span>상태</span><span>문항</span><span>보기</span><span>sourceHash</span></div>{batch.rows.slice(0, 10).map((row, index) => <div className="import-preview-row" key={`${String(row.question_uid || row.sourceHash)}-${index}`}><span className="admin-state">{String(row.status || "needs_review")}</span><strong>{String(row.stem || row.question || "-")}</strong><span>{Array.isArray(row.choices) ? row.choices.length : String(row.choices || "").split("|").filter(Boolean).length}</span><code>{String(row.sourceHash).slice(0, 12)}…</code></div>)}</div>
     </section>}
     <QuestionBankPicker busy={reviewLocked} onSelect={question=>void openManual(question)} />
-    {manualQuestion && <section className="admin-panel"><div className="admin-panel-head"><h3>문항 직접 수정</h3><button className="button button-ghost" disabled={reviewLocked} onClick={()=>{if(window.confirm("편집을 닫을까요? 저장하지 않은 입력은 사라집니다.")){setManualQuestion(null);setReviewData(null);}}}>편집 닫기</button></div>{reviewData?<ReviewEditor key={manualQuestion.id} data={reviewData} busy={reviewBusy} onMediaBusy={setMediaBusy} hasReport={false} onSave={saveReview} onReload={()=>void openManual(manualQuestion)}/>:<p role="status">{reviewBusy?"문항을 불러오는 중…":"불러오지 못했습니다. 문항을 다시 선택해 주세요."}</p>}{reviewFailure&&<p role="alert" className="question-review-error">{reviewFailure}</p>}{reviewNotice&&<p role="status">{reviewNotice}</p>}</section>}
+    {manualQuestion && <section className="admin-panel"><div className="admin-panel-head"><h3>문항 직접 수정</h3><button className="button button-ghost" disabled={reviewLocked} onClick={closeReview}>편집 닫기</button></div>{reviewData?<ReviewEditor key={manualQuestion.id} data={reviewData} busy={reviewBusy} onMediaBusy={setMediaBusy} hasReport={false} onSave={saveReview} onReload={()=>void openManual(manualQuestion)} onClose={closeReview} error={reviewFailure} notice={reviewNotice}/>:<p role="status">{reviewBusy?"문항을 불러오는 중…":"불러오지 못했습니다. 문항을 다시 선택해 주세요."}</p>}{reviewFailure&&<p role="alert" className="question-review-error">{reviewFailure}</p>}{reviewNotice&&<p role="status">{reviewNotice}</p>}</section>}
     <section className="admin-panel">
       <div className="admin-panel-head"><div><span className="eyebrow">IMPORT HISTORY</span><h2>최근 운영 DB 배치</h2></div><Link href="/cbt/">CBT MATE 열기 ↗</Link></div>
       {recentBatches.length ? recentBatches.map((item) => <div className="record-row" key={item.id}><span>{item.file_name}<small>{item.qualification_code} · {new Date(item.created_at).toLocaleString("ko-KR")}</small></span><strong>{item.row_count}문항</strong><small>{item.status}</small>{item.status === "needs_review" && <button className="button button-primary" onClick={() => void publish(item.id)} disabled={busy}>공개</button>}</div>) : <p className="admin-empty">아직 운영 DB에 저장한 배치가 없습니다.</p>}
@@ -298,7 +304,7 @@ export function QuestionBankAdmin() {
       {reviewFailure && <p className="question-review-error" role="alert">{reviewFailure}</p>}
       {reviewNotice && <p className="admin-help" role="status">{reviewNotice}</p>}
       {reviewLoading ? <p role="status">신고·처리 이력을 불러오는 중…</p> : reports.length ? reports.map((report) => <div className="record-row question-review-row" key={report.id}><span>{report.question_bank_questions?.no || "-"}번 · {report.question_bank_questions?.stem || report.question_ref || report.question_id}<small>{reportKinds[report.kind] || report.kind} · {new Date(report.created_at).toLocaleString("ko-KR")} · {report.memo || "메모 없음"}</small></span><div className="admin-card-actions"><button className="button button-primary" disabled={reviewLocked} onClick={() => void openEditor(report)}>문항 수정</button><button className="button button-ghost" disabled={reviewLocked} onClick={() => void resolveReport(report.id)}>검수 완료</button></div></div>) : !reviewFailure && <p className="admin-empty">검수 대기 중인 오류 신고가 없습니다.</p>}
-      {editing && <div className="question-review-editor"><div className="admin-panel-head"><h3>신고 문항 수정</h3><button className="button button-ghost" disabled={reviewLocked} onClick={() => { if(window.confirm("편집을 닫을까요? 저장하지 않은 입력은 사라집니다.")){setEditing(null); setReviewData(null);} }}>편집 닫기</button></div><p className="admin-help">신고 내용: {editing.memo || reportKinds[editing.kind]}</p>{reviewData ? <ReviewEditor key={editing.id} data={reviewData} busy={reviewBusy} onMediaBusy={setMediaBusy} onSave={saveReview} onReload={() => void openEditor(editing, qualificationCode)} /> : reviewBusy ? <p role="status">원본 문항을 불러오는 중…</p> : <div className="admin-form-grid"><label>종목<select value={qualificationCode} onChange={(event) => setQualificationCode(event.target.value)}><option value="">신고한 종목 선택</option>{qualifications.map((item) => <option key={item.code} value={item.code}>{item.title} ({item.code})</option>)}</select></label><button className="button button-primary" disabled={!qualificationCode} onClick={() => void openEditor(editing, qualificationCode)}>문항 불러오기</button></div>}</div>}
+      {editing && <div className="question-review-editor"><div className="admin-panel-head"><h3>신고 문항 수정</h3><button className="button button-ghost" disabled={reviewLocked} onClick={closeReview}>편집 닫기</button></div><p className="admin-help">신고 내용: {editing.memo || reportKinds[editing.kind]}</p>{reviewData ? <ReviewEditor key={editing.id} data={reviewData} busy={reviewBusy} onMediaBusy={setMediaBusy} onSave={saveReview} onReload={() => void openEditor(editing, qualificationCode)} onClose={closeReview} error={reviewFailure} notice={reviewNotice} reportMemo={editing.memo || reportKinds[editing.kind]} /> : reviewBusy ? <p role="status">원본 문항을 불러오는 중…</p> : <div className="admin-form-grid"><label>종목<select value={qualificationCode} onChange={(event) => setQualificationCode(event.target.value)}><option value="">신고한 종목 선택</option>{qualifications.map((item) => <option key={item.code} value={item.code}>{item.title} ({item.code})</option>)}</select></label><button className="button button-primary" disabled={!qualificationCode} onClick={() => void openEditor(editing, qualificationCode)}>문항 불러오기</button></div>}</div>}
     </section>
     <section className="admin-panel">
       <div className="admin-panel-head"><div><span className="eyebrow">REVIEW HISTORY</span><h2>문항 수정·검수 로그</h2><p>최근 100건을 표시합니다. 전체 이력은 계속 보관됩니다.</p></div></div>

@@ -16,18 +16,54 @@ const image='https://content.mypassmate.com/images/aa/'+'a'.repeat(64)+'.png';
 const asset='https://content.mypassmate.com/admin-images/'+'b'.repeat(64)+'.png';
 const question={id:'a'.repeat(20),certId:'aa',no:1,sourceHash:'source',stem:'stem',images:[image],displayMode:'source_image',choices:['A','B','C','D'].map((text,i)=>({label:review.choiceLabel(i),text})),answer:0,explanation:''};
 const originalFetch=globalThis.fetch;
+const body=load('components/question-body.tsx');
+const choiceView=load('components/question-choice-content.tsx',{'next/image':{default:({unoptimized,onError,...props})=>React.createElement('img',props)}});
+const views={'./question-body':body,'./question-choice-content':choiceView};
+// Catch always-expanded editing, lost drafts, and answer/choice reindex regressions.
+{
+ const h=hooks();let saved;const component=load('components/question-review-editor.tsx',{react:h.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':{},...views});
+ const data={question:{...question,images:[],displayMode:'text'},version:0,sourceHash:'source'};
+ let closed=0;
+ const render=()=>{h.reset();return nodes(component.ReviewEditor({data,busy:false,onMediaBusy(){},hasReport:false,onSave:async(...args)=>{saved=args;},onReload(){},onClose(){closed++;}}));};
+ const button=(tree,label)=>tree.find(n=>n.type==='button'&&n.props['aria-label']===label);
+ let tree=render();assert.equal(tree.filter(n=>n.type==='textarea').length,1,'only save reason expanded initially');
+ assert.ok(tree.some(n=>n.type==='dialog'),'editor declares a dialog; browser tests verify modal behavior');
+ button(tree,'문항 편집 닫기').props.onClick();assert.equal(closed,1,'close returns to question list');
+ assert.ok(tree.some(n=>n.type===body.QuestionBody),'real learner stem renderer reused');
+ button(tree,'문제 본문 수정').props.onClick();tree=render();tree.find(n=>n.type==='textarea'&&n.props['aria-label']==='문제 본문').props.onChange({target:{value:'changed stem'}});
+ button(render(),'본문 수정 닫기').props.onClick();tree=render();assert.equal(tree.find(n=>n.type===body.QuestionBody).props.question.stem,'changed stem','closing field retains draft preview');
+ const row=tree.find(n=>n.props?.['data-choice-key']==='1');assert.ok(nodes(row).some(n=>n.type==='input'&&n.props.type==='checkbox'),'answer checkbox belongs to choice');
+ tree.find(n=>n.type==='input'&&n.props['aria-label']==='② 정답').props.onChange({target:{checked:true}});
+ button(render(),'① 보기 수정').props.onClick();tree=render();tree.find(n=>n.type==='textarea'&&n.props['aria-label']==='① 보기 텍스트').props.onChange({target:{value:'edited A'}});
+ tree=render();tree.find(n=>n.type==='button'&&n.props['aria-label']==='① 보기 삭제').props.onClick();tree=render();assert.equal(tree.find(n=>n.type==='input'&&n.props['aria-label']==='① 정답').props.checked,true,'accepted answer follows choice on delete');
+ tree.find(n=>n.type==='textarea'&&n.props.maxLength===2000).props.onChange({target:{value:'manual reason'}});tree=render();tree.find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+ assert.equal(saved[0].stem,'changed stem');assert.deepEqual(saved[0].acceptedAnswers,[0]);assert.equal(saved[0].choices.length,3);assert.equal(saved[1],'manual reason');assert.equal(saved[2],false);
+ const fh=hooks(),full=load('components/question-review-editor.tsx',{react:fh.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':{},...views});let fd={...data,question};
+ const fr=()=>{fh.reset();return nodes(full.ReviewEditor({data:fd,busy:false,onMediaBusy(){},onSave:async()=>{},onReload(){}}));};
+ tree=fr();assert.equal(tree.find(n=>n.type===body.QuestionBody).props.question.displayMode,'source_image','full source image initially shown once');
+ button(tree,'문제 본문 수정').props.onClick();tree=fr();tree.find(n=>n.type==='textarea'&&n.props['aria-label']==='문제 본문').props.onChange({target:{value:'corrected source stem'}});button(fr(),'본문 수정 닫기').props.onClick();
+ assert.equal(fr().find(n=>n.type===body.QuestionBody).props.question.displayMode,'corrected_source');
+ fd={...fd,question:{...question,stem:'corrected source stem'},version:1};assert.equal(fr().find(n=>n.type===body.QuestionBody).props.question.displayMode,'corrected_source','save cannot hide edited source text again');
+}
+// Save outcomes must remain beside the sticky controls on long questions.
+{
+ const h=hooks();const component=load('components/question-review-editor.tsx',{react:h.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':{},...views});
+ const render=props=>{h.reset();return nodes(component.ReviewEditor({data:{question,version:0,sourceHash:'source'},busy:false,onMediaBusy(){},onSave:async()=>{},onReload(){},...props}));};
+ for(const props of [{notice:'saved successfully'},{error:'save failed'}]){const tree=render(props),bar=tree.find(n=>n.props?.className==='question-editor-savebar');assert.ok(nodes(bar).some(n=>n.props?.children===(props.notice||props.error)),'sticky savebar contains latest outcome');}
+ const tree=render({busy:true,notice:'stale saved successfully'});assert.ok(!nodes(tree.find(n=>n.props?.className==='question-editor-savebar')).some(n=>n.props?.children==='stale saved successfully'),'busy status overrides stale outcome');
+}
 try{
  const parent=hooks(),child=hooks();let rootBusy=false,saves=0,release,signal;
  const media=load('components/question-image-editor.tsx',{react:child.react,'@/lib/supabase-browser':{getSupabaseBrowserClient:()=>({auth:{getSession:async()=>({data:{session:{access_token:'fixture'}}})}})}});
- const editor=load('components/question-review-editor.tsx',{react:parent.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':media});
+ const editor=load('components/question-review-editor.tsx',{react:parent.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':media,...views});
  const data={question:{...question,images:[]},version:0,sourceHash:'source'};
  const render=()=>{parent.reset();return editor.ReviewEditor({data,busy:false,onMediaBusy:value=>{rootBusy=value;},onSave:async()=>{saves++;},onReload(){}});};
  const upload=props=>{child.reset();nodes(media.QuestionImageEditor(props)).find(n=>n.type==='input'&&n.props['aria-label']==='사진 추가').props.onChange({target:{files:[new File(['fixture'],'image.png',{type:'image/png'})],value:'image.png'}});};
  globalThis.fetch=(_url,options)=>{signal=options.signal;return new Promise(resolve=>{release=resolve;});};
  let tree=nodes(render());tree.find(n=>n.type==='textarea'&&n.props.maxLength===2000).props.onChange({target:{value:'fixture reason'}});tree=nodes(render());const stale=tree.find(n=>n.type==='form');
  upload(tree.filter(n=>n.type===media.QuestionImageEditor)[2].props);stale.props.onSubmit({preventDefault(){}});assert.equal(saves,0,'synchronous submit during upload blocked');await flush();tree=nodes(render());assert.equal(rootBusy,true);assert.equal(tree.find(n=>n.type==='button'&&n.props.type==='submit').props.disabled,true);
- const remove=tree.find(n=>n.type==='button'&&[].concat(n.props.children).join('')==='① 보기 삭제');assert.equal(remove.props.disabled,true);remove.props.onClick();release({ok:true,json:async()=>({url:asset})});await flush();
- tree=nodes(render());const mediaNodes=tree.filter(n=>n.type===media.QuestionImageEditor);assert.deepEqual(mediaNodes[1].props.images,[asset]);assert.deepEqual(mediaNodes[2].props.images,[]);assert.equal(rootBusy,false);
+ const remove=tree.find(n=>n.type==='button'&&n.props['aria-label']==='① 보기 삭제');assert.equal(remove.props.disabled,true);remove.props.onClick();release({ok:true,json:async()=>({url:asset})});await flush();
+ tree=nodes(render());const mediaNodes=tree.filter(n=>n.type===media.QuestionImageEditor);assert.deepEqual(mediaNodes[2].props.images,[asset]);assert.deepEqual(mediaNodes[3].props.images,[]);assert.equal(rootBusy,false);
  upload(mediaNodes[1].props);await flush();child.unmount();assert.equal(signal.aborted,true);const before=JSON.stringify(parent.state.slice(1));release({ok:true,json:async()=>({url:asset.replace(/b{64}/,'c'.repeat(64))})});await flush();assert.equal(rootBusy,false);assert.equal(JSON.stringify(parent.state.slice(1)),before);
  const ph=hooks();let legacyReads=0,correctionReads=0,picked;const legacy={...question,id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',certId:'legacy',examId:'legacy-exam'};
  const picker=load('components/question-bank-picker.tsx',{react:ph.react,'@/lib/question-bank-content':{loadContentCatalog:async()=>({qualifications:[]}),loadContentBundle:async()=>{throw Error('unexpected NAS read');}},'@/lib/question-bank':{loadPublishedDataset:async()=>{legacyReads++;return{certs:[],subjects:[],exams:[{id:'legacy-exam',title:'legacy exam'}],questions:[legacy]};}},'@/lib/question-bank-corrections':{loadQuestionCorrections:async value=>{correctionReads++;return{...value,questions:value.questions.map(q=>({...q,stem:'corrected legacy'}))};}}});

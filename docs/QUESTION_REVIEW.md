@@ -45,7 +45,19 @@ set changes invalidate AI fingerprints; unchanged single-answer questions retain
 exactly the previous fingerprint and previously paid cache reuse. Unsupported AI
 choice/answer configurations still refuse safely. No paid AI call is made by editing.
 
-## Edited photos
+## Focused learner-layout editor
+
+The editor reuses learner QuestionBody and QuestionChoiceContent renderers in a
+native modal dialog. Mobile uses a full-screen workspace; desktop uses a centered
+workspace. Stem, choices and explanation open inline only when requested. Each
+choice has an accepted-answer checkbox; photo tools and metadata are collapsed.
+The sticky save bar shows saving/media work, validation, server failure or success.
+Drafts survive failed saves and closing individual fields. Closing the workspace
+requires confirmation in the parent; modal teardown restores scroll and focus.
+Reports, audited correction/version checks and learner records keep their existing
+contracts. This UI does not automatically inspect questions or activate NAS writes.
+
+## Edited photo storage
 
 Vercel `/api/admin/question-images/` requires a designated-admin session. Crop URLs
 are allowlisted and checked against source/current/registered images. Uploads accept

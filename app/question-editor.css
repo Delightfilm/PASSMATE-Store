@@ -10,3 +10,60 @@
 .question-review-fields{min-width:0}
 .question-manual-form .button{min-height:44px}
 @media(max-width:767px){.question-image-crop-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.question-image-editor .admin-card-actions{display:flex;flex-wrap:wrap}.question-image-editor .button{min-height:44px;max-width:100%}.question-choice-editor{padding:12px}.question-review-editor{min-width:0}}
+
+/* Focused editing keeps the learner's question/choice rendering as authority. */
+.question-editor-workspace{box-sizing:border-box;width:min(1060px,calc(100% - 48px));height:calc(100dvh - 48px);max-height:none;max-width:none;margin:auto;padding:0;border:0;border-radius:var(--radius-card);background:var(--white);color:var(--ink);overflow:auto;overscroll-behavior:contain}
+.question-editor-workspace::backdrop{background:rgb(15 23 42 / .48)}
+.question-editor-workspace-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;border-bottom:1px solid var(--line);background:var(--white)}
+.question-editor-workspace-head h2{margin:0;font-size:20px;line-height:1.4}
+.question-editor-workspace-head>div{min-width:0;flex:1}
+.question-editor-workspace-head>.button,.question-editor-heading>.button{width:auto;flex:none;min-width:64px}
+.question-editor-heading .question-number{white-space:nowrap}
+.question-editor-workspace-head span{display:block;font-size:14px;color:var(--muted)}
+.question-editor-workspace .question-manual-form{max-width:850px;margin:auto;padding:16px 24px 0;min-width:0}
+.question-editor-guide,.question-editor-answer-hint{font-size:14px;line-height:1.6;color:var(--muted)}
+.question-editor-guide{margin:0 0 16px}
+.question-manual-form.exam-redesign .question-editor-preview{box-sizing:border-box;width:100%;margin:0;padding:0;border:0;border-radius:0;box-shadow:none}
+.question-editor-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.question-editor-heading p,.question-editor-heading h3{margin:0}
+.question-editor-preview h1,.question-editor-explanation p{white-space:pre-wrap;overflow-wrap:anywhere}
+.question-editor-workspace .question-inline-choice{display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:start;gap:12px;cursor:default;box-shadow:none!important}
+.question-editor-workspace .question-inline-choice:not(.is-correct):hover{border-color:var(--color-6b7280);background:var(--white)}
+.question-inline-choice-main{min-width:0}
+.question-inline-choice-main .question-choice-content{white-space:pre-wrap;overflow-wrap:anywhere}
+.question-inline-choice-actions{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.question-review-fields .question-inline-answer{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;cursor:pointer;font-size:14px}
+.question-inline-answer input{width:20px;height:20px;margin:0;accent-color:var(--success)}
+.question-inline-choice-actions .button{padding:8px 12px;white-space:nowrap}
+.question-inline-field{display:grid;gap:8px;min-width:0}
+.question-editor-workspace textarea{font-size:16px!important;line-height:1.6;caret-color:var(--blue)}
+.question-choice-delete[hidden]{display:none}
+.question-choice-delete{margin-top:8px;color:var(--error)}
+.question-editor-media{margin:8px 0 12px;font-size:14px;font-weight:400;min-width:0}
+.question-editor-media summary,.question-editor-details summary,.question-editor-report summary{box-sizing:border-box;min-height:44px;padding:10px 0;cursor:pointer;line-height:1.6;color:var(--blue-dark)}
+.question-editor-media .question-image-editor{padding:8px 0}
+.question-editor-media .question-image-item{margin:0 0 12px}
+.question-editor-add{margin-top:12px}
+.question-editor-explanation{margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+.question-editor-explanation h3{font-size:18px}
+.question-editor-explanation p{font-size:16px;line-height:1.6;margin:0}
+.question-editor-reason{margin-top:8px}
+.question-editor-details,.question-editor-report{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.question-editor-savebar{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0 max(14px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--white)}
+.question-editor-savebar>span{font-size:14px;line-height:1.6;color:var(--muted)}
+.question-editor-savebar>.question-review-error{color:var(--color-b91c1c)}
+.question-editor-savebar .admin-card-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+.question-editor-workspace :focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.question-editor-workspace ::selection{background:var(--blue-soft);color:var(--ink)}
+@media(max-width:767px){
+ .question-editor-workspace{width:100%;height:100dvh;margin:0;border-radius:0}
+ .question-editor-workspace-head{padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top))}
+ .question-editor-workspace .question-manual-form{padding:16px 16px 0}
+ .question-editor-workspace .question-inline-choice{grid-template-columns:22px minmax(0,1fr);padding:12px;gap:8px}
+ .question-inline-choice-actions{grid-column:2;flex-direction:row;justify-content:flex-end;gap:12px}
+ .question-inline-choice-actions .question-inline-answer{margin-right:auto}
+ .question-editor-savebar{flex-direction:column;align-items:stretch;gap:8px}
+ .question-editor-savebar>span{font-size:14px}
+ .question-editor-savebar .admin-card-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+ .question-editor-savebar .button{padding:10px 8px;font-size:14px;white-space:normal}
+}
