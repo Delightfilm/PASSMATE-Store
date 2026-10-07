@@ -11,6 +11,11 @@ nas/ai-explanations/.env
 nas/ai-explanations/data/
 __pycache__/
 *.pyc
+nas/question-edits/.env
+nas/question-edits/data/
+.codex-editor-*.log
+supabase/.temp/
+.codex-editor-backup/
 
 .vercel/
 .env.local

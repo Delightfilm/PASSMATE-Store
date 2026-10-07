@@ -96,10 +96,11 @@ export async function trustedQuestion(qualification: string, id: string): Promis
     .select("source_hash,content").eq("question_ref", id).eq("qualification_code", qualification).maybeSingle();
   if (error) throw new ExplanationError(503, "문항의 최신 검수 상태를 확인하지 못했습니다.");
   if (correction && correction.source_hash === question.sourceHash) {
-    const { stem, choices, answer, explanation } = correction.content;
-    question = { ...question, stem, choices: correctedChoices(question.choices, choices), answer, explanation,
-      ...(question.displayMode === "source_image" && (stem !== question.stem || choices.some((choice: { text: string }, index: number) => choice.text !== question!.choices[index]?.text)) ? { displayMode: "corrected_source" as const } : {}),
-      acceptedAnswers: [answer], answerStatus: undefined, answerLabel: undefined,
+    const { stem, choices, answer, explanation, schemaVersion, images, acceptedAnswers } = correction.content;
+    question = { ...question, stem, choices: correctedChoices(question.choices, choices, schemaVersion === 2), answer, explanation,
+      ...(schemaVersion === 2 ? { images } : {}),
+      ...(question.displayMode === "source_image" && (stem !== question.stem || choices.length !== question.choices.length || choices.some((choice: { text: string }, index: number) => choice.text !== question!.choices[index]?.text) || (schemaVersion === 2 && (JSON.stringify(images) !== JSON.stringify(question.images) || choices.some((choice: {images?:string[]},index:number)=>JSON.stringify(choice.images||[])!==JSON.stringify(question!.choices[index]?.images||[]))))) ? { displayMode: "corrected_source" as const } : {}),
+      acceptedAnswers: schemaVersion === 2 ? acceptedAnswers : [answer], answerStatus: undefined, answerLabel: undefined,
       inferredAnswers: undefined, inferredAnswerNote: undefined, answerComparison: undefined };
   }
   if (typeof question.stem !== "string" || !question.stem.trim() || question.stem.length > 10_000 ||
@@ -127,7 +128,7 @@ export async function imageParts(question: Question): Promise<ImageContent> {
   if (references.length > 4) throw new ExplanationError(422, "이미지가 많은 문항은 관리자 검수가 필요합니다.");
   const parts = await Promise.all(references.map(async ({ src, label }) => {
     const url = new URL(src);
-    const allowed = (url.origin === CONTENT_ORIGIN && IMAGE_PATH.test(url.pathname)) ||
+    const allowed = (url.origin === CONTENT_ORIGIN && (IMAGE_PATH.test(url.pathname) || /^\/admin-images\/[a-f0-9]{64}\.png$/.test(url.pathname))) ||
       (url.origin === "https://img.comcbt.com" && LEGACY_IMAGE_PATH.test(url.pathname));
     if (!allowed || url.username || url.password || url.search || url.hash) throw new ExplanationError(422, "이 문항의 이미지를 안전하게 확인할 수 없습니다.");
     try {

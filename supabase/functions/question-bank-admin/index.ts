@@ -1,5 +1,5 @@
 import { createSupabaseContext } from "npm:@supabase/server@1.7.0";
-import { editableContent, loadNasQuestion, validatePatch } from "./question-review.ts";
+import { editableContent, loadNasQuestion, validatePatch, validEditImage } from "./question-review.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -362,17 +362,20 @@ Deno.serve(async (req: Request) => {
     return json(200, { events: data ?? [] });
   }
 
-  if (["get_report_question", "save_report_question", "resolve_report"].includes(action)) {
+  if (["get_report_question", "save_report_question", "resolve_report", "get_question", "save_question", "authorize_edit_image", "register_edit_asset"].includes(action)) {
     const authorization = await admin.rpc("authorize_question_bank_review", { p_actor: actorId });
     if (authorization.error) return json(403, { error: "admin_access_required" });
     const reportId = text(body.reportId);
-    if (!reportId) return json(400, { error: "invalid_report_id" });
+    const manual = ["get_question","save_question","authorize_edit_image","register_edit_asset"].includes(action);
+    const questionRef = text(body.questionRef);
+    if (!manual && !reportId) return json(400, { error: "invalid_report_id" });
+    if (manual && !/^(?:[a-f0-9]{20}|[a-f0-9-]{36})$/i.test(questionRef)) return json(400, {error:"question_not_found"});
     if (action === "resolve_report") {
       const { data, error } = await admin.rpc("review_question_bank_report", { p_actor: actorId, p_report_id: reportId, p_resolve: true, p_reason: text(body.reason) });
       if (error) return json(error.code === "42501" ? 403 : 409, { error: error.message });
       return json(200, data);
     }
-    const { data: report, error: reportError } = await admin.from("question_bank_issue_reports").select("*").eq("id", reportId).maybeSingle();
+    const { data: report, error: reportError } = manual ? {data:{question_ref: /^[a-f0-9]{20}$/.test(questionRef) ? questionRef : null,question_id:uuid(questionRef),qualification_code:text(body.qualificationCode),status:"open",user_id:null,attempt_id:null},error:null} : await admin.from("question_bank_issue_reports").select("*").eq("id", reportId).maybeSingle();
     if (reportError) return json(500, { error: "report_load_failed" });
     if (!report) return json(404, { error: "report_not_found" });
     if (report.status !== "open") return json(409, { error: "report_already_resolved" });
@@ -398,15 +401,40 @@ Deno.serve(async (req: Request) => {
       if (correctionError) throw new Error("question_correction_load_failed");
       const sourceHash = text(source.sourceHash);
       if (correction && correction.source_hash !== sourceHash) throw new Error("question_source_changed");
-      if (action === "get_report_question") return json(200, { question: { id: ref, certId: code, no: source.no, images: source.images, ...editableContent(correction?.content || source, source) }, version: correction?.version || 0, sourceHash });
+      if (action === "authorize_edit_image") {
+        const src=text(body.src);
+        if(!validEditImage(src))throw new Error("invalid_question_image");
+        const current=editableContent(correction?.content||source,source);
+        const allImages=[...(source.images as string[]||[]),...(current.images||[]),...(source.choices as {images?:string[]}[]||[]).flatMap(c=>c.images||[]),...current.choices.flatMap(c=>c.images||[])];
+        if(!allImages.includes(src)) {
+          const match=/^https:\/\/content\.mypassmate\.com\/admin-images\/([a-f0-9]{64})\.png$/.exec(src);
+          if(!match)throw new Error("invalid_question_image");
+          const {data:asset,error}=await admin.from("question_bank_edit_assets").select("sha256").eq("sha256",match[1]).maybeSingle();
+          if(error||!asset)throw new Error("invalid_question_image");
+        }
+        return json(200,{authorized:true});
+      }
+      if (action === "register_edit_asset") {
+        const hash=text(body.sha256);const size=body.byteSize;
+        if(!/^[a-f0-9]{64}$/.test(hash)||typeof size!=="number"||!Number.isInteger(size)||size<1||size>5_000_000)throw new Error("invalid_question_image");
+        const head=await fetch(`https://content.mypassmate.com/admin-images/${hash}.png`,{method:"HEAD",redirect:"error",cache:"no-store",signal:AbortSignal.timeout(10000)});
+        if(!head.ok||Number(head.headers.get("content-length"))!==size||!head.headers.get("content-type")?.startsWith("image/png"))throw new Error("invalid_question_image");
+        const {error}=await admin.from("question_bank_edit_assets").upsert({sha256:hash,question_ref:ref,actor_user_id:actorId,byte_size:size},{onConflict:"sha256",ignoreDuplicates:true});
+        if(error)throw new Error("image_registration_failed");
+        return json(200,{registered:true});
+      }
+      if (action === "get_report_question" || action === "get_question") return json(200, { question: { id: ref, certId: code, no: source.no, images: source.images || [], acceptedAnswers: correction ? [correction.content.answer] : source.acceptedAnswers || [source.answer], displayMode: source.displayMode, ...editableContent(correction?.content || source, source) }, version: correction?.version || 0, sourceHash });
       // Image associations always come from trusted source lookup, never the browser.
       const patch = editableContent(body.patch as Record<string, unknown>, source);
       validatePatch(patch);
       if (!Number.isInteger(body.expectedVersion) || !text(body.reason) || text(body.reason).length > 2000) throw new Error("invalid_question_patch");
       if (text(body.sourceHash) !== sourceHash) throw new Error("question_source_changed");
-      const { data, error } = await admin.rpc("review_question_bank_report", {
-        p_actor: actorId, p_report_id: reportId, p_resolve: body.resolve === true,
-        p_patch: patch, p_source: editableContent(source), p_qualification_code: code,
+      const modern = patch.schemaVersion === 2;
+      if (manual && !modern) throw new Error("invalid_question_patch");
+      const { data, error } = await admin.rpc(modern ? "save_question_bank_edit" : "review_question_bank_report", {
+        ...(modern ? {p_question_ref:ref} : {}),
+        p_actor: actorId, p_report_id: manual ? null : reportId, p_resolve: !manual && body.resolve === true,
+        p_patch: patch, p_source: modern ? {...editableContent(source),images:source.images||[],acceptedAnswers:source.acceptedAnswers||[source.answer]} : editableContent(source), p_qualification_code: code,
         p_source_hash: sourceHash, p_expected_version: body.expectedVersion, p_reason: text(body.reason),
       });
       if (error) return json(error.code === "42501" ? 403 : 409, { error: error.message });
