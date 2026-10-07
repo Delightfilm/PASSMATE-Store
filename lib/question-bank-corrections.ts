@@ -2,19 +2,21 @@ import { getSupabaseBrowserClient } from "./supabase-browser";
 import type { Dataset, Question } from "./question-bank";
 import type { LoadOptions } from "./question-bank-download";
 import { correctedChoices } from "./question-bank-choices";
+import { validatePatch, type QuestionContent } from "../supabase/functions/question-bank-admin/question-review";
 
-export type Correction = { question_ref: string; source_hash: string; content: Pick<Question, "stem" | "choices" | "answer" | "explanation"> };
+export type Correction = { question_ref: string; source_hash: string; content: QuestionContent };
 export function applyCorrections(dataset: Dataset, corrections: Correction[]): Dataset {
   const map = new Map(corrections.map((correction) => [correction.question_ref, correction]));
   return { ...dataset, questions: dataset.questions.map((question) => {
     const correction = map.get(question.id);
     if (!correction || correction.source_hash !== question.sourceHash) return question;
     const content = correction.content;
-    if (!content || typeof content.stem !== "string" || !Array.isArray(content.choices) || content.choices.length !== 4 || !Number.isInteger(content.answer) || content.answer < 0 || content.answer > 3 || typeof content.explanation !== "string") throw new Error("question_correction_invalid");
-    // Never overwrite IDs, source hash, images or exam/qualification metadata.
-    return { ...question, stem: content.stem, choices: correctedChoices(question.choices, content.choices), answer: content.answer, explanation: content.explanation,
-      ...(question.displayMode === "source_image" && (content.stem !== question.stem || content.choices.some((choice, index) => choice.text !== question.choices[index]?.text)) ? { displayMode: "corrected_source" as const } : {}),
-      acceptedAnswers: [content.answer], answerStatus: undefined, answerLabel: undefined,
+    try { validatePatch(content); } catch { throw new Error("question_correction_invalid"); }
+    // Preserve IDs, source hash and exam/qualification metadata; modern edits own media.
+    return { ...question, stem: content.stem, choices: correctedChoices(question.choices, content.choices, content.schemaVersion === 2), answer: content.answer, explanation: content.explanation,
+      ...(content.schemaVersion === 2 ? {images: content.images!} : {}),
+      ...(question.displayMode === "source_image" && (content.stem !== question.stem || content.choices.length !== question.choices.length || content.choices.some((choice, index) => choice.text !== question.choices[index]?.text) || (content.schemaVersion === 2 && (JSON.stringify(content.images) !== JSON.stringify(question.images) || content.choices.some((choice,index)=>JSON.stringify(choice.images||[])!==JSON.stringify(question.choices[index]?.images||[]))))) ? { displayMode: "corrected_source" as const } : {}),
+      acceptedAnswers: content.schemaVersion === 2 ? [...content.acceptedAnswers!] : [content.answer], answerStatus: undefined, answerLabel: undefined,
       inferredAnswers: undefined, inferredAnswerNote: undefined, answerComparison: undefined };
   }) };
 }

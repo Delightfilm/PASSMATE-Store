@@ -11,9 +11,8 @@ export function normalizeLiveChoices(value: unknown): Choice[] {
   }); // Never compact choices: the registered answer refers to the source position.
 }
 
-// Corrections edit text/answer only. Original image associations cannot be removed
-// or replaced by a sparse patch, including patches saved before image recovery.
-export function correctedChoices(original: Choice[], edited: Choice[]): Choice[] {
+// Legacy sparse corrections retain source images. Version 2 explicitly owns media.
+export function correctedChoices(original: Choice[], edited: Choice[], explicitImages = false): Choice[] {
   return edited.map((choice, index) => ({ label: choice.label, text: choice.text,
-    ...(original[index]?.images?.length ? { images: original[index].images } : {}) }));
+    ...(explicitImages ? { images: choice.images || [] } : original[index]?.images?.length ? { images: original[index].images } : {}) }));
 }

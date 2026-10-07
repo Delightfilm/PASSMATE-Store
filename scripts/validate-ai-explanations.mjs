@@ -18,6 +18,9 @@ for (const invalid of [{ ...good, correctAnswer: 2 }, { ...good, choiceReasons: 
 assert.deepEqual(explanationInput(question), explanationInput({ ...question, selectedAnswer: 3, userId: "another-user" }));
 assert.notDeepEqual(explanationInput(question), explanationInput({ ...question, stem: "관리자가 수정한 문항" }));
 assert.notDeepEqual(explanationInput(question), explanationInput({ ...question, answer: 1 }));
+assert.deepEqual(explanationInput(question), explanationInput({...question,acceptedAnswers:[0]}), "single-answer questions retain previously paid cache keys");
+assert.notDeepEqual(explanationInput(question), explanationInput({ ...question, acceptedAnswers: [0, 2] }), "accepted-answer edit must not reuse the old paid explanation");
+assert.notDeepEqual(explanationInput(question), explanationInput({ ...question, images: ["https://content.mypassmate.com/admin-images/" + "a".repeat(64) + ".png"] }), "cropped image must have a new explanation fingerprint");
 
 globalThis.explanationContract = contract;
 globalThis.testSharp = sharp;

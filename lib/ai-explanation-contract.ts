@@ -28,7 +28,9 @@ export function hasAnswerVerification(value: Pick<ExplanationReply, "verificatio
 export function explanationInput(question: Question) {
   return { version: EXPLANATION_VERSION, model: EXPLANATION_MODEL, id: question.id, certId: question.certId,
     sourceHash: question.sourceHash, stem: question.stem, choices: question.choices,
-    answer: question.answer, images: question.images, explanation: question.explanation };
+    answer: question.answer,
+    ...(question.acceptedAnswers && (question.acceptedAnswers.length !== 1 || question.acceptedAnswers[0] !== question.answer) ? {acceptedAnswers: question.acceptedAnswers} : {}),
+    images: question.images, explanation: question.explanation };
 }
 
 export function validateExplanation(value: unknown, answer: number): AiExplanation {

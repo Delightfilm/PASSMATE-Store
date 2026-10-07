@@ -1,18 +1,25 @@
-export type QuestionContent = { stem: string; choices: { label: string; text: string; images?: string[] }[]; answer: number; explanation: string };
-const imagePath = /^https:\/\/content\.mypassmate\.com\/images\/[a-f0-9]{2}\/[a-f0-9]{64}\.(png|jpe?g|gif|webp)$/i;
+export type QuestionContent = { schemaVersion?: 2; stem: string; choices: { label: string; text: string; images?: string[] }[]; answer: number; acceptedAnswers?: number[]; images?: string[]; explanation: string };
+const imagePath = /^https:\/\/content\.mypassmate\.com\/(?:images\/[a-f0-9]{2}\/[a-f0-9]{64}\.(png|jpe?g|gif|webp)|admin-images\/[a-f0-9]{64}\.png)$/i;
+const legacyImagePath = /^https:\/\/img\.comcbt\.com\/cbt\/data\/[a-z0-9_-]{1,16}\/[a-z0-9_-]{1,32}\/[a-z0-9_-]{1,80}\.(png|jpe?g|gif|webp)$/i;
+export const choiceLabel = (index: number) => ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩"][index] || String(index+1);
+export function validEditImage(image: unknown): image is string { return typeof image === "string" && (imagePath.test(image) || legacyImagePath.test(image)); }
 export function editableContent(question: Record<string, unknown>, source = question): QuestionContent {
   const choices = question.choices as QuestionContent["choices"];
   const original = source.choices as QuestionContent["choices"];
-  const content = { stem: String(question.stem || ""), choices: choices?.map((choice, index) => ({ label: ["①", "②", "③", "④"][index], text: String(choice.text || ""),
-    ...(original?.[index]?.images?.length ? { images: original[index].images } : {}) })), answer: question.answer as number, explanation: String(question.explanation || "") };
+  const modern = question.schemaVersion === 2;
+  const content: QuestionContent = { stem: String(question.stem || ""), choices: choices?.map((choice, index) => ({ label: choiceLabel(index), text: String(choice.text || ""),
+    ...(modern ? {images: choice.images ?? []} : original?.[index]?.images?.length ? { images: original[index].images } : {}) })), answer: question.answer as number, explanation: String(question.explanation || ""),
+    ...(modern ? { schemaVersion: 2, images: question.images as string[], acceptedAnswers: question.acceptedAnswers as number[] } : {}) };
   validatePatch(content);
   return content;
 }
 export function validatePatch(value: unknown): asserts value is QuestionContent {
   const p = value as QuestionContent | null;
-  if (!p || typeof p.stem !== "string" || !p.stem.trim() || p.stem.length > 20000 || !Array.isArray(p.choices) || p.choices.length !== 4 || p.choices.some((choice) => typeof choice.text !== "string" || choice.text.length > 10000 ||
-    (choice.images !== undefined && (!Array.isArray(choice.images) || choice.images.length > 10 || !choice.images.every((image) => typeof image === "string" && imagePath.test(image)))) ||
-    (!choice.text.trim() && !choice.images?.length)) || !Number.isInteger(p.answer) || p.answer < 0 || p.answer > 3 || typeof p.explanation !== "string" || p.explanation.length > 20000) throw new Error("invalid_question_patch");
+  const imagesValid = (images: unknown) => Array.isArray(images) && images.length <= 10 && images.every(validEditImage);
+  if (!p || typeof p.stem !== "string" || !p.stem.trim() || p.stem.length > 20000 || !Array.isArray(p.choices) || p.choices.length < 2 || p.choices.length > 10 || p.choices.some((choice) => !choice || typeof choice.text !== "string" || choice.text.length > 10000 ||
+    (choice.images !== undefined && !imagesValid(choice.images)) ||
+    (!choice.text.trim() && !choice.images?.length)) || !Number.isInteger(p.answer) || p.answer < 0 || p.answer >= p.choices.length || typeof p.explanation !== "string" || p.explanation.length > 20000) throw new Error("invalid_question_patch");
+  if (p.schemaVersion === 2 && (!imagesValid(p.images) || !Array.isArray(p.acceptedAnswers) || !p.acceptedAnswers.length || new Set(p.acceptedAnswers).size !== p.acceptedAnswers.length || !p.acceptedAnswers.includes(p.answer) || p.acceptedAnswers.some(answer => !Number.isInteger(answer) || answer < 0 || answer >= p.choices.length))) throw new Error("invalid_question_patch");
 }
 
 // Fixed origin + catalog allowlist: no client-supplied URLs or private NAS endpoints.

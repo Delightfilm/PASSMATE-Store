@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+const source = fs.readFileSync(new URL('../supabase/functions/question-bank-admin/question-review.ts', import.meta.url), 'utf8');
+const review = await import('data:text/javascript;base64,' + Buffer.from(ts.transpile(source, {module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022})).toString('base64'));
+const image = 'https://content.mypassmate.com/images/aa/'+'a'.repeat(64)+'.png';
+const replacement = 'https://content.mypassmate.com/admin-images/'+'b'.repeat(64)+'.png';
+const original = {stem:'문제', choices:['가','나','다','라'].map((text,index)=>({label:String(index+1),text,...(index===1?{images:[image]}:{})})), answer:0, acceptedAnswers:[0,1], explanation:'',images:[image]};
+const edit = {...original, schemaVersion:2, choices:[...original.choices,{label:'⑤',text:'마'}], answer:1, acceptedAnswers:[1,4],images:[replacement]};
+// Missing variable-choice / multiple-answer support must reject this valid edit.
+review.validatePatch(edit);
+assert.deepEqual(review.editableContent(edit,original).acceptedAnswers,[1,4]);
+assert.deepEqual(review.editableContent(edit,original).images,[replacement]);
+assert.deepEqual(review.editableContent({...edit,choices:edit.choices.map(c=>({...c,images:[]}))},original).choices[1].images,[]);
+assert.deepEqual(review.editableContent({...original,acceptedAnswers:undefined},original).choices[1].images,[image]);
+for(const acceptedAnswers of [[],[5],[-1],[1.5],[1,1],['1']]) assert.throws(()=>review.validatePatch({...edit,acceptedAnswers}),/invalid/);
+assert.throws(()=>review.validatePatch({...edit,answer:0}),/invalid/,'primary answer must be part of accepted set');
+assert.throws(()=>review.validatePatch({...edit,images:['http://192.168.0.48/a.png']}),/invalid/);
+assert.throws(()=>review.validatePatch({...edit,choices:[edit.choices[0]]}),/invalid/);
+assert.throws(()=>review.validatePatch({...edit,choices:edit.choices.map(c=>({...c,text:'',images:[]}))}),/invalid/);
+console.log('Manual edit contract PASS: five choices, accepted set, explicit image unlink/replacement, legacy image preservation, invalid payload rejection');
