@@ -7,12 +7,13 @@ import {QuestionBody} from "./question-body";
 import {QuestionChoiceContent} from "./question-choice-content";
 export type ReviewData={question:Pick<Question,"id"|"certId"|"no"|"images"|"acceptedAnswers"|"displayMode"> & QuestionContent;version:number;sourceHash:string};
 
-export function ReviewEditor({data,busy,onSave,onReload,hasReport=true,onMediaBusy,onClose,error,notice,reportMemo}:{data:ReviewData;busy:boolean;hasReport?:boolean;onMediaBusy:(busy:boolean)=>void;onSave:(patch:QuestionContent,reason:string,resolve:boolean)=>Promise<void>;onReload:()=>void;onClose?:()=>void;error?:string;notice?:string;reportMemo?:string}) {
+export function ReviewEditor({data,busy,onSave,onReload,hasReport=true,onMediaBusy,onClose,error,notice,reportMemo,embedded=false}:{data:ReviewData;busy:boolean;hasReport?:boolean;embedded?:boolean;onMediaBusy:(busy:boolean)=>void;onSave:(patch:QuestionContent,reason:string,resolve:boolean)=>Promise<void>;onReload:()=>void;onClose?:()=>void;error?:string;notice?:string;reportMemo?:string}) {
  const mediaLock=useRef(false);const [mediaBusy,setMediaBusy]=useState(false);const locked=busy||mediaBusy;
  const initial=useRef(data.question).current;
  const dialogRef=useRef<HTMLDialogElement>(null);
  const returnFocus=useRef(typeof document!=="undefined"?document.activeElement:null);
  useEffect(()=>{
+  if(embedded)return;
   const dialog=dialogRef.current;if(!dialog)return;
   const overflow=document.body.style.overflow;
   document.body.style.overflow="hidden";
@@ -26,7 +27,7 @@ export function ReviewEditor({data,busy,onSave,onReload,hasReport=true,onMediaBu
     target?.focus();
    });
   };
- },[]);
+ },[embedded]);
  function beginWork(){if(mediaLock.current||busy)return false;mediaLock.current=true;setMediaBusy(true);onMediaBusy(true);return true;}
  function endWork(){mediaLock.current=false;setMediaBusy(false);onMediaBusy(false);}
  const [stem,setStem]=useState(data.question.stem);const [images,setImages]=useState([...data.question.images]);
@@ -46,7 +47,7 @@ export function ReviewEditor({data,busy,onSave,onReload,hasReport=true,onMediaBu
    if(resolve&&!window.confirm("수정을 저장하고 이 신고를 검수 완료로 처리할까요?"))return;setValidation("");void onSave(patch,reason,resolve);
  }
  const media=(value:string[],onChange:(value:string[])=>void,label:string)=><details className="question-editor-media"><summary>{label} {value.length?`(${value.length}장)`:"추가"}</summary><QuestionImageEditor images={value} onChange={onChange} questionRef={data.question.id} qualificationCode={data.question.certId} disabled={locked} beginWork={beginWork} endWork={endWork}/></details>;
- return <dialog ref={dialogRef} className="question-editor-workspace" aria-label="문항 집중 편집" onCancel={e=>{e.preventDefault();if(!busy&&!mediaLock.current)onClose?.();}}>
+ const content=<>
   <header className="question-editor-workspace-head"><div><h2>문항 편집</h2><span>{data.question.certId} · {data.question.no}번</span></div><button type="button" autoFocus className="button button-ghost" disabled={locked} aria-label="문항 편집 닫기" onClick={()=>{if(!busy&&!mediaLock.current)onClose?.();}}>닫기</button></header>
   <form className="question-manual-form exam-redesign" onSubmit={e=>{e.preventDefault();submit(false);}}>
   {reportMemo&&<details className="question-editor-report" open><summary>신고 내용</summary><p>{reportMemo}</p></details>}
@@ -71,5 +72,6 @@ export function ReviewEditor({data,busy,onSave,onReload,hasReport=true,onMediaBu
    <details className="question-editor-details"><summary>문항 정보·최신 내용 다시 불러오기</summary><p>{data.question.certId} · {data.question.no}번 · 수정 버전 {data.version}. 문항 ID와 원본은 유지되며 이전 점수는 다시 계산하지 않습니다.</p><button type="button" className="button button-ghost" disabled={locked} onClick={()=>{if(window.confirm("입력을 버리고 최신 문항을 불러올까요?"))onReload();}}>최신 문항 다시 불러오기</button></details>
   </fieldset>
   <div className="question-editor-savebar"><span role={!locked&&(validation||error)?"alert":"status"} className={!locked&&(validation||error)?"question-review-error":undefined}>{busy?"저장 중…":mediaBusy?"사진 처리 중…":validation||error||notice||"저장 전에는 운영 문항이 바뀌지 않습니다."}</span><div className="admin-card-actions"><button type="submit" className="button button-primary" disabled={locked}>수정 저장</button>{hasReport&&<button type="button" className="button button-primary" disabled={locked} onClick={()=>submit(true)}>저장 후 검수 완료</button>}</div></div>
- </form></dialog>;
+ </form></>;
+ return embedded?<section className="question-editor-workspace is-embedded" aria-label="현재 문항 편집">{content}</section>:<dialog ref={dialogRef} className="question-editor-workspace" aria-label="문항 집중 편집" onCancel={e=>{e.preventDefault();if(!busy&&!mediaLock.current)onClose?.();}}>{content}</dialog>;
 }

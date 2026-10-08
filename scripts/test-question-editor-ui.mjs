@@ -7,7 +7,7 @@ import ts from 'typescript';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 const require=createRequire(import.meta.url);
-function load(file,stubs={}){const mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInThisContext('(function(require,module,exports){'+js+'\n})')(name=>Object.hasOwn(stubs,name)?stubs[name]:require(name),mod,mod.exports);return mod.exports;}
+function load(file,stubs={}){const mod={exports:{}};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInThisContext('(function(require,module,exports){'+js+'\n})')(name=>Object.hasOwn(stubs,name)?stubs[name]:name==='@/lib/question-bank-groups'?load('lib/question-bank-groups.ts'):require(name),mod,mod.exports);return mod.exports;}
 function hooks(){const state=[],refs=[],effects=[];let s=0,r=0,e=0;return{state,reset(){s=r=e=0;},unmount(){effects.forEach(fn=>fn?.());},react:{useState(value){const i=s++;if(!(i in state))state[i]=typeof value==='function'?value():value;return[state[i],next=>{state[i]=typeof next==='function'?next(state[i]):next;}];},useRef(value){const i=r++;return refs[i]??={current:value};},useEffect(effect){const i=e++;if(!(i in effects))effects[i]=effect();},useMemo(factory){return factory();}}};}
 function nodes(value){if(Array.isArray(value))return value.flatMap(nodes);return value&&typeof value==='object'?[value,...nodes(value.props?.children)]:[];}
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
@@ -19,6 +19,28 @@ const originalFetch=globalThis.fetch;
 const body=load('components/question-body.tsx');
 const choiceView=load('components/question-choice-content.tsx',{'next/image':{default:({unoptimized,onError,...props})=>React.createElement('img',props)}});
 const views={'./question-body':body,'./question-choice-content':choiceView};
+const examUi=load('components/cbt-exam-ui.tsx');
+const examViews={...views,'./cbt-exam-ui':examUi};
+const examComponent=load('components/question-exam-review.tsx',{...examViews});
+// Real browsing uses the learner renderers and local-only answer selection.
+{
+ const h=hooks();let picked;const component=load('components/question-exam-review.tsx',{react:h.react,...examViews});
+ let questions=[{...question,displayMode:'text',no:41},{...question,id:'b'.repeat(20),no:42,stem:'second full stem',choices:[...question.choices,{label:'⑤',text:'fifth choice'}],acceptedAnswers:[0,4]}];
+ let props={questions,title:'sample exam',busy:false,onEdit:q=>{picked=q;}};
+ const render=()=>{h.reset();return nodes(component.QuestionExamReview(props));};
+ const button=(tree,label)=>tree.find(n=>n.type==='button'&&n.props['aria-label']===label);
+ let tree=render();assert.equal(tree.filter(n=>n.type===body.QuestionBody).length,1);assert.equal(tree.filter(n=>n.type===choiceView.QuestionChoiceContent).length,4);
+ assert.equal(tree.find(n=>n.type==='button'&&n.props.children==='← 이전').props.disabled,true);
+ tree.find(n=>n.type==='button'&&n.props.children==='다음 →').props.onClick();tree=render();assert.equal(tree.find(n=>n.type===body.QuestionBody).props.question.id,questions[1].id);assert.equal(tree.filter(n=>n.type===choiceView.QuestionChoiceContent).length,5);
+ button(tree,'현재 문항 수정').props.onClick();assert.equal(picked.id,questions[1].id);
+ tree.filter(n=>n.type==='button'&&n.props.className?.startsWith('choice-button'))[4].props.onClick();tree=render();assert.ok(tree.some(n=>n.type==='strong'&&n.props.children==='정답입니다.'),'multiple accepted answers work');
+ button(tree,'41번 문항으로 이동').props.onClick();button(render(),'42번 문항으로 이동').props.onClick();assert.equal(render().filter(n=>n.type==='button'&&n.props.className?.startsWith('choice-button'))[4].props['aria-pressed'],true,'navigation retains local preview answer');
+ tree=render();tree.find(n=>n.type==='input').props.onChange({target:{value:'41'}});render().find(n=>n.type==='form').props.onSubmit({preventDefault(){}});assert.equal(render().find(n=>n.type===body.QuestionBody).props.question.no,41,'search jumps in full exam rather than filtering to a snippet');
+ questions=questions.map(q=>q.no===41?{...q,stem:'saved full stem'}:q);props={...props,questions};assert.equal(render().find(n=>n.type===body.QuestionBody).props.question.stem,'saved full stem','save refresh preserves current question');
+ props={...props,editor:React.createElement('section',{id:'embedded-edit'})};tree=render();assert.ok(!tree.some(n=>n.type===body.QuestionBody));const navigation=button(tree,'42번 문항으로 이동');assert.equal(navigation.props.disabled,true);navigation.props.onClick();props={...props,editor:undefined};assert.equal(render().find(n=>n.type===body.QuestionBody).props.question.no,41,'editing locks navigation and keeps position');
+ assert.ok(!tree.some(n=>n.type==='dialog'),'browse and embedded editor do not introduce a modal');
+ const source=fs.readFileSync('components/question-exam-review.tsx','utf8');assert.ok(!/\b(fetch|localStorage|sessionStorage|saveStore|finish|requestAiExplanation)\s*[.(]/.test(source),'review cannot write learning state or call AI');
+}
 // Catch always-expanded editing, lost drafts, and answer/choice reindex regressions.
 {
  const h=hooks();let saved;const component=load('components/question-review-editor.tsx',{react:h.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':{},...views});
@@ -46,6 +68,13 @@ const views={'./question-body':body,'./question-choice-content':choiceView};
  fd={...fd,question:{...question,stem:'corrected source stem'},version:1};assert.equal(fr().find(n=>n.type===body.QuestionBody).props.question.displayMode,'corrected_source','save cannot hide edited source text again');
 }
 // Save outcomes must remain beside the sticky controls on long questions.
+// Manual browsing embeds editing in the same exam card, without a modal.
+{
+ const h=hooks();const component=load('components/question-review-editor.tsx',{react:h.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':{},...views});
+ const tree=nodes(component.ReviewEditor({data:{question,version:0,sourceHash:'source'},embedded:true,busy:false,onMediaBusy(){},onSave:async()=>{},onReload(){}}));
+ assert.ok(!tree.some(n=>n.type==='dialog'),'manual exam editing must stay inline, not open a new dialog');
+ assert.ok(tree.some(n=>n.type==='form'),'embedded editor retains the real save form');
+}
 {
  const h=hooks();const component=load('components/question-review-editor.tsx',{react:h.react,'@/supabase/functions/question-bank-admin/question-review':review,'./question-image-editor':{},...views});
  const render=props=>{h.reset();return nodes(component.ReviewEditor({data:{question,version:0,sourceHash:'source'},busy:false,onMediaBusy(){},onSave:async()=>{},onReload(){},...props}));};
@@ -66,8 +95,9 @@ try{
  tree=nodes(render());const mediaNodes=tree.filter(n=>n.type===media.QuestionImageEditor);assert.deepEqual(mediaNodes[2].props.images,[asset]);assert.deepEqual(mediaNodes[3].props.images,[]);assert.equal(rootBusy,false);
  upload(mediaNodes[1].props);await flush();child.unmount();assert.equal(signal.aborted,true);const before=JSON.stringify(parent.state.slice(1));release({ok:true,json:async()=>({url:asset.replace(/b{64}/,'c'.repeat(64))})});await flush();assert.equal(rootBusy,false);assert.equal(JSON.stringify(parent.state.slice(1)),before);
  const ph=hooks();let legacyReads=0,correctionReads=0,picked;const legacy={...question,id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',certId:'legacy',examId:'legacy-exam'};
- const picker=load('components/question-bank-picker.tsx',{react:ph.react,'@/lib/question-bank-content':{loadContentCatalog:async()=>({qualifications:[]}),loadContentBundle:async()=>{throw Error('unexpected NAS read');}},'@/lib/question-bank':{loadPublishedDataset:async()=>{legacyReads++;return{certs:[],subjects:[],exams:[{id:'legacy-exam',title:'legacy exam'}],questions:[legacy]};}},'@/lib/question-bank-corrections':{loadQuestionCorrections:async value=>{correctionReads++;return{...value,questions:value.questions.map(q=>({...q,stem:'corrected legacy'}))};}}});
- const pr=()=>{ph.reset();return picker.QuestionBankPicker({busy:false,onSelect:q=>{picked=q;}});};tree=nodes(pr());tree.find(n=>n.type==='select').props.onChange({target:{value:'__legacy__'}});await flush();tree=nodes(pr());assert.equal(legacyReads,1);assert.equal(correctionReads,1);tree.find(n=>n.type==='button'&&n.props.children==='직접 수정').props.onClick();assert.equal(picked.id,legacy.id);assert.equal(picked.stem,'corrected legacy');ph.unmount();
+ const picker=load('components/question-bank-picker.tsx',{react:ph.react,'./question-exam-review':examComponent,'@/lib/question-bank-content':{loadContentCatalog:async()=>({qualifications:[]}),loadContentBundle:async()=>{throw Error('unexpected NAS read');}},'@/lib/question-bank':{loadPublishedDataset:async()=>{legacyReads++;return{certs:[],subjects:[],exams:[{id:'legacy-exam',title:'legacy exam'}],questions:[legacy]};}},'@/lib/question-bank-corrections':{loadQuestionCorrections:async value=>{correctionReads++;return{...value,questions:value.questions.map(q=>({...q,stem:'corrected legacy'}))};}}});
+ const updates={[legacy.id]:{...legacy,stem:'older locally saved correction'}};
+ const pr=()=>{ph.reset();return picker.QuestionBankPicker({busy:false,updates,onSelect:q=>{picked=q;}});};tree=nodes(pr());tree.find(n=>n.type==='select').props.onChange({target:{value:'__legacy__'}});await flush();tree=nodes(pr());assert.equal(legacyReads,1);assert.equal(correctionReads,1);const preview=tree.find(n=>n.type===examComponent.QuestionExamReview);assert.equal(preview.props.questions[0].stem,'corrected legacy','fresh server corrections must supersede older session saves');preview.props.onEdit(preview.props.questions[0]);assert.equal(picked.id,legacy.id);assert.equal(picked.stem,'corrected legacy');ph.unmount();
 }finally{globalThis.fetch=originalFetch;}
 const choices=load('lib/question-bank-choices.ts');const corrections=load('lib/question-bank-corrections.ts',{'./supabase-browser':{},'./question-bank-choices':choices,'../supabase/functions/question-bank-admin/question-review':review});
 const patch={...question,schemaVersion:2,images:[],acceptedAnswers:[0],choices:question.choices.map((c,i)=>({...c,images:i===0?[asset]:[]}))};
