@@ -12,6 +12,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { makeId, parseImportFile, sourceHash, type ImportBatch, type ImportContext, type ImportError, type ImportRow } from "@/lib/question-bank";
 import type { Question } from "@/lib/question-bank";
 import { loadContentCatalog } from "@/lib/question-bank-content";
+import { applyCorrections } from "@/lib/question-bank-corrections";
 
 type RemoteBatch = {
   id: string;
@@ -70,6 +71,7 @@ export function QuestionBankAdmin() {
   const [reviewFailure, setReviewFailure] = useState("");
   const [editing, setEditing] = useState<IssueReport | null>(null);
   const [manualQuestion, setManualQuestion] = useState<Question | null>(null);
+  const [manualUpdates, setManualUpdates] = useState<Record<string,Question>>({});
   const [reviewData, setReviewData] = useState<ReviewData | null>(null);
   const [qualifications, setQualifications] = useState<{ code: string; title: string }[]>([]);
   const [qualificationCode, setQualificationCode] = useState("");
@@ -145,6 +147,11 @@ export function QuestionBankAdmin() {
       const result = await callQuestionBankAdmin<{ version: number }>({ action: editing ? "save_report_question" : "save_question", reportId: editing?.id, questionRef: reviewData.question.id, qualificationCode: qualificationCode, patch, reason, resolve, expectedVersion: reviewData.version, sourceHash: reviewData.sourceHash });
       if (resolve && editing) { setReports((items) => items.filter((item) => item.id !== editing.id)); setEditing(null); setReviewData(null); }
       else setReviewData({ ...reviewData, question: { ...reviewData.question, ...patch }, version: result.version });
+      if(manualQuestion){
+        const updated=applyCorrections({certs:[],subjects:[],exams:[],questions:[manualQuestion]},[{question_ref:manualQuestion.id,source_hash:reviewData.sourceHash,content:patch}]).questions[0];
+        setManualUpdates(items=>({...items,[updated.id]:updated}));
+        setManualQuestion(updated);
+      }
       setReviewNotice(resolve ? "문항 수정과 검수 완료를 저장했습니다." : "문항 수정을 저장했습니다. 다음 문항 조회부터 반영됩니다.");
       await loadReports();
     } catch (error) { setReviewFailure(reviewError(error)); }
@@ -292,8 +299,7 @@ export function QuestionBankAdmin() {
       {batch.errors.length ? <div className="import-errors">{batch.errors.map((item, index) => <div key={`${item.row}-${index}`}><b>행 {item.row}</b><span>{item.message}</span></div>)}</div> : <p className="admin-empty">오류가 없습니다.</p>}
       <div className="import-preview-table"><div className="import-preview-head"><span>상태</span><span>문항</span><span>보기</span><span>sourceHash</span></div>{batch.rows.slice(0, 10).map((row, index) => <div className="import-preview-row" key={`${String(row.question_uid || row.sourceHash)}-${index}`}><span className="admin-state">{String(row.status || "needs_review")}</span><strong>{String(row.stem || row.question || "-")}</strong><span>{Array.isArray(row.choices) ? row.choices.length : String(row.choices || "").split("|").filter(Boolean).length}</span><code>{String(row.sourceHash).slice(0, 12)}…</code></div>)}</div>
     </section>}
-    <QuestionBankPicker busy={reviewLocked} onSelect={question=>void openManual(question)} />
-    {manualQuestion && <section className="admin-panel"><div className="admin-panel-head"><h3>문항 직접 수정</h3><button className="button button-ghost" disabled={reviewLocked} onClick={closeReview}>편집 닫기</button></div>{reviewData?<ReviewEditor key={manualQuestion.id} data={reviewData} busy={reviewBusy} onMediaBusy={setMediaBusy} hasReport={false} onSave={saveReview} onReload={()=>void openManual(manualQuestion)} onClose={closeReview} error={reviewFailure} notice={reviewNotice}/>:<p role="status">{reviewBusy?"문항을 불러오는 중…":"불러오지 못했습니다. 문항을 다시 선택해 주세요."}</p>}{reviewFailure&&<p role="alert" className="question-review-error">{reviewFailure}</p>}{reviewNotice&&<p role="status">{reviewNotice}</p>}</section>}
+    <QuestionBankPicker busy={reviewLocked} updates={manualUpdates} onSelect={question=>void openManual(question)} editor={manualQuestion?(reviewData?<ReviewEditor key={`${manualQuestion.id}:${reviewData.sourceHash}`} embedded data={reviewData} busy={reviewBusy} onMediaBusy={setMediaBusy} hasReport={false} onSave={saveReview} onReload={()=>void openManual(manualQuestion)} onClose={closeReview} error={reviewFailure} notice={reviewNotice}/>:<div className="admin-exam-editor-loading"><p role={reviewFailure?"alert":"status"}>{reviewFailure||(reviewBusy?"문항을 불러오는 중…":"문항을 불러오지 못했습니다.")}</p><button type="button" className="button button-ghost" disabled={reviewLocked} onClick={()=>void openManual(manualQuestion)}>다시 불러오기</button><button type="button" className="button button-ghost" disabled={reviewLocked} onClick={closeReview}>편집 닫기</button></div>):undefined}/>
     <section className="admin-panel">
       <div className="admin-panel-head"><div><span className="eyebrow">IMPORT HISTORY</span><h2>최근 운영 DB 배치</h2></div><Link href="/cbt/">CBT MATE 열기 ↗</Link></div>
       {recentBatches.length ? recentBatches.map((item) => <div className="record-row" key={item.id}><span>{item.file_name}<small>{item.qualification_code} · {new Date(item.created_at).toLocaleString("ko-KR")}</small></span><strong>{item.row_count}문항</strong><small>{item.status}</small>{item.status === "needs_review" && <button className="button button-primary" onClick={() => void publish(item.id)} disabled={busy}>공개</button>}</div>) : <p className="admin-empty">아직 운영 DB에 저장한 배치가 없습니다.</p>}
