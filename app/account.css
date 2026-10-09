@@ -60,11 +60,13 @@
 
 /* The name is a menu label, never an authorization claim. */
 .site-header .header-actions .auth-nav--signed-in { width: auto; min-width: 0; }
+.site-header .auth-nav--signed-in .auth-menu { min-width: 0; width: 100%; }
 .site-header .auth-nav--signed-in .auth-menu-trigger { width: auto; min-width: 104px; max-width: 224px; padding: 5px 12px; gap: 8px; }
-.site-header .auth-nav--signed-in .auth-menu-label { display: block; min-width: 0; font-size: 14px; }
-.auth-greeting { display: grid; min-width: 0; text-align: left; line-height: 1.35; }
-.auth-greeting-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
-.auth-greeting-message { color: var(--muted); font-size: 14px; font-weight: 400; }
+.site-header .auth-nav--signed-in .auth-menu-label { display: block; min-width: 0; max-width: 100%; overflow: hidden; font-size: 14px; }
+.auth-greeting { display: flex; align-items: center; gap: 6px; min-width: 0; text-align: left; line-height: 1.35; }
+.auth-greeting-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.auth-greeting-wave { flex: none; font-size: 16px; line-height: 1; }
+.site-header .auth-nav--signed-in .auth-menu-user-icon { display: none; }
 .site-header .auth-nav--signed-in .auth-menu-icon { display: none; }
 @media (max-width: 1100px) {
   .site-header .header-actions { min-width: 0; max-width: calc(100% - 48px); }
