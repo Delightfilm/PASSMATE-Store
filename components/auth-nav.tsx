@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { readLocalStore, type LocalAttempt } from "@/lib/question-bank";
+import { accountDisplayName } from "@/lib/account-display-name";
 
 export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt" }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const [ready, setReady] = useState(false);
   const [ongoing, setOngoing] = useState<LocalAttempt | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,22 +79,37 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
     }
 
     const supabase = getSupabaseBrowserClient();
+    let active = true, revision = 0;
+    let syncTimer: ReturnType<typeof setTimeout>;
+    let profileController: AbortController | null = null;
 
     async function sync(sessionUser: User | null) {
+      const current = ++revision;
+      profileController?.abort();
+      if (!active) return;
       setUser(sessionUser);
       setIsAdmin(false);
+      setDisplayName(accountDisplayName(sessionUser));
+      setReady(true);
 
       if (sessionUser) {
+        const controller = new AbortController();
+        profileController = controller;
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        try {
         const { data } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role,display_name")
           .eq("id", sessionUser.id)
-          .maybeSingle();
+          .abortSignal(controller.signal).maybeSingle();
 
+        if (!active || current !== revision) return;
         setIsAdmin(data?.role === "admin");
+        setDisplayName(accountDisplayName(sessionUser, data?.display_name));
+        } catch { /* Keep the metadata greeting if the profile is unavailable. */ }
+        finally { clearTimeout(timeout); }
       }
 
-      setReady(true);
     }
 
     void supabase.auth.getSession().then(({ data }) => {
@@ -101,12 +118,22 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        void sync(session?.user ?? null);
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => { void sync(session?.user ?? null); }, 0);
       }
     );
 
-    return () => listener.subscription.unsubscribe();
+    return () => { active = false; ++revision; clearTimeout(syncTimer); profileController?.abort(); listener.subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    const update = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId: string; displayName: string }>).detail;
+      if (detail?.userId === user?.id && typeof detail.displayName === "string") setDisplayName(detail.displayName.trim());
+    };
+    window.addEventListener("passmate-profile-updated", update);
+    return () => window.removeEventListener("passmate-profile-updated", update);
+  }, [user?.id]);
 
   useEffect(() => {
     if (service !== "cbt") return;
@@ -125,9 +152,9 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
   }
 
   return (
-    <div className="auth-nav">
+    <div className={`auth-nav${user ? " auth-nav--signed-in" : ""}`}>
       <div className="auth-menu" ref={menuRef} onKeyDown={moveMenu} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); }}>
-        <button ref={triggerRef} type="button" className="auth-nav-link auth-menu-trigger" aria-label={user ? "계정 메뉴" : "메뉴"} aria-haspopup="true" aria-expanded={menuOpen} aria-controls="account-menu-panel" onClick={() => setMenuOpen((open) => !open)}><svg className="auth-menu-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c0-4 3-6.5 7.5-6.5s7.5 2.5 7.5 6.5" /></svg><span className="auth-menu-label">{user ? "내 계정" : "메뉴"}</span><svg className="auth-menu-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m3 6 5 5 5-5" /></svg><span className="auth-menu-icon" aria-hidden="true">☰</span></button>
+        <button ref={triggerRef} type="button" className="auth-nav-link auth-menu-trigger" aria-label={user ? `${displayName ? `${displayName} 님 ` : ""}반갑습니다! 계정 메뉴` : "메뉴"} aria-haspopup="true" aria-expanded={menuOpen} aria-controls="account-menu-panel" onClick={() => setMenuOpen((open) => !open)}><svg className="auth-menu-user-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c0-4 3-6.5 7.5-6.5s7.5 2.5 7.5 6.5" /></svg><span className="auth-menu-label">{user ? <span className="auth-greeting">{displayName && <span className="auth-greeting-name">{displayName} 님</span>}<span className="auth-greeting-message">반갑습니다!</span></span> : "메뉴"}</span><svg className="auth-menu-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m3 6 5 5 5-5" /></svg><span className="auth-menu-icon" aria-hidden="true">☰</span></button>
         <nav id="account-menu-panel" className="auth-menu-panel" aria-label="계정 및 서비스 메뉴" hidden={!menuOpen}>
           {user && <span className="auth-menu-email">{user.email}</span>}
           {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
