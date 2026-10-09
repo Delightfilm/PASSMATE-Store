@@ -8,6 +8,8 @@
 
 ### Account learning dashboard — 2026-10-10
 
+- User-requested number count-up and left-to-right accuracy reveal now run once on visibility, respecting reduced motion. Hover/touch/keyboard tooltips expose the existing scores. Local production Edge/WebKit motion and dashboard regression checks passed; release evidence is recorded separately in `reports/account-motion-20261010/RESULT.md` in the outer workspace. Initial account loading CLS and real iOS device checks remain separate follow-ups.
+
 - Account-owned learning summary, recent accuracy graph, review links and history table now precede separate profile settings. Guest browser history is excluded; study reads are user-scoped, paginated and fail with retry rather than fake totals. Header greeting uses the real profile/name and updates after the existing name save.
 - Local Edge/WebKit responsive, error/empty/delay/name, menu keyboard, guest/logout and cross-page header checks passed with fixture responses. Existing live RLS ownership policies were read-only verified; no production account writes, schema, auth provider or payment/download contract changes. Check / TypeScript / production build passed.
 - Details: `docs/ACCOUNT_DASHBOARD_QA.md`; workspace captures: `reports/account-ui-20261010/`. Production release proof is recorded separately in the workspace report after deployment.

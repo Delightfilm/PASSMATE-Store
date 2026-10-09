@@ -16,7 +16,7 @@
 .account-metric:first-child { padding-left: 0; }
 .account-metric + .account-metric { border-left: 1px solid var(--line); }
 .account-metric h3 { font-size: 15px; color: var(--muted); }
-.account-metric-value { display: block; margin-top: 8px; color: var(--blue); font-size: 36px; font-weight: 700; line-height: 1.25; }
+.account-metric-value { display: block; margin-top: 8px; color: var(--blue); font-size: 36px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
 .account-learning-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 24px; margin-bottom: 24px; }
 .account-panel { min-width: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--white); padding: 24px; }
 .account-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -27,6 +27,12 @@
 .account-chart-grid { stroke: var(--line); stroke-width: 1; }
 .account-chart-line { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .account-chart-point { fill: var(--white); stroke: var(--blue); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.account-chart-selected { fill: var(--blue); }
+.account-chart-interaction { position: absolute; inset: 0 0 0 24px; width: calc(100% - 24px); min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; cursor: crosshair; touch-action: pan-y; }
+.account-chart-interaction:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+.account-chart-tooltip { position: absolute; z-index: 1; display: grid; gap: 2px; width: 144px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 14px; line-height: 1.6; transform: translate(-50%, -100%); pointer-events: none; }
+.account-chart-tooltip span { color: var(--muted); }
+.account-chart-tooltip strong { color: var(--blue); font-weight: 600; }
 .account-chart-dates { display: flex; justify-content: space-between; }
 .account-chart-empty { display: grid; place-items: center; min-height: 172px; color: var(--muted); text-align: center; }
 .account-chart-data { margin-top: 12px; font-size: 14px; color: var(--muted); }
