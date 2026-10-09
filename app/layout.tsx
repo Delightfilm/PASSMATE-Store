@@ -6,6 +6,7 @@ import "./ui-refinements.css";
 import "./store-mobile.css";
 import "./store-copy.css";
 import "./legal.css";
+import "./auth-recent.css";
 import "./learning-home.css";
 import "./question-editor.css";
 import "@/lib/cbt-home-catalog";

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearOAuthNextPath, getSafeNextPath, readOAuthNextPath } from "@/lib/auth-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { clearPendingOAuth, completeRecentOAuth } from "@/lib/recent-login";
 
 function getProviderError(): string | null {
   const search = new URLSearchParams(window.location.search);
@@ -28,6 +29,7 @@ export function OAuthCallback() {
 
     const providerError = getProviderError();
     if (providerError) {
+      clearPendingOAuth();
       clearStoredNext();
       loginUrl.searchParams.set(
         "oauth_error",
@@ -44,6 +46,7 @@ export function OAuthCallback() {
     const finish = () => {
       if (!active || completed) return;
       completed = true;
+      completeRecentOAuth();
       clearStoredNext();
       router.replace(nextPath);
       router.refresh();

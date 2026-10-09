@@ -1,0 +1,18 @@
+.auth-method-button { position: relative; }
+.auth-recent-badge {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 12px;
+  transform: translateY(-50%);
+  padding: 3px 8px;
+  border: 1px solid var(--blue-line);
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue-dark);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.auth-card--login .auth-social { gap: 18px; }

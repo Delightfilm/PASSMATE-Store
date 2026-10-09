@@ -1,10 +1,16 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-05**
+> Last updated: **2026-10-09**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### Recent login method hint — 2026-10-09
+
+- Login-only `최근 로그인` badge identifies the last successful email/Google/Kakao method in this browser. Stores only the method, with safe optional storage and no auth/payment/download/DB contract change. Existing users acquire the hint on their next successful login; old history is not guessed.
+- Local Chromium/WebKit UI matrices (360/390/430/768/1280px, four history states), malformed/denied storage, signup suppression and six fixture auth success/failure/cancellation cases per engine passed. These are simulated auth responses, not real-account OAuth proof. Contract checks, TypeScript and production build passed. Deployment verification is recorded separately in the workspace report.
+- Details: `docs/AUTH_RECENT_LOGIN.md`; captures/tests: `reports/recent-login-20261009/` in the outer workspace.
 
 ### Official parser/presentation review — 2026-10-05, local verification complete
 

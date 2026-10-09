@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clearOAuthNextPath, getAuthErrorMessage, getSafeNextPath, rememberOAuthNextPath } from "@/lib/auth-ui";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { clearPendingOAuth, readRecentLogin, rememberPendingOAuth, rememberRecentLogin, type LoginMethod } from "@/lib/recent-login";
 
 type Mode = "login" | "signup" | "forgot" | "reset";
 type OAuthProvider = "google" | "kakao";
@@ -19,8 +20,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [busy, setBusy] = useState(false);
   const [oauthBusy, setOAuthBusy] = useState<OAuthProvider | null>(null);
   const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
+  const [recentLogin, setRecentLogin] = useState<LoginMethod | null>(null);
 
   useEffect(() => {
+    if (mode === "login") setRecentLogin(readRecentLogin());
+    clearPendingOAuth();
     const params = new URLSearchParams(window.location.search);
     setNextPath(getSafeNextPath(params.get("next")));
 
@@ -33,7 +37,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
     if (mode === "login" && params.get("confirmed") === "1") {
       const supabase = getSupabaseBrowserClient();
       void supabase.auth.getSession().then(({ data }) => {
-        if (data.session) router.replace(getSafeNextPath(params.get("next")));
+        if (data.session) {
+          rememberRecentLogin("email");
+          router.replace(getSafeNextPath(params.get("next")));
+        }
       });
     }
   }, [mode, router]);
@@ -57,9 +64,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
       });
       if (error) throw error;
       if (!data.url) throw new Error("OAuth 로그인 주소를 만들지 못했습니다.");
+      rememberPendingOAuth(provider);
       window.location.assign(data.url);
     } catch (error) {
       clearOAuthNextPath();
+      clearPendingOAuth();
       const text = error instanceof Error ? error.message : String(error);
       setMessage({ kind: "error", text: getAuthErrorMessage(text) });
       setOAuthBusy(null);
@@ -74,8 +83,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (data.session) rememberRecentLogin("email");
         router.replace(nextPath);
         router.refresh();
         return;
@@ -105,6 +115,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         });
         if (error) throw error;
         if (data.session) {
+          rememberRecentLogin("email");
           router.replace(nextPath);
           return;
         }
@@ -157,17 +168,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
     <div className="account-shell">
       <h1 className="page-title">{copy.title}</h1>
       {(mode === "forgot" || mode === "reset") && <p className="page-lead">{copy.lead}</p>}
-      <div className="auth-card">
+      <div className={`auth-card${mode === "login" ? " auth-card--login" : ""}`}>
         {supportsOAuth && (
           <>
             <div className="auth-social" aria-label="SNS 로그인">
-              <button className="auth-social-button auth-social-button--google" type="button" onClick={() => signInWithOAuth("google")} disabled={isBusy}>
+              <button className="auth-social-button auth-social-button--google auth-method-button" type="button" onClick={() => signInWithOAuth("google")} disabled={isBusy}>
                 <span className="auth-social-icon auth-social-icon--google" aria-hidden="true">G</span>
                 {oauthBusy === "google" ? "Google 연결 중..." : "Google로 계속하기"}
+                {mode === "login" && recentLogin === "google" && <span className="auth-recent-badge" title="이 브라우저에서 최근 로그인한 방식">최근 로그인</span>}
               </button>
-              <button className="auth-social-button auth-social-button--kakao" type="button" onClick={() => signInWithOAuth("kakao")} disabled={isBusy}>
+              <button className="auth-social-button auth-social-button--kakao auth-method-button" type="button" onClick={() => signInWithOAuth("kakao")} disabled={isBusy}>
                 <span className="auth-social-icon auth-social-icon--kakao" aria-hidden="true">●</span>
                 {oauthBusy === "kakao" ? "카카오 연결 중..." : "카카오로 계속하기"}
+                {mode === "login" && recentLogin === "kakao" && <span className="auth-recent-badge" title="이 브라우저에서 최근 로그인한 방식">최근 로그인</span>}
               </button>
             </div>
             <div className="auth-divider"><span>또는</span></div>
@@ -178,7 +191,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           {mode !== "reset" && <div className="auth-field"><label htmlFor="email">이메일</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></div>}
           {(mode === "login" || mode === "signup" || mode === "reset") && <div className="auth-field"><label htmlFor="password">{mode === "reset" ? "새 비밀번호" : "비밀번호"}</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={8} required /></div>}
           {(mode === "signup" || mode === "reset") && <div className="auth-field"><label htmlFor="password-confirm">비밀번호 확인</label><input id="password-confirm" type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} autoComplete="new-password" minLength={8} required /></div>}
-          <button className="button button-primary button-wide auth-submit" type="submit" disabled={isBusy}>{busy ? "처리 중..." : copy.submit}</button>
+          <button className="button button-primary button-wide auth-submit auth-method-button" type="submit" disabled={isBusy}>{busy ? "처리 중..." : copy.submit}{mode === "login" && recentLogin === "email" && <span className="auth-recent-badge" title="이 브라우저에서 최근 로그인한 방식">최근 로그인</span>}</button>
         </form>
         {message && <p className={`auth-message auth-message--${message.kind}`} role="status">{message.text}</p>}
         {mode === "login" ? (

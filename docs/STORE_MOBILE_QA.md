@@ -381,3 +381,11 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 - Chromium 로컬 전체 페이지 CLS 최대 0.052. WebKit은 관측 API 미지원으로 측정 불가. 운영 결과와 전/후 캡처는 워크스페이스 `reports/learning-home-release-20261005/FOOTER_HTML_UPDATE.md`에 기록한다. `footer-html-local-*` PNG/JSON에 이번 로컬 결과를 보관했다.
 - 변경 파일: 푸터/사업자 정보 컴포넌트, `app/legal.css`, `app/tokens.css`, `lib/business-info.ts`, 디자인/상태/이 QA 문서. 이 수정 커밋만 revert하면 직전 밝은 푸터와 이전 신고번호 값으로 돌아간다.
 - 추가 확인에서 기존 CBT 모바일 하단 메뉴(56px)가 푸터 기본 여백(44px)과 겹칠 수 있어, 메뉴가 실제로 있는 ≤767px 화면에서 `--bottom-nav-height: 56px`을 적용했다. 하단 메뉴 기능은 변경하지 않았으며 safe-area는 기존 계산에 더한다.
+
+## 로그인 방식 최근 표시 — 2026-10-09
+
+- Google/카카오/이메일 중 이 브라우저의 마지막 성공 방식 하나에 `최근 로그인` 배지를 표시한다. 가입 화면은 제외한다. 방식 이름만 저장하고 계정/개인정보/토큰은 저장하지 않는다. 인증 판단·OAuth 설정·next 경로·결제/다운로드 계약은 보존한다.
+- Chromium·WebKit 각각 360/390/430/768/1280px × 기록 없음/Google/카카오/이메일 20건: 가로 넘침 0, 로그인 버튼 터치 위반 0, 배지/버튼 문구 겹침 0, 배지 대비 최소 8.01:1. 표시 여부에 따른 SNS 간격 이동을 피하도록 간격은 항상 18px이다.
+- 각 엔진의 이메일 성공/실패, Google·카카오 성공/취소 6건을 **fixture 응답**으로 확인했다. 성공 후 기록 변경, 실패/취소 시 이전 기록 보존, 새로고침 후 표시 유지, 손상/차단 저장소와 가입 화면 미표시를 검사했다. 실제 OAuth/실계정 로그인·운영 DB 쓰기는 수행하지 않았다.
+- Chromium 로그인 화면 CLS 최대 0.00112. WebKit은 Layout Shift 관측 API 미지원으로 CLS 측정을 주장하지 않는다. 초기 WebKit fixture 입력은 hydration 완료를 기다리도록 보정했고, WebKit에서 허용하지 않는 302 route.fulfill 대신 테스트용 HTML 리다이렉트를 사용했다. 애플리케이션의 로그인/리다이렉트 코드를 우회하거나 변경하지 않았다.
+- `npm run check`, `npx tsc --noEmit`, `npx next build` 통과. QA 도구·전/후 캡처·JSON·운영 확인 결과는 워크스페이스 `reports/recent-login-20261009/`에 보관한다.
