@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { accountDisplayName } from "@/lib/account-display-name";
 import { AccountStudy } from "@/components/account-study";
+import { AccountReveal } from "@/components/account-reveal";
 
 type Profile = { id: string; display_name: string | null; role: string };
 
@@ -99,7 +100,7 @@ export function AccountClient({ qualificationNames }: { qualificationNames: Reco
         <div className="account-primary-actions"><Link className="button button-primary" href="/cbt/">문제 풀기</Link><Link className="button button-ghost" href="/library/">내 자료</Link></div>
       </div>
       {user && <AccountStudy key={user.id} userId={user.id} qualificationNames={qualificationNames} />}
-      <section className="account-panel account-settings" aria-labelledby="account-settings-title">
+      <AccountReveal className="account-panel account-settings" labelledBy="account-settings-title">
         <h3 id="account-settings-title">계정 설정</h3>
         <p className="account-email account-muted">{user?.email}</p>
         <form className="auth-form account-profile-form" onSubmit={saveProfile}>
@@ -112,7 +113,7 @@ export function AccountClient({ qualificationNames }: { qualificationNames: Reco
           <Link className="account-text-link" href="/account/forgot-password/">비밀번호 변경</Link>
           <button className="account-text-link" type="button" onClick={signOut}>로그아웃</button>
         </div>
-      </section>
+      </AccountReveal>
     </div>
   );
 }

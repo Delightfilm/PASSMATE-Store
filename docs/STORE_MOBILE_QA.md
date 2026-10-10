@@ -394,6 +394,10 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 
 ### 계정 숫자·그래프 모션 추가
 
+- 후속으로 계정 인터랙션 6종(섹션 등장, 세로 가이드·%p, 복습 행 반응, 완료율 링, 스크롤 요약, 기록 행동)을 적용했다. 모바일 40px 요약/링, PC 48px 요약·44px 링, 실제 헤더 높이 반영. 계정 767px 규칙에 한정해 모바일 기록 행동을 항상 표시한다.
+- Edge/WebKit 360/390/430/768/1280px의 6종·회귀, 0/50/100% 링 픽셀 비교, reduced-motion/resize/실제 응시·결과 화면 fixture 이동 통과. 가로 넘침 0, 터치 44px 이상, 보조 14px 이상, 대비 7.56:1. check/tsc/build 통과. 별도 스토어·CBT 인터랙션은 제안만 정리했다.
+- 상세 파일·캡처·영상·운영 증거·롤백: 외곽 `reports/account-motion-20261010/RESULT_SIX.md`와 `docs/ACCOUNT_DASHBOARD_QA.md`.
+
 - 850ms 카운터와 좌→우 그래프 reveal, 호버·터치·방향키/Home/End/Escape 수치 확인, reduced-motion 즉시 표시를 추가했다. 기존 통계/조회/인증·결제·다운로드 계약은 보존한다.
 - production build의 Chromium·WebKit 360/390/430/768/1280px 모션·회귀 검사 통과. 터치 44px 이상, 보조 14px 이상, 대비 7.56:1, 가로 넘침 없음. fixture 계정만 사용했으며 초기 로딩 전체 CLS=0이나 실기기 Safari 검증을 주장하지 않는다.
 - 파일·검사·남은 항목·롤백: `docs/ACCOUNT_DASHBOARD_QA.md`. 전/후 캡처와 영상·운영 증거: 외곽 `reports/account-motion-20261010/`.

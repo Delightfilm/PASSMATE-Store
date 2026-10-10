@@ -12,11 +12,26 @@
 .account-primary-actions { display: flex; gap: 12px; flex-shrink: 0; }
 .account-dashboard .button { min-width: 44px; min-height: 44px; font-size: 15px; }
 .account-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-block: 1px solid var(--line); padding: 24px 0; margin-bottom: 28px; }
-.account-metric { padding-inline: 24px; }
+.account-metric { display: flex; flex-direction: column; min-width: 0; padding-inline: 24px; }
 .account-metric:first-child { padding-left: 0; }
 .account-metric + .account-metric { border-left: 1px solid var(--line); }
 .account-metric h3 { font-size: 15px; color: var(--muted); }
-.account-metric-value { display: block; margin-top: 8px; color: var(--blue); font-size: 36px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.account-metric-stat { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.account-metric-value { display: inline-grid; color: var(--blue); font-size: 36px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.account-metric-value::before { content: attr(data-value); visibility: hidden; grid-area: 1 / 1; }
+.account-metric-value > span { grid-area: 1 / 1; }
+.account-dashboard .account-metric > p { margin-top: auto; padding-top: 8px; }
+.account-completion-ring { display: block; width: 44px; height: 44px; flex: none; }
+.account-ring-track, .account-ring-fill { fill: none; stroke-width: 4; }
+.account-ring-track { stroke: var(--line); }
+.account-ring-fill { stroke: var(--blue); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 24px 24px; }
+.account-summary-origin { margin-bottom: 28px; }
+.account-summary-origin .account-metrics { margin-bottom: 0; }
+.account-floating-summary { position: fixed; inset-inline: 0; z-index: 40; height: 48px; border-bottom: 1px solid var(--line); background: var(--white); pointer-events: none; }
+.account-floating-summary > div { display: flex; align-items: center; gap: 24px; width: min(1040px, calc(100% - 48px)); height: 100%; margin-inline: auto; }
+.account-floating-summary span { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+.account-floating-summary strong { color: var(--blue); font-weight: 600; font-variant-numeric: tabular-nums; }
+html:has(.account-page) { scroll-padding-top: calc(132px + env(safe-area-inset-top)); }
 .account-learning-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 24px; margin-bottom: 24px; }
 .account-panel { min-width: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--white); padding: 24px; }
 .account-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -28,9 +43,10 @@
 .account-chart-line { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .account-chart-point { fill: var(--white); stroke: var(--blue); stroke-width: 3; vector-effect: non-scaling-stroke; }
 .account-chart-selected { fill: var(--blue); }
+.account-chart-guide { stroke: var(--blue); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
 .account-chart-interaction { position: absolute; inset: 0 0 0 24px; width: calc(100% - 24px); min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 8px; background: transparent; cursor: crosshair; touch-action: pan-y; }
 .account-chart-interaction:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
-.account-chart-tooltip { position: absolute; z-index: 1; display: grid; gap: 2px; width: 144px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 14px; line-height: 1.6; transform: translate(-50%, -100%); pointer-events: none; }
+.account-chart-tooltip { position: absolute; z-index: 1; display: grid; gap: 2px; width: 160px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; transform: translate(-50%, -100%); pointer-events: none; }
 .account-chart-tooltip span { color: var(--muted); }
 .account-chart-tooltip strong { color: var(--blue); font-weight: 600; }
 .account-chart-dates { display: flex; justify-content: space-between; }
@@ -42,13 +58,27 @@
 .account-review-link { display: flex; align-items: center; min-height: 64px; gap: 12px; border-bottom: 1px solid var(--line); color: var(--ink); font-size: 16px; }
 .account-review-link strong { margin-left: auto; color: var(--blue); font-size: 22px; font-weight: 600; }
 .account-review-link:hover { color: var(--blue); }
+.account-review-arrow { transition: transform 150ms ease-out; }
+.account-review-link:active { background: var(--soft); }
+.account-review-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; background: var(--soft); }
+@media (hover: hover) and (pointer: fine) {
+  .account-review-link { transition: background-color 150ms ease-out, border-color 150ms ease-out; }
+  .account-review-link:hover { background: var(--soft); border-color: var(--blue-line); }
+  .account-review-link:hover .account-review-arrow { transform: translateX(3px); }
+  .account-history-action { opacity: 0; }
+  .account-table-wrap tbody tr:hover { background: var(--soft); }
+  .account-table-wrap tbody tr:hover .account-history-action, .account-table-wrap tbody tr:focus-within .account-history-action { opacity: 1; }
+}
 .account-history { margin-top: 0; }
 .account-text-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding: 8px 4px; border: 0; background: transparent; color: var(--blue); font-size: 14px; font-weight: 600; cursor: pointer; }
 .account-table-wrap { margin-top: 12px; }
 .account-table-wrap table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
 .account-table-wrap th, .account-table-wrap td { padding: 16px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: anywhere; font-weight: 400; }
 .account-table-wrap thead th { background: var(--soft); color: var(--muted); font-weight: 600; }
-.account-table-wrap th:first-child { width: 46%; }
+.account-table-wrap th:first-child { width: 38%; }
+.account-table-wrap th:last-child { width: 18%; }
+.account-history-action { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; max-width: 100%; padding: 6px 8px; border-radius: 8px; background: var(--soft); color: var(--blue); font-size: 14px; font-weight: 600; line-height: 1.5; text-align: center; }
+.account-history-action:focus-visible { opacity: 1; outline: 2px solid var(--blue); outline-offset: 2px; }
 .account-table-wrap tbody th { font-weight: 600; }
 .account-table-wrap tbody tr:last-child > * { border-bottom: 0; }
 .account-empty { padding: 24px 0; color: var(--muted); }
@@ -92,12 +122,26 @@
   .account-metric + .account-metric { border: 0; }
   .account-metric h3 { font-size: 14px; }
   .account-metric-value { font-size: 28px; }
+  .account-metric-stat { gap: 4px; }
+  .account-metric:first-child .account-metric-stat { column-gap: 0; }
+  .account-metric:first-child .account-metric-value { font-size: clamp(22px, 6.1vw, 26px); }
+  .account-completion-ring { width: 40px; height: 40px; }
+  .account-floating-summary { height: 40px; }
+  .account-floating-summary > div { width: calc(100% - 32px); gap: 16px; }
+  .account-floating-summary span { gap: 6px; }
+  html:has(.account-page) { scroll-padding-top: calc(108px + env(safe-area-inset-top)); }
   .account-learning-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .account-panel { padding: 20px 16px; }
   .account-chart { aspect-ratio: auto; height: 180px; }
   .account-table-wrap th, .account-table-wrap td { padding: 14px 4px; }
-  .account-table-wrap th:first-child { width: 39%; }
+  .account-table-wrap th:first-child { width: 31%; }
+  .account-table-wrap th:last-child { width: 27%; }
+  .account-history-action { opacity: 1; padding: 6px 4px; }
   .account-profile-form { grid-template-columns: minmax(0,1fr); }
   .account-settings-actions { gap: 20px; }
   .account-study-skeleton { min-height: 920px; gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-review-link, .account-review-arrow { transition: none; }
+  .account-review-link:hover .account-review-arrow { transform: none; }
 }

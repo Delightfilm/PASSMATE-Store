@@ -8,6 +8,8 @@
 
 ### Account learning dashboard — 2026-10-10
 
+- Six approved account interactions implemented: below-fold reveal, graph guide/delta, review hover/press, completion ring, header-aware floating summary and contextual attempt links. Local production Edge/WebKit feature/regression tests plus check/tsc/build passed, including fixture navigation into actual exam/result screens. Production evidence and proposed store/CBT ideas are recorded separately in outer `reports/account-motion-20261010/RESULT_SIX.md`. Store/CBT proposals have not been applied.
+
 - User-requested number count-up and left-to-right accuracy reveal now run once on visibility, respecting reduced motion. Hover/touch/keyboard tooltips expose the existing scores. Local production Edge/WebKit motion and dashboard regression checks passed; release evidence is recorded separately in `reports/account-motion-20261010/RESULT.md` in the outer workspace. Initial account loading CLS and real iOS device checks remain separate follow-ups.
 
 - Account-owned learning summary, recent accuracy graph, review links and history table now precede separate profile settings. Guest browser history is excluded; study reads are user-scoped, paginated and fail with retry rather than fake totals. Header greeting uses the real profile/name and updates after the existing name save.

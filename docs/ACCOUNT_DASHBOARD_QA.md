@@ -1,5 +1,23 @@
 # 내 계정 학습 대시보드 · 2026-10-10
 
+## 인터랙션 6종 적용 (2026-10-10 · 최신)
+
+| 항목 | 적용 내용 |
+| --- | --- |
+| 섹션 등장 | 첫 화면 밖의 복습·기록·설정만 viewport 진입 시 12px / 240ms 한 번 등장. 키보드 포커스 시 즉시 표시 |
+| 그래프 가이드 | 선택 위치 세로선과 직전 항목 대비 변화량(%p). 첫 항목에는 비교 없음. 소수 변화량은 소수점 한 자리로 표현 |
+| 복습 행 반응 | 마우스 환경에서 배경·테두리 강조, 화살표 3px / 150ms. 터치는 배경 피드백, 키보드 포커스 표시 유지 |
+| 완료율 링 | 기존 숫자와 같은 850ms 진행도. PC 44px / 모바일 40px, 숫자의 최종 폭을 예약해 링 이동 방지. 빈 기록은 링 없음 |
+| 고정 요약 | 원래 요약이 헤더 위로 사라지면 헤더 아래 표시. 모바일 40px / PC 48px. ResizeObserver로 실제 헤더 높이·safe-area 포함 높이를 반영, 위로 돌아오면 제거 |
+| 기록 행동 | 기존 `/cbt/{cert}/exam/{attempt}/` 링크. 진행 중은 이어서 풀기, 제출한 시험은 결과 보기. PC 마우스 환경에서 hover/focus 노출, 모바일·터치 환경은 항상 표시 |
+
+- `components/account-reveal.tsx`, `components/account-summary.tsx` 추가. `account-client.tsx`는 설정 섹션 래퍼만 교체하며 로그인·이름 저장·로그아웃 처리는 보존한다. `account-study.tsx`는 요약 연결·복습 래퍼·기록 링크, `account-accuracy-chart.tsx`는 가이드·변화량, `app/account.css`는 계정 범위 표시만 수정한다.
+- 기록 링크는 client_id 우선으로 정규화한 기존 attempt.id를 사용하고 경로 인자를 URL 인코딩한다. certSlug가 없으면 catalog에 존재하는 certId를 사용한다. 둘 다 없으면 링크를 만들지 않고 기록만 표시한다. prefetch는 끄고 사용자의 선택 시 기존 CBT 복원 경로로 이동한다.
+- 실제 시험 경로의 `mergeAccountStore` 복원과 in_progress/ submitted 분기를 확인했다. 로컬 Supabase 문제 조회 및 운영 NAS 번들에 대응하는 synthetic fixture로 실제 응시 화면/결과 화면까지 연결을 검사한다. 기존 CBT 동기화 요청도 fixture 처리하며 실제 사용자/DB에는 쓰지 않는다.
+- 두 엔진 production build 360/390/430/768/1280px: 6종, 변화량 7항목씩, 고정 바 높이·헤더 경계·resize, hover/focus·터치, unknown 자격증, 빈/0점/0%완료/100%완료, 소수 및 0%p 변화량 통과. 0/50/100% 링은 PNG 파란 픽셀 증가도 확인했다.
+- 아래 기존 계정 회귀 5개 폭·추가 9건·헤더 20건, check / tsc / build도 통과한다. 모션 줄이기와 실행 중 설정 변경, 재진입 반복 없음, 화면 이동 정리를 유지한다. 신규 라이브러리·DB·인증·결제·다운로드·채점 코드 변경 없음.
+- QA 도구/전후 PNG/영상/JSON/운영 검증/후속 스토어·CBT 제안은 외곽 `reports/account-motion-20261010/RESULT_SIX.md`에 기록한다. 초기 인증/학습 로딩 전체 CLS와 실기기 Safari는 별도 남은 확인이다. 이번 인터랙션 커밋 revert로 6종만 되돌린다.
+
 ## 숫자·그래프 모션 보완 (2026-10-10)
 
 | 이전 | 이후 | 이유 |
