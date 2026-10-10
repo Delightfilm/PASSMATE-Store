@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), "utf8");
 const urlFor = (source) => "data:text/javascript;base64," + Buffer.from(ts.transpile(source, { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 })).toString("base64");
 const downloadUrl = urlFor(read("../lib/question-bank-download.ts"));
-const { readContentJson, createContentRequest, watchContentRequest } = await import(downloadUrl);
+const { readContentJson, createContentRequest, watchContentRequest, loadingProgressPresentation } = await import(downloadUrl);
 
 const { loadingDisplayName, loadingMessages, startLoadingMessages, SLOW_LOADING_MESSAGE, LOADING_MESSAGE_INTERVAL_MS, LOADING_MESSAGE_FADE_MS, LOADING_SHOW_DELAY_MS, LOADING_SLOW_DELAY_MS } = await import(urlFor(read("../lib/question-bank-loading.ts")));
 assert.equal(LOADING_MESSAGE_INTERVAL_MS, 5_000);
@@ -107,6 +107,34 @@ const stream = new ReadableStream({ pull(controller) {
 } });
 assert.deepEqual(await readContentJson(new Response(stream)), object, "UTF-8 split boundaries must not corrupt JSON");
 assert.deepEqual(await readContentJson(Response.json(object)), object);
+const measured = [];
+assert.deepEqual(await readContentJson(new Response(bytes, { headers: { "content-length": String(bytes.length) } }), { onProgress: value => measured.push(value) }), object);
+assert.equal(measured[0].total, bytes.length); assert.equal(measured.at(-1).loaded, bytes.length); assert.equal(measured.at(-1).stage, "parse");
+const compressed = [];
+await readContentJson(new Response(bytes, { headers: { "content-length": "50", "content-encoding": "gzip" } }), { onProgress: value => compressed.push(value) });
+assert.equal(compressed[0].total, undefined, "Compressed Content-Length does not measure decoded stream bytes");
+for (const descriptor of [{ url: "https://content.example.test/bundles/qa.json.gz" }, { type: "cors" }]) {
+  const response = new Response(bytes, { headers: { "content-length": "50" } }), observed = [];
+  for (const [key, value] of Object.entries(descriptor)) Object.defineProperty(response, key, { value });
+  await readContentJson(response, { onProgress: value => observed.push(value) });
+  assert.equal(observed[0].total, undefined, "A hidden CORS Content-Encoding or gzip filename cannot produce a guessed total");
+}
+const decodedSize = [];
+await readContentJson(new Response(bytes, { headers: { "content-length": "50", "content-encoding": "gzip" } }), { totalBytes: bytes.length, onProgress: value => decodedSize.push(value) });
+assert.equal(decodedSize[0].total, bytes.length, "Catalog uncompressedBytes can measure a decoded gzip stream");
+assert.deepEqual(await readContentJson(Response.json(object), { onProgress: () => { throw new Error("presentation only"); } }), object, "A presentation failure never breaks data loading");
+let emit, resolveProgress;
+const progressShared = createContentRequest(options => { emit = options.onProgress; return new Promise(resolve => { resolveProgress = resolve; }); });
+const stopped = new AbortController(), eventsA = [], eventsB = [];
+const watchA = watchContentRequest(progressShared, { signal: stopped.signal, onProgress: value => eventsA.push(value) });
+emit({ stage: "download", loaded: 10, total: 100 });
+const watchB = watchContentRequest(progressShared, { onProgress: value => eventsB.push(value) });
+assert.equal(eventsB[0].loaded, 10, "Late coalesced subscriber receives the latest measured progress");
+stopped.abort(); await assert.rejects(watchA, { name: "AbortError" });
+emit({ stage: "download", loaded: 50, total: 100 });
+assert.equal(eventsA.length, 1); assert.equal(eventsB.length, 2);
+assert.equal(progressShared.controller.signal.aborted, false);
+resolveProgress("ok"); assert.equal(await watchB, "ok"); assert.equal(progressShared.progressListeners.size, 0, "All progress listeners are released without changing shared download cancellation");
 
 const ac = new AbortController(); let cancelled = false;
 const pending = readContentJson(new Response(new ReadableStream({ cancel() { cancelled = true; } })), { signal: ac.signal });
@@ -227,7 +255,10 @@ const css = read("../components/question-bank-loading.module.css");
 assert.ok(component.includes('role="status"') && component.includes('aria-live="polite"') && component.includes('aria-busy="true"'));
 assert.ok(component.includes('aria-hidden="true"'));
 assert.equal((component.match(/setAnnouncement\(/g) || []).length, 2);
-assert.ok(!component.includes("dangerouslySetInnerHTML") && !component.includes("progressbar"));
+assert.ok(!component.includes("dangerouslySetInnerHTML"));
+assert.ok(component.includes("loadingProgressPresentation") && component.includes('percent !== null ? "progressbar"'), "Only measured progress may render a progressbar");
+assert.equal(loadingProgressPresentation({ stage: "download", loaded: 50, total: 100 }).percent, 50);
+for (const progress of [undefined, { stage: "download", loaded: 50 }, { stage: "download", loaded: 50, total: 0 }, { stage: "download", loaded: 101, total: 100 }, { stage: "download", loaded: -1, total: 100 }, { stage: "parse", loaded: 50, total: 100 }]) assert.equal(loadingProgressPresentation(progress).percent, null, "Never guess download percent from time, invalid size, or parsing");
 assert.ok(css.includes("prefers-reduced-motion: reduce") && css.includes("animation: none"));
 assert.ok(css.includes("min-height: 48px") && css.includes("transition: opacity var(--message-fade-duration)") && css.includes("transition: none"));
 assert.ok(component.includes("LOADING_MESSAGE_FADE_MS") && component.includes("--message-fade-duration"));

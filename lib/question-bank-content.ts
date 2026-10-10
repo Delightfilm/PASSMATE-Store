@@ -1,5 +1,5 @@
 import type { Cert, Dataset, Exam, LocalStore, Question, Subject } from "./question-bank";
-import { createContentRequest, readContentJson, watchContentRequest, type ContentRequest, type LoadOptions } from "./question-bank-download";
+import { createContentRequest, readContentJson, watchContentRequest, notifyLoadProgress, type ContentRequest, type LoadOptions } from "./question-bank-download";
 import { groupSourceIdsForAttempt, resolveQualificationGroup } from "./question-bank-groups";
 
 export type CatalogEntry = { code: string; title: string; bundle: string; sha256: string; questions: number; exams: number; images: number; uncompressedBytes?: number };
@@ -49,7 +49,7 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string, o
     const url = `${contentBase()}/${entry.bundle}`;
     const response = await fetchContent(url, "no-cache", requestOptions.signal);
     if (!response.ok) throw new Error(`question_bank_bundle_${response.status}`);
-    const bundle = await readContentJson<Bundle>(response, requestOptions);
+    const bundle = await readContentJson<Bundle>(response, { ...requestOptions, totalBytes: entry.uncompressedBytes });
     if (bundle.schemaVersion !== "passmate.question-bank.bundle.v1" || bundle.releaseId !== catalog.releaseId || bundle.qualification.code !== code || bundle.questions.length !== entry.questions || bundle.exams.length !== entry.exams) throw new Error("question_bank_bundle_invalid");
     const imageUrl = (image: string) => {
       if (!/^images\/[a-f0-9]{2}\/[a-f0-9]{64}\.[a-z0-9]+$/i.test(image)) throw new Error("question_bank_image_invalid");
@@ -66,6 +66,7 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string, o
 }
 
 export async function loadContentDataset(mode: string, certParam: string, attemptId: string, store: LocalStore, options: LoadOptions = {}): Promise<Dataset> {
+  notifyLoadProgress(options.onProgress, { stage: "catalog" });
   const catalog = await loadContentCatalog(options);
   const certs: Cert[] = catalog.qualifications.map((entry) => ({ id: entry.code, name: entry.title, questionCount: entry.questions, examCount: entry.exams }));
   const selected = resolveQualificationGroup(certs, certParam);
@@ -80,6 +81,7 @@ export async function loadContentDataset(mode: string, certParam: string, attemp
   // Sequential loads avoid a request burst and keep peak parsing memory bounded.
   for (const code of codes) {
     if (!certs.some((cert) => cert.id === code)) continue;
+    notifyLoadProgress(options.onProgress, { stage: "bundle" });
     const bundle = await loadContentBundle(catalog, code, options);
     dataset.subjects.push(...bundle.subjects); dataset.exams.push(...bundle.exams); dataset.questions.push(...bundle.questions);
   }

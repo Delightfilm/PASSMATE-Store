@@ -50,6 +50,8 @@ export async function validateStorePriceBinding(transform) {
         react: { useState: initial => [initial === "core" ? kind : initial, () => {}] },
         "next/link": { __esModule: true, default: ({ children, ...props }) => React.createElement("a", props, children) },
         "@/lib/cart": cart, "@/lib/product-display": display, "./product-price": price,
+        // Presentation-only wrapper: all SKU/price/disabled assertions remain live.
+        "./scroll-reveal": { ScrollReveal: ({ children, className, as = "section" }) => React.createElement(as, { className }, children) },
         "@/lib/use-product-prices": { useProductPrices: (values, initial) => {
           assert.deepEqual(values, slugs); assert.deepEqual(initial, prices);
           return { prices, loading, failed: false, retry: () => {} };

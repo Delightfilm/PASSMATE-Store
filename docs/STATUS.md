@@ -6,9 +6,15 @@
 
 ## Current Focus
 
+### Store / CBT interactions — 2026-10-10
+
+- The approved next bundle implements six store and six CBT interactions with existing tokens and reduced-motion/keyboard fallbacks. Price/SKU, auth, payment, PDF download, grading and persistence protocols remain intact; no dependency or schema change.
+- Store samples are not currently supplied to the public gallery. Its crossfade/loading behavior was verified with a temporary local probe, removed before the release build. Local save checks explicitly mean this browser, not confirmed account sync.
+- Checks, captures, production build and release evidence: `docs/STORE_CBT_INTERACTIONS_QA.md` and outer `reports/store-cbt-interactions-20261010/RESULT.md`.
+
 ### Account learning dashboard — 2026-10-10
 
-- Six approved account interactions implemented: below-fold reveal, graph guide/delta, review hover/press, completion ring, header-aware floating summary and contextual attempt links. Local production Edge/WebKit feature/regression tests plus check/tsc/build passed, including fixture navigation into actual exam/result screens. Production evidence and proposed store/CBT ideas are recorded separately in outer `reports/account-motion-20261010/RESULT_SIX.md`. Store/CBT proposals have not been applied.
+- Six approved account interactions implemented: below-fold reveal, graph guide/delta, review hover/press, completion ring, header-aware floating summary and contextual attempt links. Local production Edge/WebKit feature/regression tests plus check/tsc/build passed, including fixture navigation into actual exam/result screens. Production evidence and the original store/CBT proposals are recorded separately in outer `reports/account-motion-20261010/RESULT_SIX.md`; their subsequent implementation is recorded above.
 
 - User-requested number count-up and left-to-right accuracy reveal now run once on visibility, respecting reduced motion. Hover/touch/keyboard tooltips expose the existing scores. Local production Edge/WebKit motion and dashboard regression checks passed; release evidence is recorded separately in `reports/account-motion-20261010/RESULT.md` in the outer workspace. Initial account loading CLS and real iOS device checks remain separate follow-ups.
 

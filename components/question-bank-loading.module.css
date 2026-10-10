@@ -71,6 +71,11 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+.progressArea { min-height: 48px; margin-top: var(--space-2); }
+.progressArea p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.progressTrack { height: 4px; margin-top: 8px; border-radius: 4px; overflow: hidden; }
+.progressTrack[role="progressbar"] { background: var(--line); }
+.progressTrack span { display: block; height: 100%; background: var(--blue); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 620px) { .card { padding: var(--space-4); } }
 @media (prefers-reduced-motion: reduce) {

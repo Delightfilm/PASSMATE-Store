@@ -20,7 +20,9 @@ import { QuestionMemo, QuestionResponseStats } from "@/components/cbt-question-r
 import { recordQuestionResponses } from "@/lib/cbt-question-stats";
 import { recordInstantReview, saveQuestionMemo } from "@/lib/cbt-review-state";
 import { QuestionBankLoading } from "@/components/question-bank-loading";
-import type { LoadOptions } from "@/lib/question-bank-download";
+import type { LoadOptions, LoadProgress } from "@/lib/question-bank-download";
+import { HighlightQuery } from "@/components/highlight-query";
+import { ResultRateBar } from "@/components/result-rate-bar";
 import { belongsToQualification, examSelectionLabel, isHistoricalTitle, qualificationGroups, sourceVariantLabel } from "@/lib/question-bank-groups";
 import { loadingDisplayName } from "@/lib/question-bank-loading";
 import {
@@ -44,6 +46,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const [hydrated, setHydrated] = useState(false);
   const [dataState, setDataState] = useState<"loading" | "live" | "error" | "cancelled">("loading");
   const [loadSequence, setLoadSequence] = useState(0);
+  const [loadProgress, setLoadProgress] = useState<LoadProgress>();
   const [user, setUser] = useState<User | null>(null);
   const [loadingProfile, setLoadingProfile] = useState<{ id: string; name: unknown } | null>(null);
   const loadingUserId = user?.id;
@@ -62,13 +65,14 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
     loadController.current?.abort();
     const controller = new AbortController();
     loadController.current = controller;
-    const options: LoadOptions = { signal: controller.signal };
+    const options: LoadOptions = { signal: controller.signal, onProgress: progress => { if (version === loadVersion.current && !controller.signal.aborted) setLoadProgress(progress); } };
+    setLoadProgress(undefined);
     setLoadSequence(version);
     setDataState("loading");
     const load = async () => {
-      if (!contentBase()) return loadPublishedDataset(controller.signal);
+      if (!contentBase()) { options.onProgress?.({ stage: "bundle" }); return loadPublishedDataset(controller.signal); }
       let current = readLocalStore();
-      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { current = await mergeAccountStore(current); controller.signal.throwIfAborted(); setStore(current); persistStore(current); }
+      if (["exam", "history", "bookmarks", "wrong-notes"].includes(mode)) { options.onProgress?.({ stage: "account" }); current = await mergeAccountStore(current); controller.signal.throwIfAborted(); setStore(current); persistStore(current); }
       const live = await loadContentDataset(mode, certParam, attemptId, current, options);
       // Preserve links to pre-NAS UUID-based exams and saved learning records.
       const hasLegacyRefs = [...current.bookmarks, ...Object.keys(current.wrongNotes)].some((id) => !/^[a-f0-9]{20}$/.test(id));
@@ -76,7 +80,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
       if (needsLegacy) { const legacy = await loadPublishedDataset(controller.signal); if (legacy) { live.certs.push(...legacy.certs); live.exams.push(...legacy.exams); live.subjects.push(...legacy.subjects); live.questions.push(...legacy.questions); } }
       return live;
     };
-    void load().then((live) => loadQuestionCorrections(live, options)).then((live) => { if (version !== loadVersion.current || controller.signal.aborted) return; setDataset(live); setDataState("live"); }).catch((error) => {
+    void load().then((live) => { options.onProgress?.({ stage: "corrections" }); return live; }).then((live) => loadQuestionCorrections(live, options)).then((live) => { if (version !== loadVersion.current || controller.signal.aborted) return; setDataset(live); setDataState("live"); }).catch((error) => {
       if (version !== loadVersion.current) return;
       console.error("[CBT MATE] 운영 문제 데이터를 불러오지 못했습니다.", error);
       setDataset(null); setDataState("error");
@@ -124,7 +128,7 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   const withStorageNotice = (content: React.ReactNode) => <>{storageError && <div className="container" role="alert"><p>{storageError}</p></div>}{content}</>;
 
   if (!hydrated) return <CbtSkeleton />;
-  if (dataState === "loading") return <PageShell><QuestionBankLoading key={loadSequence} displayName={loadingDisplayName(loadingProfile?.id === user?.id ? loadingProfile?.name : undefined, user?.user_metadata)} onCancel={cancelDataset} onRetry={retryDataset} /></PageShell>;
+  if (dataState === "loading") return <PageShell><QuestionBankLoading key={loadSequence} displayName={loadingDisplayName(loadingProfile?.id === user?.id ? loadingProfile?.name : undefined, user?.user_metadata)} onCancel={cancelDataset} onRetry={retryDataset} progress={loadProgress} /></PageShell>;
   if (dataState === "cancelled") return <PageShell><div className="cbt-load-error" role="status"><h1>데이터 불러오기를 취소했습니다.</h1><p>다시 시도하면 문제 데이터를 불러옵니다.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (dataState === "error" || !dataset) return <PageShell><div className="cbt-load-error" role="alert"><h1>문제 데이터를 불러오지 못했습니다.</h1><p>잠시 후 다시 시도해 주세요. 문제가 계속되면 관리자에게 알려 주세요.</p><button type="button" className="button button-primary" onClick={retryDataset}>다시 시도</button></div></PageShell>;
   if (mode === "home") return withStorageNotice(<CbtHome dataset={dataset} />);
@@ -150,7 +154,7 @@ function CbtHome({ dataset }: { dataset: Dataset }) {
     <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow eyebrow--latin">CBT MATE</span><h1>실전처럼 풀고, 약점을 바로 확인하세요.</h1><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">기출 {(dataset.totalQuestions ?? dataset.questions.length).toLocaleString()}문항</span></div>
     <label className="cbt-search"><span className="cbt-search-icon" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="종목명을 검색하세요 (예: 정보처리기사)" aria-label="종목 검색" /></label>
     {certs.length > 1 && <div className="cbt-category-chips" aria-label="종목 카테고리">{categories.map((item) => <button className={category === item ? "is-active" : ""} onClick={() => chooseCategory(item)} key={item}>{item}</button>)}</div>}
-    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong>{cert.name}</strong><span>기출 시험지 {(cert.examCount ?? dataset.exams.filter((exam) => belongsToQualification(cert, exam.certId)).length).toLocaleString()}개 · 문제 {(cert.questionCount ?? dataset.questions.filter((question) => belongsToQualification(cert, question.certId)).length).toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
+    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong><span><HighlightQuery text={cert.name} query={query} /></span><span className="qualification-arrow" aria-hidden="true">→</span></strong><span>기출 시험지 {(cert.examCount ?? dataset.exams.filter((exam) => belongsToQualification(cert, exam.certId)).length).toLocaleString()}개 · 문제 {(cert.questionCount ?? dataset.questions.filter((question) => belongsToQualification(cert, question.certId)).length).toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
   </PageShell>;
 }
 
@@ -227,7 +231,7 @@ function QuestionCountInput({ id, label, value, onChange }: { id: string; label:
 
 function StartModal({ exam, gradeMode, setGradeMode, onClose, onStart }: { exam: Dataset["exams"][number]; gradeMode: GradeMode; setGradeMode: (mode: GradeMode) => void; onClose: () => void; onStart: () => void }) { return <Modal title="지금 시험을 시작할까요?" onClose={onClose}><p className="cbt-start-info"><strong>{exam.questionCount.toLocaleString()}문항 · {exam.durationMinutes.toLocaleString()}분</strong><span>시작하면 제한시간이 흐릅니다.</span></p>{exam.id !== "__mock__" && <fieldset className="cbt-mode-options"><legend>채점 방식 선택</legend><label><input type="radio" name="grade-mode" checked={gradeMode === "submit"} onChange={() => setGradeMode("submit")} />한번에 채점</label><label><input type="radio" name="grade-mode" checked={gradeMode === "instant"} onChange={() => setGradeMode("instant")} />즉시 채점</label></fieldset>}<div className="cbt-modal-actions"><button className="button button-ghost" onClick={onClose}>취소</button><button className="button button-primary" onClick={onStart}>시작 확정</button></div></Modal>; }
 
-function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: { dataset: Dataset; store: LocalStore; saveStore: (store: LocalStore) => void; certParam: string; attemptId: string; user: User | null }) {
+function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: { dataset: Dataset; store: LocalStore; saveStore: (store: LocalStore) => boolean; certParam: string; attemptId: string; user: User | null }) {
   const router = useRouter(); const attempt = store.attempts.find((item) => item.id === attemptId); const cert = findCert(dataset, certParam) || dataset.certs.find((item) => item.id === attempt?.config.certId);
   const questions = useMemo(() => attempt?.questionIds.map((id) => dataset.questions.find((question) => question.id === id)).filter((item): item is Question => !!item) || [], [attempt?.questionIds, dataset.questions]);
   const [selected, setSelected] = useState(0); const [secondsLeft, setSecondsLeft] = useState<number | null>(null); const [modal, setModal] = useState<ModalName>(null); const [toast, setToast] = useState(""); const [submitting, setSubmitting] = useState(false); const [reportQuestion, setReportQuestion] = useState<Question | null>(null); const [reshuffle, setReshuffle] = useState(false); const [layoutMode, setLayoutMode] = useState<"a" | "b">("a"); const [fontSize, setFontSize] = useState<"base" | "large" | "xlarge">("base"); const [choiceLayout, setChoiceLayout] = useState<"one" | "two" | "focus">("one"); const [sheetOpen, setSheetOpen] = useState(false); const [reviewOpen, setReviewOpen] = useState(false); const finishedIds = useRef(new Set<string>()); const sheetOpener = useRef<HTMLElement | null>(null); const warned = useRef(false); const question = questions[selected];
@@ -277,20 +281,21 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
     } finally { setSubmitting(false); }
   }, [attempt, questions, saveStore, user]);
   useEffect(() => { if (!attempt?.endAt || attempt.status !== "in_progress") return; const tick = () => { const left = timeLeftSeconds(attempt.endAt); setSecondsLeft(left); if (left === 0) setModal("expired"); else if (left !== null && left <= 60 && !warned.current) { warned.current = true; setToast("종료까지 1분 미만 남았습니다."); } return left; }; if (tick() === 0) return; const timer = window.setInterval(() => { if (tick() === 0) window.clearInterval(timer); }, 1000); return () => window.clearInterval(timer); }, [attempt?.endAt, attempt?.status]);
-  function updateAttempt(next: LocalAttempt) { saveStore({ ...store, attempts: store.attempts.map((item) => item.id === next.id ? next : item) }); }
+  function updateAttempt(next: LocalAttempt) { return saveStore({ ...store, attempts: store.attempts.map((item) => item.id === next.id ? next : item) }); }
   const answerQuestion = useCallback((questionId: string, index: number) => {
     if (!attempt || timeLeftSeconds(attempt.endAt) === 0 || attempt.lockedIds.includes(questionId) || !attempt.questionIds.includes(questionId)) return;
     const answers = attempt.config.gradeMode === "instant" ? { ...attempt.answers, [questionId]: index } : toggleAnswerSelection(attempt.answers, questionId, index);
     const next = { ...attempt, answers, lockedIds: attempt.config.gradeMode === "instant" ? [...attempt.lockedIds, questionId] : attempt.lockedIds };
     const item = questions.find((question) => question.id === questionId);
+    let saved: boolean;
     if (attempt.config.gradeMode === "instant" && item) {
-      saveStore(recordInstantReview({ ...store, attempts: store.attempts.map((saved) => saved.id === next.id ? next : saved) }, next, item, index));
+      saved = saveStore(recordInstantReview({ ...store, attempts: store.attempts.map((saved) => saved.id === next.id ? next : saved) }, next, item, index));
       recordQuestionResponses([item], { [item.id]: index }, attempt.id);
-    } else updateAttempt(next);
-    setToast(answers[questionId] === undefined ? "선택을 해제했습니다." : "답안을 저장했습니다.");
+    } else saved = updateAttempt(next);
+    if (saved) setToast(answers[questionId] === undefined ? "선택을 해제했습니다." : "답안을 이 브라우저에 저장했습니다.");
   }, [attempt, store, questions, saveStore]);
   const answer = useCallback((index: number) => { if (question) answerQuestion(question.id, index); }, [answerQuestion, question]);
-  const toggleBookmark = useCallback(() => { if (!question) return; const active = store.bookmarks.includes(question.id); saveStore({ ...store, bookmarks: active ? store.bookmarks.filter((id) => id !== question.id) : [...store.bookmarks, question.id] }); setToast(active ? "북마크를 해제했습니다." : "북마크에 추가했습니다."); }, [question, saveStore, store]);
+  const toggleBookmark = useCallback(() => { if (!question) return; const active = store.bookmarks.includes(question.id); if (saveStore({ ...store, bookmarks: active ? store.bookmarks.filter((id) => id !== question.id) : [...store.bookmarks, question.id] })) setToast(active ? "이 브라우저에서 북마크를 해제했습니다." : "✓ 북마크를 이 브라우저에 저장했습니다."); }, [question, saveStore, store]);
   function leave(discard: boolean) { if (!attempt || !cert) return; if (discard) saveStore({ ...store, attempts: store.attempts.filter((item) => item.id !== attempt.id) }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/`); }
   function retry(ids: string[]) { if (!attempt || !cert) return; const id = makeId("attempt"); const now = new Date(); const next: LocalAttempt = { ...attempt, id, reviewedQuestionIds: [], questionIds: reshuffle ? shuffle(ids) : ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: attempt.config.timeLimitMinutes ? new Date(now.getTime() + attempt.config.timeLimitMinutes * 60000).toISOString() : null, submittedAt: undefined, score: undefined, status: "in_progress" }; saveStore({ ...store, attempts: [next, ...store.attempts] }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`); }
   useEffect(() => { if (!attempt || attempt.status !== "in_progress") return; const keyboard = (event: KeyboardEvent) => { if (event.defaultPrevented || modal || sheetOpen || reviewOpen || (event.target as HTMLElement)?.closest('input,textarea,select,[role="radiogroup"],[role="dialog"],dialog')) return; if (/^[1-9]$/.test(event.key) && Number(event.key) <= (question?.choices.length || 0)) answer(Number(event.key) - 1); else if(event.key === "0" && question?.choices.length === 10) answer(9); else if (event.key === "ArrowLeft") setSelected((value) => Math.max(0, value - 1)); else if (event.key === "ArrowRight") setSelected((value) => Math.min(questions.length - 1, value + 1)); else if (event.key.toLowerCase() === "b") toggleBookmark(); }; window.addEventListener("keydown", keyboard); return () => window.removeEventListener("keydown", keyboard); }, [answer, attempt, question?.choices.length, questions.length, toggleBookmark, modal, sheetOpen, reviewOpen]);
@@ -347,7 +352,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
   </section>;
 }
 
-function ResultScreen({ guest, displayName, dataset, cert, attempt, questions, reshuffle, setReshuffle, onRetry, onReport, reportQuestion, onReportClose, store, saveStore, toast, setToast }: { guest: boolean; displayName: string; dataset: Dataset; cert: Cert; attempt: LocalAttempt; questions: Question[]; reshuffle: boolean; setReshuffle: (value: boolean) => void; onRetry: (ids: string[]) => void; onReport: (question: Question) => void; reportQuestion: Question | null; onReportClose: () => void; store: LocalStore; saveStore: (store: LocalStore) => void; toast: string; setToast: (message: string) => void }) {
+function ResultScreen({ guest, displayName, dataset, cert, attempt, questions, reshuffle, setReshuffle, onRetry, onReport, reportQuestion, onReportClose, store, saveStore, toast, setToast }: { guest: boolean; displayName: string; dataset: Dataset; cert: Cert; attempt: LocalAttempt; questions: Question[]; reshuffle: boolean; setReshuffle: (value: boolean) => void; onRetry: (ids: string[]) => void; onReport: (question: Question) => void; reportQuestion: Question | null; onReportClose: () => void; store: LocalStore; saveStore: (store: LocalStore) => boolean; toast: string; setToast: (message: string) => void }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   useEffect(() => { document.title = "시험 결과 | CBT MATE"; window.scrollTo({ top: 0 }); }, []);
   const correct = questions.filter((question) => isCorrectAnswer(question, attempt.answers[question.id])).length;
@@ -377,7 +382,7 @@ function ResultScreen({ guest, displayName, dataset, cert, attempt, questions, r
       <p>{timedOut ? "시간 초과 · " : ""}{displayDate(attempt.submittedAt)} · 전체 {questions.length}문항</p>
       </div>
     </div>
-    <div className="cbt-result-next-grid"><section className="cbt-subject-stats"><h2>과목별 정답률</h2>{subjectStats.map((item) => <div key={item.name}><span>{item.name}</span><i role="img" aria-label={`정답률 ${item.rate}%`}><b style={{ width: `${item.rate}%`, minWidth: item.rate ? 8 : 0 }} /></i><strong>{item.rate}%</strong></div>)}{weakest && <p className="cbt-weakness">다음 학습 제안: {weakest.name} 문제를 복습해 보세요.</p>}</section><div className="result-action-group" aria-label="결과 다음 단계"><h2>다음 학습</h2><div className="result-actions">
+<div className="cbt-result-next-grid"><section className="cbt-subject-stats"><h2>과목별 정답률</h2>{subjectStats.map((item) => <div key={item.name}><span>{item.name}</span><ResultRateBar name={item.name} rate={item.rate} /><strong>{item.rate}%</strong></div>)}{weakest && <p className="cbt-weakness">다음 학습 제안: {weakest.name} 문제를 복습해 보세요.</p>}</section><div className="result-action-group" aria-label="결과 다음 단계"><h2>다음 학습</h2><div className="result-actions">
       <button className="button button-primary" disabled={!wrongIds.length} onClick={showWrongExplanation}>틀린 문제 해설</button>
       <Link className="button button-secondary" href="/cbt/wrong-notes/">오답노트 보기</Link>
       <button className="button button-secondary" disabled={!wrongIds.length} onClick={() => onRetry(wrongIds)}>틀린 문제 다시 풀기</button>
@@ -398,7 +403,7 @@ function ResultScreen({ guest, displayName, dataset, cert, attempt, questions, r
   </div>{reportQuestion && <ReportModal question={reportQuestion} attemptId={attempt.id} store={store} saveStore={saveStore} onClose={onReportClose} onDone={() => { onReportClose(); setToast("오류 신고를 접수했습니다."); }} />}<Toast message={toast} onDone={() => setToast("")} /></section>;
 }
 
-function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: { mode: "wrong-notes" | "bookmarks" | "history"; dataset: Dataset; store: LocalStore; saveStore: (store: LocalStore) => void; user: User | null; authReady: boolean }) {
+function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: { mode: "wrong-notes" | "bookmarks" | "history"; dataset: Dataset; store: LocalStore; saveStore: (store: LocalStore) => boolean; user: User | null; authReady: boolean }) {
   const router = useRouter();
   const [certId, setCertId] = useState("all");
   const [subjectId, setSubjectId] = useState("all");

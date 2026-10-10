@@ -14,7 +14,7 @@ export function LearningHome() {
         <h2 id="learning-quick-title">바로 풀 자격증</h2>
         <div className="learning-quick-grid">
           {quickQualifications.map(item => <Link href={qualificationHref(item.slug)} prefetch={false} key={item.code}>
-            <strong>{item.title}</strong><span>{item.exams.toLocaleString("ko-KR")}개 회차</span>
+            <strong>{item.title}<span className="qualification-arrow" aria-hidden="true">→</span></strong><span>{item.exams.toLocaleString("ko-KR")}개 회차</span>
           </Link>)}
         </div>
       </section>

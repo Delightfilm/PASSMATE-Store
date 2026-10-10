@@ -8,6 +8,7 @@ import { useProductPrices } from "@/lib/use-product-prices";
 import { ProductPrice } from "./product-price";
 import { getProductFamilyTitle } from "@/lib/product-display";
 import { ProductCover } from "./product-cover";
+import { ScrollReveal } from "./scroll-reveal";
 
 export function HomeProducts({ product, initialPrices = {} }: { product: Product | null; initialPrices?: LiveProductPriceMap }) {
   const coreSlug = product?.slug ?? "";
@@ -42,7 +43,7 @@ export function HomeProducts({ product, initialPrices = {} }: { product: Product
       </div>
     </section>
 
-    <section className="home-products section" aria-labelledby="home-products-title">
+    <ScrollReveal className="home-products section" labelledBy="home-products-title">
       <div className="container">
         <div className="section-heading"><h2 id="home-products-title"><span className="store-desktop-copy">내 학습에 맞는 구성을 고르세요.</span><span className="store-mobile-copy">완성패키지 구성도 살펴보세요.</span></h2></div>
         <div className="home-product-grid">
@@ -58,6 +59,6 @@ export function HomeProducts({ product, initialPrices = {} }: { product: Product
           </article>
         </div>
       </div>
-    </section>
+    </ScrollReveal>
   </>;
 }

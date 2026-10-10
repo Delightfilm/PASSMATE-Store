@@ -12,6 +12,7 @@ import type { LiveProductPriceMap } from "@/lib/live-product-prices";
 import { useProductPrices } from "@/lib/use-product-prices";
 import { ProductPrice } from "./product-price";
 import { getProductFamilyTitle } from "@/lib/product-display";
+import { ScrollReveal } from "./scroll-reveal";
 
 const packageRows = [
   ["핵심개념 요약노트", true, true],
@@ -78,7 +79,7 @@ export function ProductPurchaseOptions({
           onClick={() => { setKind("core"); setNotice(""); }}
           aria-pressed={kind === "core"}
         >
-          핵심노트
+          <span className="package-tab-heading">핵심노트<span className="package-selected-check" aria-hidden="true">✓</span></span>
           <small>{priceText(prices[coreSlug], priceLoading)}</small>
         </button>
         <button
@@ -87,7 +88,7 @@ export function ProductPurchaseOptions({
           onClick={() => { setKind("pass"); setNotice(""); }}
           aria-pressed={kind === "pass"}
         >
-          시험대비 완성패키지
+          <span className="package-tab-heading">시험대비 완성패키지<span className="package-selected-check" aria-hidden="true">✓</span></span>
           <small>{priceText(prices[passSlug], priceLoading)}</small>
         </button>
       </div>
@@ -105,12 +106,12 @@ export function ProductPurchaseOptions({
         ))}
       </div>
 
-      <div className="mobile-package-checklists" aria-label="패키지별 구성">
+      <ScrollReveal as="div" className="mobile-package-checklists" label="패키지별 구성">
         {(["core", "pass"] as const).map((pack) => <article className={`mobile-package-card${kind === pack ? " is-selected" : ""}`} key={pack}>
           <h3><button type="button" aria-pressed={kind === pack} onClick={() => { setKind(pack); setNotice(""); }}>{PACKAGE_LABELS[pack]}<span aria-hidden="true">{kind === pack ? "✓" : "+"}</span></button></h3>
           <ul>{packageRows.filter((row) => row[pack === "core" ? 1 : 2]).map(([label]) => <li key={label}><span aria-hidden="true">✓</span> {label}</li>)}</ul>
         </article>)}
-      </div>
+      </ScrollReveal>
       {failed && <div className="package-price-error"><ProductPrice failed retry={retry} /></div>}
 
 

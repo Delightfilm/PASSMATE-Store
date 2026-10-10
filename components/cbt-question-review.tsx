@@ -31,10 +31,10 @@ function ResponseStats({ question, refresh, prefetch }: { question: Question; re
   </div>;
 }
 
-export function QuestionMemo({ questionId, value, guest, onSave }: { questionId: string; value: string; guest: boolean; onSave: (memo: string) => void }) {
+export function QuestionMemo({ questionId, value, guest, onSave }: { questionId: string; value: string; guest: boolean; onSave: (memo: string) => boolean }) {
   return <MemoEditor key={questionId} value={value} guest={guest} onSave={onSave} />;
 }
-function MemoEditor({ value, guest, onSave }: { value: string; guest: boolean; onSave: (memo: string) => void }) {
+function MemoEditor({ value, guest, onSave }: { value: string; guest: boolean; onSave: (memo: string) => boolean }) {
   const [draft, setDraft] = useState(value);
   const [message, setMessage] = useState("");
   useEffect(() => { setDraft(value); }, [value]);
@@ -46,9 +46,9 @@ function MemoEditor({ value, guest, onSave }: { value: string; guest: boolean; o
       onChange={(event) => { setDraft(event.target.value); setMessage(""); }} />
     <div className="cbt-memo-footer"><small>{guest ? "이 브라우저에 보관돼요. 로그인하면 계정 기록과 연결할 수 있어요." : "개인 학습 기록에 함께 저장돼요."}</small>
       <button type="button" className="button button-secondary" disabled={draft === value} onClick={() => {
-        try { onSave(draft.trim()); setMessage("메모를 저장했어요."); } catch { setMessage("메모를 저장하지 못했어요. 다시 시도해 주세요."); }
+        try { setMessage(onSave(draft.trim()) ? "✓ 메모를 이 브라우저에 저장했어요." : "메모를 저장하지 못했어요. 다시 시도해 주세요."); } catch { setMessage("메모를 저장하지 못했어요. 다시 시도해 주세요."); }
       }}>메모 저장</button></div>
-    {message && <p role="status">{message}</p>}
+    {message && <p className={message.startsWith("✓") ? "cbt-saved-check" : undefined} role="status">{message}</p>}
     </div>
   </details>;
 }

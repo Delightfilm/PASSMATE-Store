@@ -41,6 +41,12 @@ const clientPath = resolve("components/question-bank-client.tsx");
 const clientOutput = ts.transpileModule(readFileSync(clientPath, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
 const client = { exports: {} };
 const clientRequire = (name) => {
+  if (name === "@/components/highlight-query" || name === "@/components/result-rate-bar") {
+    const file = resolve(name.slice(2) + ".tsx"), presentation = { exports: {} };
+    const output = ts.transpileModule(readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
+    new Script(`(function(require,module,exports){${output}\n})`).runInThisContext()(createRequire(file), presentation, presentation.exports);
+    return presentation.exports;
+  }
   if (name === "next/navigation") return { useRouter: () => ({}) };
   if (name === "next/link") return { default: ({ href, children, ...props }) => React.createElement("a", { href, ...props }, children) };
   if (name === "@/components/cbt-exam-ui") return module.exports;

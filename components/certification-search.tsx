@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { qualificationHref, searchQualifications } from "@/lib/cbt-home-catalog";
+import { HighlightQuery } from "./highlight-query";
 
 export function CertificationSearch() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function CertificationSearch() {
         {results.map((item, index) => <li role="presentation" key={item.code}>
           <Link id={`certification-option-${index}`} role="option" aria-selected={active === index} tabIndex={-1} href={qualificationHref(item.slug)} prefetch={false}
             onMouseDown={event => event.preventDefault()} onClick={() => setOpen(false)}>
-            <strong>{item.title}</strong><span>{item.exams.toLocaleString("ko-KR")}개 회차</span>
+            <strong><HighlightQuery text={item.title} query={query} /></strong><span>{item.exams.toLocaleString("ko-KR")}개 회차</span>
           </Link>
         </li>)}
       </ul> : <p role="status">검색 결과가 없어요. 자격증 이름을 다시 확인해 주세요.</p>}

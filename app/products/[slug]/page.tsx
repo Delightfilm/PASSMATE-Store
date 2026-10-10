@@ -6,6 +6,7 @@ import { getProduct } from "@/lib/products";
 import { ProductPurchaseOptions } from "@/components/product-purchase-options";
 import { getServerProductPrices } from "@/lib/server-product-prices";
 import { getPackageSlug } from "@/lib/cart";
+import { ProductSectionNav } from "@/components/product-section-nav";
 import {
   getCoreProductTitle,
   getCustomerCopy,
@@ -34,8 +35,9 @@ export default async function ProductPage({
 
   return (
     <section className="section page-section product-detail">
+      <div className="container product-section-nav-shell"><ProductSectionNav /></div>
       <div className="container product-detail-grid">
-        <div className="product-visual-column">
+        <div className="product-visual-column" id="product-overview">
           <ProductGallery
             theme={isStageSoundCore ? "light" : "dark"}
             year={product.year}
@@ -52,7 +54,7 @@ export default async function ProductPage({
           <h1>{product.year}<br/>{displayTitle}</h1>
           <p>{getCustomerCopy(product.description)}</p>
           <div className="price-row">
-            <h2>패키지 선택</h2>
+            <h2 id="product-package">패키지 선택</h2>
             <span>디지털 PDF</span>
           </div>
           <ProductPurchaseOptions slug={product.slug} title={displayTitle} initialPrices={prices} />

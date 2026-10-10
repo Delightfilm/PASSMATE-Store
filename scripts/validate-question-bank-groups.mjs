@@ -90,6 +90,13 @@ const file = resolve("components/question-bank-client.tsx");
 const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
 const module = { exports: {} };
 const customRequire = (name) => {
+  if (name === "@/components/highlight-query" || name === "@/components/result-rate-bar") {
+    const presentationFile = resolve(name.slice(2) + ".tsx");
+    const compiled = ts.transpileModule(fs.readFileSync(presentationFile, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText;
+    const presentation = { exports: {} };
+    new Script(`(function(require,module,exports){${compiled}\n})`).runInThisContext()(createRequire(presentationFile), presentation, presentation.exports);
+    return presentation.exports;
+  }
   if (name === "@/lib/question-bank-groups") return groups;
   if (name === "@/lib/question-bank") return { certCategory: () => "기타", certSlug: c => c.slug || c.name, hangulInitials: x => x };
   if (name === "next/navigation") return { useRouter: () => ({}) };

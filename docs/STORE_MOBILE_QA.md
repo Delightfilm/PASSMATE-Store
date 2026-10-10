@@ -395,7 +395,7 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 ### 계정 숫자·그래프 모션 추가
 
 - 후속으로 계정 인터랙션 6종(섹션 등장, 세로 가이드·%p, 복습 행 반응, 완료율 링, 스크롤 요약, 기록 행동)을 적용했다. 모바일 40px 요약/링, PC 48px 요약·44px 링, 실제 헤더 높이 반영. 계정 767px 규칙에 한정해 모바일 기록 행동을 항상 표시한다.
-- Edge/WebKit 360/390/430/768/1280px의 6종·회귀, 0/50/100% 링 픽셀 비교, reduced-motion/resize/실제 응시·결과 화면 fixture 이동 통과. 가로 넘침 0, 터치 44px 이상, 보조 14px 이상, 대비 7.56:1. check/tsc/build 통과. 별도 스토어·CBT 인터랙션은 제안만 정리했다.
+- Edge/WebKit 360/390/430/768/1280px의 6종·회귀, 0/50/100% 링 픽셀 비교, reduced-motion/resize/실제 응시·결과 화면 fixture 이동 통과. 가로 넘침 0, 터치 44px 이상, 보조 14px 이상, 대비 7.56:1. check/tsc/build 통과. 당시 스토어·CBT 인터랙션은 제안만 정리했으며, 후속 구현은 아래에 기록한다.
 - 상세 파일·캡처·영상·운영 증거·롤백: 외곽 `reports/account-motion-20261010/RESULT_SIX.md`와 `docs/ACCOUNT_DASHBOARD_QA.md`.
 
 - 850ms 카운터와 좌→우 그래프 reveal, 호버·터치·방향키/Home/End/Escape 수치 확인, reduced-motion 즉시 표시를 추가했다. 기존 통계/조회/인증·결제·다운로드 계약은 보존한다.
@@ -407,3 +407,11 @@ Playwright WebKit은 실기기 iOS Safari 검증을 대체하지 않는다. 실�
 - Edge/WebKit 각각 360/390/430/768/1280px: 가로 넘침 0, 보조 최소 14px, 터치 위반 0, 보조 대비 7.56:1. 메뉴 열기/Escape/포커스, 비로그인/로그아웃, 홈·스토어·목록·CBT 헤더의 좁은 PC 폭 겹침도 확인했다. 인증·개인 학습 응답은 fixture이며 실제 사용자의 기록을 읽거나 쓰지 않았다.
 - 운영 RLS 메타데이터는 읽기 전용으로 확인했고 네 테이블 모두 계정 소유 접근 제한을 유지한다. 인증 공급자·결제·다운로드·학습 저장/채점·DB 스키마는 변경하지 않았다.
 - 계정 CSS 기본/1100px 헤더/767px 모바일 규칙, 검사, 데이터 정의, 파일과 롤백은 `docs/ACCOUNT_DASHBOARD_QA.md`에 정리했다. `npm run check`, `npx tsc --noEmit`, `npx next build` 통과. 캡처·도구·배포 결과: 외곽 워크스페이스 `reports/account-ui-20261010/`.
+
+## 스토어·문제은행 후속 인터랙션 — 2026-10-10
+
+- 스토어 6종: 카드 hover/전체 링크, 패키지 선택 체크, 섹션 스크롤 등장, 실제 이미지 로딩 후 고정 크기 crossfade, 헤더 높이를 반영한 sticky 앵커, PC 표지 ±2° 반응. 공개 상품에는 아직 실제 샘플 이미지가 없어 갤러리 전환은 로컬 probe로 검증했다.
+- CBT 6종: 자격증 검색 강조/카드 반응, 즉시 보기 선택 표시, 실제 과목별 결과 막대, 현재 문항 표시, 로컬 저장 성공 체크/실패 안내, NAS 실제 단계·확인 가능한 byte 진행률. 정답 공개 시점·채점·저장·동기화 계약과 가격/SKU·결제·인증·PDF 다운로드는 보존했다.
+- Chromium·WebKit의 배포용 빌드: 360/390/430/768/1280px × 7화면, 각각 35캡처+35기능 검사와 8개 실패/재시도·reduced-motion·0점·즉시채점·NAS 검사를 통과했다. 가로 넘침 0, 검사 대상 터치 44px 이상, 새 텍스트 대비 최소 6.70:1. 실제 운영 학습 데이터·실결제·운영 DB 쓰기는 하지 않았다.
+- `npm run check`, `npx tsc --noEmit`, `npx next build` 통과. `app/interactions.css`의 기본 규칙, 767px 모바일, fine pointer hover, reduced-motion 범위와 관련 컴포넌트를 변경했다. 기존 계정 모션은 그대로 둔다.
+- 상세 파일/조건/계약 검사: `docs/STORE_CBT_INTERACTIONS_QA.md`. 전/후 캡처·영상·JSON·배포 커밋/READY·롤백은 외곽 `reports/store-cbt-interactions-20261010/RESULT.md`에 보관한다. 실기기 iOS/VoiceOver·계정 cloud sync 완료는 별도 수동 확인 대상이다.
