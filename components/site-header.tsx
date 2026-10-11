@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { CbtMateLogo, PassmateLogo } from "./logo";
 import { AuthNav } from "./auth-nav";
 import { ServiceSwitcher } from "./service-switcher";
+import { STORE_ENABLED } from "@/lib/store-availability";
 
 export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}) {
   const pathname = usePathname();
@@ -33,7 +34,7 @@ export function SiteHeader({ showOnExam = false }: { showOnExam?: boolean } = {}
           {cbt ? cbtLinks.map((item) => (
             <Link className={item.active ? "is-active" : ""} aria-current={item.active ? "page" : undefined} href={item.href} key={item.href}>{item.label}</Link>
           )) : <>
-            <Link className={pathname.startsWith("/products") ? "is-active" : ""} aria-current={pathname.startsWith("/products") ? "page" : undefined} href="/products">요약노트</Link>
+            {STORE_ENABLED && <Link className={pathname.startsWith("/products") ? "is-active" : ""} aria-current={pathname.startsWith("/products") ? "page" : undefined} href="/products">요약노트</Link>}
             <Link className={pathname.startsWith("/library") ? "is-active" : ""} aria-current={pathname.startsWith("/library") ? "page" : undefined} href="/library">내 자료</Link>
           </>}
         </nav>}

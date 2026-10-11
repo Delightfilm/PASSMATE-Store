@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
+import { STORE_ENABLED } from "@/lib/store-availability";
+import { StoreUnavailable } from "@/components/store-unavailable";
 import { ProductGallery } from "@/components/product-gallery";
 import { getProduct } from "@/lib/products";
 import { ProductPurchaseOptions } from "@/components/product-purchase-options";
@@ -13,6 +15,7 @@ import {
 } from "@/lib/product-display";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  if (!STORE_ENABLED) return { title: "스토어 준비중 | PASSMATE" };
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return { title: "상품을 찾을 수 없습니다 | PASSMATE" };
@@ -25,6 +28,7 @@ export default async function ProductPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  if (!STORE_ENABLED) return <StoreUnavailable />;
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) notFound();

@@ -4,11 +4,14 @@ import { getProducts } from "@/lib/products";
 import { getServerProductPrices } from "@/lib/server-product-prices";
 import { getPackageSlug } from "@/lib/cart";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { STORE_ENABLED } from "@/lib/store-availability";
+import { StoreUnavailable } from "@/components/store-unavailable";
 
 export const metadata: Metadata = { title: "자격증 핵심노트 스토어 | PASSMATE", description: "2027 컴퓨터활용능력 2급 핵심노트와 시험대비 완성패키지의 구성과 가격을 비교하세요." };
 export const dynamic = "force-dynamic";
 
 export default async function StoreHome() {
+  if (!STORE_ENABLED) return <StoreUnavailable />;
   const products = await getProducts();
   const featured = products.find((product) => product.code === "PM-C2") ?? null;
   const prices = await getServerProductPrices(featured ? [featured.slug, getPackageSlug(featured.slug, "pass")] : []);

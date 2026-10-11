@@ -6,8 +6,11 @@ export const metadata: Metadata = { title: "요약노트 | PASSMATE", descriptio
 import { ProductCard } from "@/components/product-card";
 import { getProducts } from "@/lib/products";
 import { getServerProductPrices } from "@/lib/server-product-prices";
+import { STORE_ENABLED } from "@/lib/store-availability";
+import { StoreUnavailable } from "@/components/store-unavailable";
 
 export default async function ProductsPage() {
+  if (!STORE_ENABLED) return <StoreUnavailable />;
   const products = await getProducts();
   const prices = await getServerProductPrices(products.map(product => product.slug));
 

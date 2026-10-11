@@ -7,6 +7,7 @@ import type { User } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { readLocalStore, type LocalAttempt } from "@/lib/question-bank";
 import { accountDisplayName } from "@/lib/account-display-name";
+import { STORE_ENABLED } from "@/lib/store-availability";
 
 export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt" }) {
   const [user, setUser] = useState<User | null>(null);
@@ -158,10 +159,10 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
         <nav id="account-menu-panel" className="auth-menu-panel" aria-label="계정 및 서비스 메뉴" hidden={!menuOpen}>
           {user && <span className="auth-menu-email">{user.email}</span>}
           {service === "cbt" && ongoing && <ResumeLink attempt={ongoing} />}
-          <Link className="auth-menu-store-link" href="/products/">요약노트</Link>
+          {STORE_ENABLED && <Link className="auth-menu-store-link" href="/products/">요약노트</Link>}
           <Link className="auth-menu-store-link" href="/library/">내 자료</Link>
           {isAdmin && <Link href="/admin/">관리자</Link>}
-          {service === "passmate" && <Link href={user ? "/cart/" : "/account/login/?next=%2Fcart%2F"}>장바구니</Link>}
+          {STORE_ENABLED && service === "passmate" && <Link href={user ? "/cart/" : "/account/login/?next=%2Fcart%2F"}>장바구니</Link>}
           <Link href={user ? "/account/" : `/account/login/?next=${encodeURIComponent(service === "cbt" ? "/cbt/" : "/")}`}>{user ? "내 계정" : "로그인"}</Link>
         </nav>
       </div>

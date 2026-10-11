@@ -4,8 +4,11 @@ export const metadata: Metadata = { title: "결제 | PASSMATE", description: "�
 
 import Script from "next/script";
 import { CheckoutClient } from "@/components/checkout-client";
+import { STORE_ENABLED } from "@/lib/store-availability";
+import { StoreUnavailable } from "@/components/store-unavailable";
 
 export default function CheckoutPage() {
+  if (!STORE_ENABLED) return <StoreUnavailable />;
   return (
     <>
       <Script

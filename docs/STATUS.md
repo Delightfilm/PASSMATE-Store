@@ -1,10 +1,16 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-10**
+> Last updated: **2026-10-11**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### Reversible store pause / CBT launch audit — 2026-10-11
+
+- Store presentation is paused via `STORE_ENABLED = false`; store/product/cart/new-checkout pages show “스토어는 준비중이에요!” without product or price reads. Store tab remains available; library, prior purchases, downloads and payment completion are preserved. No auth/payment/CBT persistence contract or DB changes.
+- Local check/TypeScript/build and Chromium/WebKit store route/tab verification passed. CBT was audited without corrections: guest quota-failure submission/retry bugs, conditional historic-score mismatch and existing font/target issues are documented in `docs/STORE_PAUSE_CBT_AUDIT.md`.
+- Resolve the two storage-failure launch blockers before marketing. Personalization, onboarding motion and guest-inclusive cumulative counts are proposals only. Production release evidence belongs to outer `reports/cbt-launch-audit-20261011/RESULT.md`.
 
 ### Store / CBT interactions — 2026-10-10
 

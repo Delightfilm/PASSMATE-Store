@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CertificationSearch } from "./certification-search";
 import { qualificationHref, quickQualifications } from "@/lib/cbt-home-catalog";
+import { STORE_ENABLED } from "@/lib/store-availability";
 
 export function LearningHome() {
   return <section className="learning-home" aria-labelledby="learning-home-title">
@@ -20,7 +21,7 @@ export function LearningHome() {
       </section>
       <nav className="learning-actions" aria-label="학습 서비스">
         <Link className="learning-all" href="/cbt/" prefetch={false}>전체 자격증 보기 <span aria-hidden="true">→</span></Link>
-        <Link className="learning-store" href="/store/" prefetch={false}>핵심노트 스토어 <span aria-hidden="true">→</span></Link>
+        {STORE_ENABLED && <Link className="learning-store" href="/store/" prefetch={false}>핵심노트 스토어 <span aria-hidden="true">→</span></Link>}
       </nav>
     </div>
   </section>;
