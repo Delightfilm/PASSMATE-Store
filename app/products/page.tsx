@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { STORE_ENABLED } from "@/lib/store-availability";
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "요약노트 | PASSMATE", description: "자격증별 요약노트를 비교하고 내 학습에 맞는 자료를 선택하세요." };
+export const metadata: Metadata = STORE_ENABLED
+  ? { title: "요약노트 | PASSMATE", description: "자격증별 요약노트를 비교하고 내 학습에 맞는 자료를 선택하세요." }
+  : { title: "스토어 준비중 | PASSMATE", description: "패스메이트 스토어는 준비 중입니다. 문제은행에서 기출문제 풀이와 복습을 이용해 보세요.", robots: { index: false, follow: true } };
 
 import { ProductCard } from "@/components/product-card";
 import { getProducts } from "@/lib/products";
 import { getServerProductPrices } from "@/lib/server-product-prices";
-import { STORE_ENABLED } from "@/lib/store-availability";
 import { StoreUnavailable } from "@/components/store-unavailable";
 
 export default async function ProductsPage() {

@@ -7,7 +7,9 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { STORE_ENABLED } from "@/lib/store-availability";
 import { StoreUnavailable } from "@/components/store-unavailable";
 
-export const metadata: Metadata = { title: "자격증 핵심노트 스토어 | PASSMATE", description: "2027 컴퓨터활용능력 2급 핵심노트와 시험대비 완성패키지의 구성과 가격을 비교하세요." };
+export const metadata: Metadata = STORE_ENABLED
+  ? { title: "자격증 핵심노트 스토어 | PASSMATE", description: "자격증 핵심노트와 시험대비 완성패키지의 구성과 가격을 확인하세요." }
+  : { title: "스토어 준비중 | PASSMATE", description: "패스메이트 스토어는 준비 중입니다. 문제은행에서 기출문제 풀이와 복습을 이용해 보세요.", robots: { index: false, follow: true } };
 export const dynamic = "force-dynamic";
 
 export default async function StoreHome() {

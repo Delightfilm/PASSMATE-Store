@@ -15,7 +15,7 @@ import {
 } from "@/lib/product-display";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  if (!STORE_ENABLED) return { title: "스토어 준비중 | PASSMATE" };
+  if (!STORE_ENABLED) return { title: "스토어 준비중 | PASSMATE", description: "패스메이트 스토어는 준비 중입니다.", robots: { index: false, follow: true } };
   const { slug } = await params;
   const product = await getProduct(slug);
   if (!product) return { title: "상품을 찾을 수 없습니다 | PASSMATE" };
