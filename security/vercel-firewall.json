@@ -1,0 +1,20 @@
+{
+  "version": "2026-10-12",
+  "managed": { "bot-protection": "challenge", "ai-bots": "deny" },
+  "rules": [
+    {
+      "name": "PASSMATE exploit probes",
+      "description": "Deny requests for non-existent secret/VCS/PHP scanner targets; preserve real PASSMATE routes.",
+      "active": true,
+      "conditionGroup": [{ "conditions": [{ "type": "path", "op": "re", "value": "(^|/)(\\.env(?:\\.[^/]+)?|\\.git|wp-admin|wp-login\\.php|xmlrpc\\.php|phpmyadmin)(/|$)" }] }],
+      "action": { "mitigate": { "action": "deny" } }
+    },
+    {
+      "name": "PASSMATE CBT API burst",
+      "description": "Temporary per-IP CBT API limit; excludes static assets, auth callbacks and payment webhooks.",
+      "active": true,
+      "conditionGroup": [{ "conditions": [{ "type": "path", "op": "pre", "value": "/api/cbt/" }] }],
+      "action": { "mitigate": { "action": "rate_limit", "rateLimit": { "algo": "fixed_window", "window": 60, "limit": 600, "keys": ["ip"], "action": "rate_limit" } } }
+    }
+  ]
+}

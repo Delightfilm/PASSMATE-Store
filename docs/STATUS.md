@@ -1,10 +1,16 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-11**
+> Last updated: **2026-10-12**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### Automated access policy / edge protection — 2026-10-12
+
+- User-authorized automated-access clauses are published at `/terms/` with actual footer/menu/sitemap links. This is the scoped automated-access policy, not a fabricated complete service contract; full terms/privacy/refund/copyright and legal warnings remain pending.
+- Main project WAF now uses bot challenges, recognized AI-bot denial, exploit-probe denial and temporary CBT API IP limits (600/60s). An isolated 20/10s live probe returned 20 allowed/nonexistent-route responses and ten 429s, then was removed. No MAC/permanent device ban is claimed.
+- NAS public data is a separate Cloudflare origin; operator authentication was unavailable and NAS settings were not modified. Automated WebKit is challenged; public iOS Safari proof remains pending. Details and separate WAF/code rollback: `docs/SECURITY_BOT_POLICY.md`; deployment evidence is recorded in outer `reports/bot-security-20261012/RESULT.md`.
 
 ### Reversible store pause / CBT launch audit — 2026-10-11
 

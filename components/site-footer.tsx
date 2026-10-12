@@ -17,6 +17,7 @@ export function SiteFooter() {
             <Link href="/cbt/" prefetch={false}>문제은행</Link>
             <Link href="/store/" prefetch={false}>스토어</Link>
             <Link href="/library/" prefetch={false}>내 자료</Link>
+            <Link href="/terms/" prefetch={false}>이용약관</Link>
             {businessInfo.email && <a href={`mailto:${businessInfo.email}`}>문의</a>}
           </nav>
         </div>

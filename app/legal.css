@@ -1,4 +1,18 @@
-/* Footer-only selectors; unpublished policies do not create links. */
+/* Scoped legal pages and footer; unpublished policies do not create links. */
+.legal-policy { max-width: 720px; margin: 0 auto; padding: 48px 16px calc(48px + env(safe-area-inset-bottom, 0px)); color: var(--ink); font-size: 16px; line-height: 1.7; overflow-wrap: anywhere; }
+.legal-policy h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 36px); font-weight: 700; line-height: 1.4; }
+.legal-policy .legal-policy-date { margin: 0 0 32px; color: var(--muted); font-size: 14px; }
+.legal-policy h2 { margin: 32px 0 12px; font-size: 20px; font-weight: 600; line-height: 1.5; }
+.legal-policy-body p { margin: 0 0 16px; }
+.legal-policy-body ol { margin: 0; padding-left: 24px; }
+.legal-policy-body li { padding-left: 4px; margin-bottom: 12px; }
+.legal-policy-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 32px; }
+.legal-policy-links a { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; color: var(--blue); font-size: 14px; }
+.legal-policy-business { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.7; }
+.legal-policy-business .business-information { margin: 0; display: grid; gap: 16px; }
+.legal-policy-business dt { color: var(--muted); }
+.legal-policy-business dd { margin: 0; }
+.legal-policy-business a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; color: var(--blue); }
 body .site-footer.site-footer--business { background: var(--footer-surface); color: var(--footer-foreground); border-top-color: var(--footer-border); padding: 36px 0 calc(var(--footer-clearance, 44px) + var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px)); }
 .site-footer--business .footer-container { max-width: 1120px; margin-inline: auto; padding-inline: 24px; }
 .site-footer--business .footer-topline { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 28px; }

@@ -164,6 +164,7 @@ export function AuthNav({ service = "passmate" }: { service?: "passmate" | "cbt"
           {isAdmin && <Link href="/admin/">관리자</Link>}
           {STORE_ENABLED && service === "passmate" && <Link href={user ? "/cart/" : "/account/login/?next=%2Fcart%2F"}>장바구니</Link>}
           <Link href={user ? "/account/" : `/account/login/?next=${encodeURIComponent(service === "cbt" ? "/cbt/" : "/")}`}>{user ? "내 계정" : "로그인"}</Link>
+          <Link href="/terms/" prefetch={false}>이용약관</Link>
         </nav>
       </div>
     </div>
