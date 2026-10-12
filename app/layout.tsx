@@ -32,7 +32,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  verification: { google: "ftvih_KtvnWky1OkrX2pWm909x1kfjb6SxtMB_aYb9s" },
+  verification: {
+    google: "ftvih_KtvnWky1OkrX2pWm909x1kfjb6SxtMB_aYb9s",
+    other: { "naver-site-verification": "0156b86fe73f3e5c2a77d6de82dcaa947c1c9ce5" },
+  },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
