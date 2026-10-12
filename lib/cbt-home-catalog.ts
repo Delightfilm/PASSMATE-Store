@@ -24,3 +24,4 @@ export function searchQualifications(query: string, limit = 6) {
   }).slice(0, limit);
 }
 export const quickQualifications = groupedQualifications.filter(item => item.questions > 0 && item.exams > 0).sort((a, b) => b.questions - a.questions || (a.code < b.code ? -1 : 1)).slice(0, 6);
+export const publicQualifications = groupedQualifications.filter(item => item.questions > 0 && item.exams > 0);

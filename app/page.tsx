@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LearningHome } from "@/components/learning-home";
+import { HOME_TITLE, HOME_DESCRIPTION, publicMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "자격증 기출문제 검색 · CBT 문제은행 | PASSMATE", description: "자격증을 찾아 기출문제를 풀고 틀린 문제를 복습하세요. 핵심노트 스토어도 함께 이용할 수 있어요." };
+export const metadata: Metadata = publicMetadata(HOME_TITLE, HOME_DESCRIPTION, "/");
 
 export default function Home() { return <LearningHome />; }
