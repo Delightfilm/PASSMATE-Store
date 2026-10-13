@@ -1,0 +1,2 @@
+export type LearningTransition = {kind:'start'|'complete';qualificationSlug:string;method?:'past'|'mock'|'custom'|'retry';count:number;localAttemptKey:string;persisted:boolean;alreadySubmitted?:boolean};
+export function createLearningTracker(deps:{track:(name:string,params:unknown,dedupeKey?:string)=>boolean;isPublicExam:(key:string)=>boolean;storage:Pick<Storage,'getItem'|'setItem'>|null}):{record(input:LearningTransition):boolean;flush():void;clear():void};
