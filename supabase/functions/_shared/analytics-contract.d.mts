@@ -1,0 +1,10 @@
+export type ReportKind = 'overview'|'acquisition'|'pages'|'qualifications'|'environment'|'realtime';
+export type AnalyticsRequest = {report:ReportKind;startDate?:string;endDate?:string;sourceMedium?:string;qualificationSlug?:string;device?:'desktop'|'mobile'|'tablet';groupBy?:'channel'|'source'|'campaign'|'landing'|'page'|'country'|'city'|'device'|'browser'};
+export type AnalyticsRow = {dimensions:Record<string,string>;metrics:Record<string,number>};
+export type ReportData = {rows:AnalyticsRow[];totals:Record<string,number>;previousTotals?:Record<string,number>};
+export type AnalyticsResponse = {status:'ok'|'notConfigured'|'noData'|'stale'|'error';report:ReportKind;data:ReportData|null;meta:{fetchedAt:string|null;timezone:string;measurementStartedAt:string|null;thresholded:boolean;dataLossFromOtherRow:boolean;customDimensionsReady:boolean;signupSupported:boolean;partialToday:boolean;rowLimit:number;unfilteredRealtime:boolean;eventCountsLimited?:boolean};errorCode?:'permission'|'quota'|'network'|'configuration'|'incompatible'};
+export type AnalyticsServerConfig = {propertyId:string;serviceAccount:{client_email:string;private_key:string};timezone:string;measurementStartedAt:string|null;customDimensionsReady:boolean;signupSupported:boolean};
+export const REPORT_GROUPS: Record<ReportKind,string[]>;
+export function propertyToday(now:Date,timezone:string):string;
+export function validateAnalyticsRequest(input:unknown,now:Date,timezone:string):AnalyticsRequest;
+export function makeCacheKey(propertyId:string,request:AnalyticsRequest):string;

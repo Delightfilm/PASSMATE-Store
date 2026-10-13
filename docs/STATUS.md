@@ -1,10 +1,17 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-12**
+> Last updated: **2026-10-14**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### Admin visitor analytics and popular exams — 2026-10-14 (server connected; web release in progress)
+
+- Approved GA4 dashboard plus member-only popular-exam sheet are in PR #48. Analytics tests passed 51/51. Original GA review findings and the bounded new sheet's identity/cohort findings were corrected. SQL fixtures and CSV metadata checks passed.
+- GA4 stream, readonly Viewer/server secret, Data API and five custom dimensions are connected. All actual provider report combinations succeeded. Operational Supabase cache/RLS and JWT/admin-only functions are applied; existing learner/order data is preserved.
+- Browser consent rejection sends no Google requests; grant sends sanitized page/qualification events with 204 responses. Actual GA realtime API received test events. This proof is from the enabled local build; actual www release and new admin/mobile/report reconciliation remain in progress. Prior disabled preview is not evidence for current changes. User chose to keep existing GA advertising region settings.
+- Scope, verification limits, decisions and rollback: `docs/ANALYTICS_QA.md`; activation runbook: `docs/ANALYTICS.md`.
 
 ### Automated access policy / edge protection — 2026-10-12
 

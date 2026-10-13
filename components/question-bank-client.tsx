@@ -22,6 +22,7 @@ import { recordInstantReview, saveQuestionMemo } from "@/lib/cbt-review-state";
 import { QuestionBankLoading } from "@/components/question-bank-loading";
 import type { LoadOptions, LoadProgress } from "@/lib/question-bank-download";
 import { HighlightQuery } from "@/components/highlight-query";
+import { trackAnalyticsEvent, recordLearningTransition, flushLearningEvents } from "@/lib/analytics";
 import { ResultRateBar } from "@/components/result-rate-bar";
 import { belongsToQualification, examSelectionLabel, isHistoricalTitle, qualificationGroups, sourceVariantLabel } from "@/lib/question-bank-groups";
 import { loadingDisplayName } from "@/lib/question-bank-loading";
@@ -160,6 +161,7 @@ function CbtHome({ dataset }: { dataset: Dataset }) {
 
 function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Dataset; cert: Cert; store: LocalStore; saveStore: (store: LocalStore) => boolean; user: User | null }) {
   const router = useRouter();
+  useEffect(() => { trackAnalyticsEvent("qualification_view", { qualification_slug: certSlug(cert) }, window.location.pathname); }, [cert]);
   const certExams = useMemo(() => dataset.exams.filter((exam) => belongsToQualification(cert, exam.certId)).sort((a, b) => b.year - a.year || b.round.localeCompare(a.round)), [dataset, cert]);
   const subjects = useMemo(() => dataset.subjects.filter((subject) => belongsToQualification(cert, subject.certId)), [dataset, cert]);
   const sourceCerts = dataset.certs.filter((source) => belongsToQualification(cert, source.id));
@@ -187,17 +189,18 @@ function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Datase
   const displayName = typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : "수험자";
   useEffect(() => { const value = new URLSearchParams(window.location.search).get("tab"); if (value === "subjects" || value === "mock" || value === "builder" || value === "records") setTabState(value); }, []);
   function setTab(value: typeof tab) { setTabState(value); const url = new URL(window.location.href); if (value === "exams") url.searchParams.delete("tab"); else url.searchParams.set("tab", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
-  function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects) {
+  function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects, learningMethod: "past" | "mock" | "custom" = "past") {
     const ids = exact ? questionIds : order === "random" ? shuffle(questionIds).slice(0, count) : questionIds.slice(0, count);
     if (!ids.length) { setToast("선택한 범위에 출제 가능한 문제가 없습니다."); return; }
     const id = makeId("attempt"); const now = new Date();
     const attempt: LocalAttempt = { id, config: { certId: cert.id, certSlug: certSlug(cert), sourceCertIds: Array.from(new Set(dataset.questions.filter((question) => ids.includes(question.id)).map((question) => question.certId))), examIds, subjectIds, count: ids.length, order: exact ? "ordered" : order, target, gradeMode: mode, timeLimitMinutes: minutes }, questionIds: ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: minutes ? new Date(now.getTime() + minutes * 60000).toISOString() : null, status: "in_progress" };
     if (!saveStore({ ...store, attempts: [attempt, ...store.attempts] })) { setStartExamId(""); return; }
+    recordLearningTransition({ kind: "start", qualificationSlug: certSlug(cert), method: learningMethod, count: ids.length, localAttemptKey: id, persisted: true });
     router.push(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`);
   }
-  function beginBuilder() { const scopedSubjects = selectedSubjects.length ? selectedSubjects : subjects.map((subject) => subject.id); const ids = scopedSubjects.flatMap((subjectId) => { const available = pool.filter((question) => question.subjectId === subjectId); const ordered = order === "random" ? shuffle(available) : available.sort((a, b) => a.no - b.no); return ordered.slice(0, Math.max(0, builderCounts[subjectId] || 0)).map((question) => question.id); }); begin(ids, selectedExamIds, gradeMode, timeLimit, true); }
+  function beginBuilder() { const scopedSubjects = selectedSubjects.length ? selectedSubjects : subjects.map((subject) => subject.id); const ids = scopedSubjects.flatMap((subjectId) => { const available = pool.filter((question) => question.subjectId === subjectId); const ordered = order === "random" ? shuffle(available) : available.sort((a, b) => a.no - b.no); return ordered.slice(0, Math.max(0, builderCounts[subjectId] || 0)).map((question) => question.id); }); begin(ids, selectedExamIds, gradeMode, timeLimit, true, selectedSubjects, "custom"); }
   function beginExam() { const exam = certExams.find((item) => item.id === startExamId); if (exam) begin(dataset.questions.filter((question) => question.examId === exam.id).sort((a, b) => a.no - b.no).map((question) => question.id), [exam.id], gradeMode, exam.durationMinutes, true); }
-  function beginMock() { const available = mockQuestions; begin(shuffle(available).slice(0, Math.min(60, available.length)).map((question) => question.id), Array.from(new Set(available.map((question) => question.examId))), "submit", 60, true, []); }
+  function beginMock() { const available = mockQuestions; begin(shuffle(available).slice(0, Math.min(60, available.length)).map((question) => question.id), Array.from(new Set(available.map((question) => question.examId))), "submit", 60, true, [], "mock"); }
   const allBuilderQuestions = dataset.questions.filter((question) => belongsToQualification(cert, question.certId) && selectedExamIds.includes(question.examId) && (!selectedSubjects.length || selectedSubjects.includes(question.subjectId)));
   const attempted = new Set(store.attempts.flatMap((attempt) => Object.keys(attempt.answers)));
   const pool = allBuilderQuestions.filter((question) => target === "all" || (target === "unanswered" && !attempted.has(question.id)) || (target === "wrong" && (store.wrongNotes[question.id]?.wrongCount || 0) > 0) || (target === "bookmark" && store.bookmarks.includes(question.id)));
@@ -233,6 +236,7 @@ function StartModal({ exam, gradeMode, setGradeMode, onClose, onStart }: { exam:
 
 function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: { dataset: Dataset; store: LocalStore; saveStore: (store: LocalStore) => boolean; certParam: string; attemptId: string; user: User | null }) {
   const router = useRouter(); const attempt = store.attempts.find((item) => item.id === attemptId); const cert = findCert(dataset, certParam) || dataset.certs.find((item) => item.id === attempt?.config.certId);
+  useEffect(() => { if (attempt?.status === "in_progress" && cert) flushLearningEvents(); }, [attempt?.id, attempt?.status, cert]);
   const questions = useMemo(() => attempt?.questionIds.map((id) => dataset.questions.find((question) => question.id === id)).filter((item): item is Question => !!item) || [], [attempt?.questionIds, dataset.questions]);
   const [selected, setSelected] = useState(0); const [secondsLeft, setSecondsLeft] = useState<number | null>(null); const [modal, setModal] = useState<ModalName>(null); const [toast, setToast] = useState(""); const [submitting, setSubmitting] = useState(false); const [reportQuestion, setReportQuestion] = useState<Question | null>(null); const [reshuffle, setReshuffle] = useState(false); const [layoutMode, setLayoutMode] = useState<"a" | "b">("a"); const [fontSize, setFontSize] = useState<"base" | "large" | "xlarge">("base"); const [choiceLayout, setChoiceLayout] = useState<"one" | "two" | "focus">("one"); const [sheetOpen, setSheetOpen] = useState(false); const [reviewOpen, setReviewOpen] = useState(false); const finishedIds = useRef(new Set<string>()); const sheetOpener = useRef<HTMLElement | null>(null); const warned = useRef(false); const question = questions[selected];
   const statsPage = Math.floor(selected / 100);
@@ -272,7 +276,8 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
         questions.forEach((item) => { if (attempt.reviewedQuestionIds?.includes(item.id)) return; const correct = isCorrectAnswer(item, result.answers[item.id]); const old = wrongNotes[item.id]; if (!correct) wrongNotes[item.id] = { wrongCount: (old?.wrongCount || 0) + 1, lastWrongAt: result.submittedAt, memo: old?.memo || "", mastered: false }; else if (old) wrongNotes[item.id] = { ...old, mastered: true }; });
       }
       const submitted: LocalAttempt = { ...attempt, answers: result.answers, status: "submitted", submittedAt: result.submittedAt, score: result.score };
-      saveStore({ ...latest, wrongNotes, attempts: latest.attempts.map((item) => item.id === attempt.id ? submitted : item) });
+      const resultSaved = saveStore({ ...latest, wrongNotes, attempts: latest.attempts.map((item) => item.id === attempt.id ? submitted : item) });
+      if (resultSaved && cert) recordLearningTransition({ kind: "complete", qualificationSlug: certSlug(cert), count: attempt.questionIds.length, localAttemptKey: attempt.id, persisted: true, alreadySubmitted: result.alreadySubmitted });
       recordQuestionResponses(questions, result.answers, attempt.id);
       setModal(null);
     } catch (error) {
@@ -297,7 +302,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
   const answer = useCallback((index: number) => { if (question) answerQuestion(question.id, index); }, [answerQuestion, question]);
   const toggleBookmark = useCallback(() => { if (!question) return; const active = store.bookmarks.includes(question.id); if (saveStore({ ...store, bookmarks: active ? store.bookmarks.filter((id) => id !== question.id) : [...store.bookmarks, question.id] })) setToast(active ? "이 브라우저에서 북마크를 해제했습니다." : "✓ 북마크를 이 브라우저에 저장했습니다."); }, [question, saveStore, store]);
   function leave(discard: boolean) { if (!attempt || !cert) return; if (discard) saveStore({ ...store, attempts: store.attempts.filter((item) => item.id !== attempt.id) }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/`); }
-  function retry(ids: string[]) { if (!attempt || !cert) return; const id = makeId("attempt"); const now = new Date(); const next: LocalAttempt = { ...attempt, id, reviewedQuestionIds: [], questionIds: reshuffle ? shuffle(ids) : ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: attempt.config.timeLimitMinutes ? new Date(now.getTime() + attempt.config.timeLimitMinutes * 60000).toISOString() : null, submittedAt: undefined, score: undefined, status: "in_progress" }; saveStore({ ...store, attempts: [next, ...store.attempts] }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`); }
+  function retry(ids: string[]) { if (!attempt || !cert) return; const id = makeId("attempt"); const now = new Date(); const next: LocalAttempt = { ...attempt, id, reviewedQuestionIds: [], questionIds: reshuffle ? shuffle(ids) : ids, answers: {}, lockedIds: [], startedAt: now.toISOString(), endAt: attempt.config.timeLimitMinutes ? new Date(now.getTime() + attempt.config.timeLimitMinutes * 60000).toISOString() : null, submittedAt: undefined, score: undefined, status: "in_progress" }; const saved = saveStore({ ...store, attempts: [next, ...store.attempts] }); recordLearningTransition({ kind: "start", qualificationSlug: certSlug(cert), method: "retry", count: ids.length, localAttemptKey: id, persisted: saved }); router.replace(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`); }
   useEffect(() => { if (!attempt || attempt.status !== "in_progress") return; const keyboard = (event: KeyboardEvent) => { if (event.defaultPrevented || modal || sheetOpen || reviewOpen || (event.target as HTMLElement)?.closest('input,textarea,select,[role="radiogroup"],[role="dialog"],dialog')) return; if (/^[1-9]$/.test(event.key) && Number(event.key) <= (question?.choices.length || 0)) answer(Number(event.key) - 1); else if(event.key === "0" && question?.choices.length === 10) answer(9); else if (event.key === "ArrowLeft") setSelected((value) => Math.max(0, value - 1)); else if (event.key === "ArrowRight") setSelected((value) => Math.min(questions.length - 1, value + 1)); else if (event.key.toLowerCase() === "b") toggleBookmark(); }; window.addEventListener("keydown", keyboard); return () => window.removeEventListener("keydown", keyboard); }, [answer, attempt, question?.choices.length, questions.length, toggleBookmark, modal, sheetOpen, reviewOpen]);
   if (!attempt || !cert || !questions.length) return <PageShell><EmptyState title="응시 기록을 찾을 수 없습니다." body="저장되지 않았거나 삭제된 시험입니다." href="/cbt/" action="종목 선택으로" /></PageShell>;
   if (attempt.status === "submitted") return <ResultScreen guest={!user} displayName={typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : "수험자"} dataset={dataset} cert={cert} attempt={attempt} questions={questions} reshuffle={reshuffle} setReshuffle={setReshuffle} onRetry={retry} onReport={setReportQuestion} reportQuestion={reportQuestion} onReportClose={() => setReportQuestion(null)} store={store} saveStore={saveStore} toast={toast} setToast={setToast} />;
@@ -354,6 +359,7 @@ function ExamScreen({ dataset, store, saveStore, certParam, attemptId, user }: {
 
 function ResultScreen({ guest, displayName, dataset, cert, attempt, questions, reshuffle, setReshuffle, onRetry, onReport, reportQuestion, onReportClose, store, saveStore, toast, setToast }: { guest: boolean; displayName: string; dataset: Dataset; cert: Cert; attempt: LocalAttempt; questions: Question[]; reshuffle: boolean; setReshuffle: (value: boolean) => void; onRetry: (ids: string[]) => void; onReport: (question: Question) => void; reportQuestion: Question | null; onReportClose: () => void; store: LocalStore; saveStore: (store: LocalStore) => boolean; toast: string; setToast: (message: string) => void }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  useEffect(() => { flushLearningEvents(); }, [attempt.id]);
   useEffect(() => { document.title = "시험 결과 | CBT MATE"; window.scrollTo({ top: 0 }); }, []);
   const correct = questions.filter((question) => isCorrectAnswer(question, attempt.answers[question.id])).length;
   const unanswered = questions.filter((question) => attempt.answers[question.id] === undefined).length;
@@ -445,7 +451,8 @@ function LearningScreen({ mode, dataset, store, saveStore, user, authReady }: { 
       config: { certId: cert.id, certSlug: certSlug(cert), examIds: Array.from(new Set(scopedIds.map((qid) => dataset.questions.find((question) => question.id === qid)?.examId).filter(Boolean) as string[])), subjectIds: [], count: scopedIds.length, order: "ordered", target: mode === "bookmarks" ? "bookmark" : "wrong", gradeMode: "submit", timeLimitMinutes: null },
       questionIds: scopedIds, answers: {}, lockedIds: [], startedAt: new Date().toISOString(), endAt: null, status: "in_progress",
     };
-    saveStore({ ...store, attempts: [attempt, ...store.attempts] });
+    const saved = saveStore({ ...store, attempts: [attempt, ...store.attempts] });
+    recordLearningTransition({ kind: "start", qualificationSlug: certSlug(cert), method: "retry", count: scopedIds.length, localAttemptKey: id, persisted: saved });
     router.push(`/cbt/${encodeURIComponent(certSlug(cert))}/exam/${id}/`);
   }
 
