@@ -9,7 +9,7 @@ export function LearningHome() {
     <div className="container learning-home-container">
       <div className="learning-hero">
         <h1 id="learning-home-title">내 시험 기출부터,<br />틀린 문제 복습까지.</h1>
-        <p className="learning-home-description">자격증 기출문제를 찾아 CBT 문제은행에서 풀어보세요.</p>
+        <p className="learning-home-description">자격증을 찾아 기출문제를 풀어보세요.</p>
         <CertificationSearch />
       </div>
       <section className="learning-quick" aria-labelledby="learning-quick-title">
@@ -24,7 +24,7 @@ export function LearningHome() {
         <Link className="learning-all" href="/cbt/" prefetch={false}>전체 자격증 보기 <span aria-hidden="true">→</span></Link>
         {STORE_ENABLED && <Link className="learning-store" href="/store/" prefetch={false}>핵심노트 스토어 <span aria-hidden="true">→</span></Link>}
       </nav>
-      <PriorityQualificationLinks />
+      <PriorityQualificationLinks embedded />
     </div>
   </section>;
 }

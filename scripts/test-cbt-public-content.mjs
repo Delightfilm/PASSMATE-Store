@@ -27,14 +27,20 @@ const route = load(path.join(root, "app/cbt/[certSlug]/page.tsx"));
 for (const [slug, years] of [["전기기능사", "2002–2016"], ["지게차운전기능사", "2004–2011"], ...["무대음향", "무대기계", "무대조명"].flatMap(field => [1,2,3].map(grade => [`${field}-${grade}급`, "2008–2026"]))]) {
   const params = Promise.resolve({ certSlug: encodeURIComponent(slug) });
   const html = renderToStaticMarkup(await route.default({ params }));
-  assert.match(html, /<h1[^>]*>[^<]+기출문제/, `cold heading missing: ${slug}`);
+  assert.ok(html.includes(`<h1>${slug.replace(/-([123]급)$/, " $1")}</h1>`), `qualification heading should only name the subject: ${slug}`);
   assert.ok(html.includes(years), `${slug} must disclose actual archived years without client loading`);
   assert.ok(html.includes('href="/cbt/"'), "public hub must be a real link");
   assert.ok(!html.includes('/exam/'), "personal attempts must not become public SEO links");
+  assert.match(html, /<details class="cbt-study-details">/, "long guidance must remain in a user-openable section");
+  assert.ok(!/<details[^>]*\sopen(?:=|\s|>)/.test(html), "long guidance must be collapsed initially");
   const meta = await route.generateMetadata({ params });
   assert.ok(meta.alternates.canonical.includes(encodeURIComponent(slug)));
 }
 const hub = renderToStaticMarkup(load(path.join(root, "app/cbt/page.tsx")).default());
+const topics = renderToStaticMarkup(load(path.join(root, "components/cbt-public-content.tsx")).PriorityQualificationLinks());
+for (const field of ["무대음향", "무대기계", "무대조명"]) {
+  for (const grade of [1,2,3]) assert.ok(topics.includes(`aria-label="${field} ${grade}급 문제풀이"`), "short grade links must identify the field for assistive technology");
+}
 const { AppRouterContext } = createRequire(import.meta.url)("next/dist/shared/lib/app-router-context.shared-runtime");
 const home = renderToStaticMarkup(React.createElement(AppRouterContext.Provider, { value: {} }, load(path.join(root, "app/page.tsx")).default()));
 for (const slug of ["전기기능사", "지게차운전기능사", ...["무대음향", "무대기계", "무대조명"].flatMap(field => [1,2,3].map(grade => `${field}-${grade}급`))]) {
