@@ -12,12 +12,14 @@ import "./question-editor.css";
 import "./account.css";
 import "./interactions.css";
 import "./store-unavailable.css";
+import "./analytics.css";
 import "@/lib/cbt-home-catalog";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PageTransition } from "@/components/page-transition";
 import { storeFontGuard } from "@/lib/store-font-guard";
 import { SITE_URL, HOME_TITLE, HOME_DESCRIPTION } from "@/lib/seo";
+import { AnalyticsProvider } from "@/components/analytics-provider";
 
 const pretendard = localFont({
   src: "./fonts/PretendardVariable.woff2",
@@ -48,6 +50,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Suspense><SiteHeader /></Suspense>
         <main><PageTransition>{children}</PageTransition></main>
         <SiteFooter />
+        <Suspense><AnalyticsProvider /></Suspense>
       </body>
     </html>
   );
