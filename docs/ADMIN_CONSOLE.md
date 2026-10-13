@@ -1,5 +1,9 @@
 # PASSMATE Admin Workspace
 
+## 방문 분석
+
+`방문 분석` 패널은 `admin-analytics` Edge Function을 통해 GA4 집계를 조회한다. 사용자 JWT와 DB의 관리자 role을 검사하며 브라우저가 캐시 테이블이나 Google 자격 증명에 접근하지 않는다. 일반 집계 캐시는 15분, 최근 30분 활성 사용자 캐시는 60초다. GA4 미연결·보고서 지연·실제 0·오류를 구분하고, 연결 전 예시 숫자를 표시하지 않는다. 상세 설정과 검증은 `docs/ANALYTICS.md`를 따른다.
+
 ## Goal
 
 관리자가 SSH/SQL 없이 상품 데이터, 주문, 발행 상태를 운영할 수 있게 한다.
