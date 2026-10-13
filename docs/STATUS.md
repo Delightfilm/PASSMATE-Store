@@ -1,10 +1,17 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-12**
+> Last updated: **2026-10-13**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### Admin visitor analytics — 2026-10-13 (preview; activation pending)
+
+- Approved GA4 + administrator dashboard implementation is available in draft PR #48. Analytics tests passed 45/45 and the full production build passed. A fresh review's Important findings were reproduced and corrected in one fix pass.
+- Preview deployment `dpl_6fmZ98AkcsDKmA6W9rSAsitXxscM` is READY at implementation commit `037a418d133870b1e47672bc8996e7e83e7c1b4e`. Browser inspection confirmed the public home loads without GA collection scripts; anonymous administrator access redirects to login.
+- Production web integration, GA4 stream/readonly reporting credentials, operational Supabase cache/function, privacy notice and actual measurement/report reconciliation remain incomplete. Collection stays disabled. Automatic approval review rejected the exact stream/settings and Supabase operations; explicit approval requests are pending. No production collection or live statistics are claimed.
+- Scope, verification limits, decisions and rollback: `docs/ANALYTICS_QA.md`; activation runbook: `docs/ANALYTICS.md`.
 
 ### Automated access policy / edge protection — 2026-10-12
 
