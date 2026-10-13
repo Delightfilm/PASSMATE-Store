@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { QuestionBankAdmin } from "@/components/question-bank-admin";
+const AdminAnalytics = dynamic(() => import("@/components/admin-analytics").then(module => module.AdminAnalytics), { loading: () => <p role="status">방문 분석을 여는 중입니다.</p> });
 
 type MenuKey =
   | "overview"
+  | "analytics"
   | "products"
   | "questionBank"
   | "versions"
@@ -234,6 +237,7 @@ function statusLabel(value: string | null): string {
 function menuTitle(menu: MenuKey): string {
   const titles: Record<MenuKey, string> = {
     overview: "대시보드",
+    analytics: "방문 분석",
     products: "상품 관리",
     questionBank: "문제은행 관리",
     versions: "콘텐츠 · 버전",
@@ -581,6 +585,9 @@ export function AdminClient() {
           <AdminNavButton active={activeMenu === "overview"} onClick={() => setActiveMenu("overview")}>
             홈
           </AdminNavButton>
+          <AdminNavButton active={activeMenu === "analytics"} onClick={() => setActiveMenu("analytics")}>
+            방문 분석
+          </AdminNavButton>
         </AdminNavGroup>
 
         <AdminNavGroup label="상품 · 데이터">
@@ -634,6 +641,7 @@ export function AdminClient() {
         {notice && <p className="auth-message auth-message--success">{notice}</p>}
 
         {activeMenu === "questionBank" && <QuestionBankAdmin />}
+        {activeMenu === "analytics" && <AdminAnalytics />}
 
         {activeMenu === "overview" && (
           <section className="store-admin-view">
