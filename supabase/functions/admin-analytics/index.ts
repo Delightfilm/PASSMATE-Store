@@ -1,6 +1,6 @@
 import {createSupabaseContext} from 'npm:@supabase/server@1.7.0';
 import {createAdminAnalyticsHandler,reportMeta} from '../_shared/analytics-handler.mjs';
-import {createGoogleAnalyticsClient,buildReportRequests,normalizeReports} from '../_shared/analytics-google.mjs';
+import {createGoogleAnalyticsClient,buildReportRequests,normalizeReports,assertReportCompatible} from '../_shared/analytics-google.mjs';
 import {makeCacheKey} from '../_shared/analytics-contract.mjs';
 import type {AnalyticsRequest,AnalyticsResponse,AnalyticsServerConfig} from '../_shared/analytics-contract.mjs';
 
@@ -39,8 +39,8 @@ async function fetchReport(request:AnalyticsRequest):Promise<AnalyticsResponse> 
         if(body.dimensions?.some(x=>x.name.startsWith('customEvent:')&&!metadata?.dimensions.has(x.name)))throw Object.assign(Error('analytics_configuration'),{code:'configuration'});
         const check={dimensions:body.dimensions,metrics:body.metrics,dimensionFilter:body.dimensionFilter},checkKey=JSON.stringify(check);
         if((compatibility.get(checkKey)||0)<Date.now()){
-          const reply=await google.checkCompatibility(check) as {dimensionCompatibilities?:{compatibility:string}[];metricCompatibilities?:{compatibility:string}[]};
-          if([...(reply.dimensionCompatibilities||[]),...(reply.metricCompatibilities||[])].some(x=>x.compatibility!=='COMPATIBLE'))throw Object.assign(Error('analytics_incompatible'),{code:'incompatible'});
+          const reply=await google.checkCompatibility({...check,compatibilityFilter:'COMPATIBLE'}) as Parameters<typeof assertReportCompatible>[1];
+          assertReportCompatible(check,reply);
           compatibility.set(checkKey,Date.now()+86400000);if(compatibility.size>200)compatibility.delete(compatibility.keys().next().value!);
         }
         return google.runReport(spec.body);

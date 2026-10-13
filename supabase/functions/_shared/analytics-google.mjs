@@ -1,7 +1,15 @@
 const TRAFFIC=['totalUsers','sessions','screenPageViews','userEngagementDuration'];
 const EVENTS=['qualification_view','exam_start','exam_complete','sign_up'];
 const DIMENSION={channel:'sessionDefaultChannelGroup',source:'sessionSourceMedium',campaign:'sessionCampaignName',landing:'landingPage',page:'pagePath',country:'country',city:'city',device:'deviceCategory',browser:'browser'};
+const requestQueue=[];let activeRequests=0;
+function limited(task){return new Promise((resolve,reject)=>{requestQueue.push({task,resolve,reject});drain();});}
+function drain(){while(activeRequests<2&&requestQueue.length){const item=requestQueue.shift();activeRequests++;Promise.resolve().then(item.task).then(item.resolve,item.reject).finally(()=>{activeRequests--;drain();});}}
 function fail(code){throw Object.assign(new Error(`analytics_${code}`),{code});}
+export function assertReportCompatible(requested,reply){
+  for(const [key,entries,metadata]of [['dimensions',reply.dimensionCompatibilities||[],'dimensionMetadata'],['metrics',reply.metricCompatibilities||[],'metricMetadata']]){
+    for(const field of requested[key]||[]){const match=entries.find(item=>item[metadata]?.apiName===field.name);if(match?.compatibility!=='COMPATIBLE')fail('incompatible');}
+  }
+}
 function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
 function encoded(value){return b64(new TextEncoder().encode(JSON.stringify(value)));}
 
@@ -10,9 +18,11 @@ export function createGoogleAnalyticsClient(config) {
   let token=null,tokenPending=null;
   async function fetchJson(url,init) {
     try {
-      const response=await config.fetch(url,{...init,signal:AbortSignal.timeout(10000)});
-      if(!response.ok)fail(response.status===401||response.status===403?'permission':response.status===429?'quota':response.status===400?'incompatible':'network');
-      return await response.json();
+      return await limited(async()=>{
+        const response=await config.fetch(url,{...init,signal:AbortSignal.timeout(10000)});
+        if(!response.ok)fail(response.status===401||response.status===403?'permission':response.status===429?'quota':response.status===400?'incompatible':'network');
+        return await response.json();
+      });
     }catch(error){if(error?.code)throw error;fail('network');}
   }
   async function accessToken() {
@@ -50,10 +60,10 @@ export function buildReportRequests(request) {
   const standard=(dims,metrics,event=false,limit=100)=>{
     const expressions=[...filters];if(event)expressions.push({filter:{fieldName:'eventName',inListFilter:{values:EVENTS}}});
     const dimensionFilter=expressions.length?{andGroup:{expressions}}:undefined;
-    return {kind:'standard',body:{...base,dimensions:dims.map(name=>({name})),metrics:metrics.map(name=>({name})),...(dimensionFilter?{dimensionFilter}:{}),limit:String(limit),...(dims.length?{orderBys:[dims.includes('date')?{dimension:{dimensionName:'date'}}:{metric:{metricName:metrics[0]},desc:true}]}:{})}};
+    return {kind:'standard',body:{...base,dimensions:dims.map(name=>({name})),metrics:metrics.map(name=>({name})),...(dimensionFilter?{dimensionFilter}:{}),limit:String(limit),...(dims.length?{orderBys:[dims.includes('date')?{dimension:{dimensionName:'date'}}:{metric:{metricName:metrics.includes('sessions')?'sessions':metrics[0]},desc:true}]}:{})}};
   };
   if(request.report==='qualifications')return [standard(['customEvent:qualification_slug','eventName'],['eventCount'],true,1500),standard(['eventName'],['eventCount'],true,10)];
-  const dimension=request.report==='overview'?'date':request.report==='acquisition'?DIMENSION[request.groupBy||'source']:request.report==='pages'?DIMENSION[request.groupBy||'page']:DIMENSION[request.groupBy||'device'];
+  const dimension=request.report==='overview'?'date':request.report==='acquisition'?DIMENSION[request.groupBy||'source']:request.report==='pages'?DIMENSION[request.groupBy||'page']:DIMENSION[request.groupBy||'country'];
   const rows=standard([dimension],TRAFFIC);
   const totals=standard([],TRAFFIC);
   const events=standard([dimension,'eventName'],['eventCount'],true,1000);
@@ -79,7 +89,7 @@ export function normalizeReports(request,replies,meta) {
       const name=row.dimensions.eventName;if(!EVENTS.includes(name)||(name==='sign_up'&&!meta.signupSupported))continue;
       const dimensions={...row.dimensions};delete dimensions.eventName;
       if(intoTotals)totals[name]=(totals[name]||0)+(row.metrics.eventCount||0);
-      else {const key=JSON.stringify(dimensions);const item=rows.get(key)||{dimensions,metrics:{}};item.metrics[name]=(item.metrics[name]||0)+(row.metrics.eventCount||0);rows.set(key,item);}
+      else {const key=JSON.stringify(dimensions);if(request.report!=='qualifications'&&!rows.has(key))continue;const item=rows.get(key)||{dimensions,metrics:{}};item.metrics[name]=(item.metrics[name]||0)+(row.metrics.eventCount||0);rows.set(key,item);}
     }
   }
   if(request.report==='qualifications'){mergeEvents(replies[0]);mergeEvents(replies[1],true);}
@@ -89,6 +99,10 @@ export function normalizeReports(request,replies,meta) {
     if(request.report==='overview')for(const row of decodedRows(replies[2])){const name=row.dimensions.eventName;if(EVENTS.includes(name)&&(name!=='sign_up'||meta.signupSupported))totals[name]=(totals[name]||0)+(row.metrics.eventCount||0);}
     else mergeEvents(replies[3],true);
   }
-  const sorted=[...rows.values()];if(request.report!=='overview')sorted.sort((a,b)=>(b.metrics.sessions||b.metrics.exam_start||b.metrics.qualification_view||0)-(a.metrics.sessions||a.metrics.exam_start||a.metrics.qualification_view||0));
+  const eventReply=replies[request.report==='qualifications'?0:2];
+  const eventLimited=Number(eventReply?.rowCount??eventReply?.rows?.length??0)>(eventReply?.rows?.length||0);
+  meta.eventCountsLimited=eventLimited;
+  if(!eventLimited)for(const row of rows.values())for(const event of EVENTS)if(event!=='sign_up'||meta.signupSupported)row.metrics[event]??=0;
+  const sorted=[...rows.values()];if(request.report!=='overview')sorted.sort((a,b)=>request.report==='qualifications'?(b.metrics.exam_start||b.metrics.qualification_view||0)-(a.metrics.exam_start||a.metrics.qualification_view||0):(b.metrics.sessions??0)-(a.metrics.sessions??0));
   return {rows:sorted.slice(0,100),totals,...(request.report==='overview'?{previousTotals:decodedRows(replies[3])[0]?.metrics||{}}:{})};
 }

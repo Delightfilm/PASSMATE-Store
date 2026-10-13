@@ -21,6 +21,7 @@ function getCollector() {
   try { storage=window.localStorage; } catch { /* Private mode. */ }
   let tagPromise:Promise<void>|null=null;
   collector=createAnalyticsCollector({storage,
+    onReady(){void learning?.flush().catch(()=>{});},
     setDisabled(value) { target[`ga-disable-${measurementId}`]=value; if(value && target.dataLayer) target.dataLayer.length=0; },
     send(command) {
       // gtag's documented queue format is an arguments object.
@@ -44,6 +45,7 @@ function getCollector() {
   return collector;
 }
 export function visitAnalyticsPage() {
+  if(!/\/exam\/[^/]+\/?$/.test(window.location.pathname)){learningVisible=false;learning?.clear();}
   getCollector()?.visit(`https://www.mypassmate.com${window.location.pathname}${window.location.search}`,document.referrer);
 }
 export function setAnalyticsConsent(value:'granted'|'denied') {
@@ -57,24 +59,24 @@ export function readAnalyticsConsent():'granted'|'denied'|null {
 export function trackAnalyticsEvent(name:string,params:unknown,dedupeKey?:string) {
   return getCollector()?.track(name,params,dedupeKey)??false;
 }
-export function suspendAnalytics() { getCollector()?.visit('https://www.mypassmate.com/admin/',''); }
+export function suspendAnalytics() { learningVisible=false;learning?.clear();getCollector()?.visit('https://www.mypassmate.com/admin/',''); }
 
 function getLearningTracker() {
   if(learning)return learning;
   let storage:Storage|null=null;try{storage=window.localStorage;}catch{/* Optional. */}
-  learning=createLearningTracker({storage,track:trackAnalyticsEvent,isPublicExam(key) {
+  learning=createLearningTracker({storage,track:trackAnalyticsEvent,withLock:navigator.locks?((name,task)=>navigator.locks.request(name,task)):undefined,isPublicExam(key) {
     if(!learningVisible||!analyticsAvailable||readAnalyticsConsent()!=='granted')return false;
     try{return decodeURIComponent(window.location.pathname).endsWith(`/exam/${key}/`)||decodeURIComponent(window.location.pathname).endsWith(`/exam/${key}`);}catch{return false;}
   }});
   return learning;
 }
-export function recordLearningTransition(input:LearningTransition):boolean {
+export async function recordLearningTransition(input:LearningTransition):Promise<boolean> {
   if(!analyticsAvailable||typeof window==='undefined'||readAnalyticsConsent()!=='granted')return false;
   if(input.kind==='start'&&input.method){learningMethods.set(input.localAttemptKey,input.method);if(learningMethods.size>1000)learningMethods.delete(learningMethods.keys().next().value!);}
   learningVisible=false;
-  return getLearningTracker().record(input.kind==='complete'?{...input,method:learningMethods.get(input.localAttemptKey)}:input);
+  try{return await getLearningTracker().record(input.kind==='complete'?{...input,method:learningMethods.get(input.localAttemptKey)}:input);}catch{return false;}
 }
 export function flushLearningEvents() {
   if(!analyticsAvailable)return;
-  visitAnalyticsPage();learningVisible=true;learning?.flush();
+  visitAnalyticsPage();learningVisible=true;void learning?.flush().catch(()=>{});
 }
