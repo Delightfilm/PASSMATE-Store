@@ -8,10 +8,12 @@ import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { QuestionBankAdmin } from "@/components/question-bank-admin";
 const AdminAnalytics = dynamic(() => import("@/components/admin-analytics").then(module => module.AdminAnalytics), { loading: () => <p role="status">방문 분석을 여는 중입니다.</p> });
+const AdminExamUsage = dynamic(() => import("@/components/admin-exam-usage").then(module => module.AdminExamUsage), { loading: () => <p role="status">인기 시험을 여는 중입니다.</p> });
 
 type MenuKey =
   | "overview"
   | "analytics"
+  | "examUsage"
   | "products"
   | "questionBank"
   | "versions"
@@ -238,6 +240,7 @@ function menuTitle(menu: MenuKey): string {
   const titles: Record<MenuKey, string> = {
     overview: "대시보드",
     analytics: "방문 분석",
+    examUsage: "인기 시험",
     products: "상품 관리",
     questionBank: "문제은행 관리",
     versions: "콘텐츠 · 버전",
@@ -588,6 +591,9 @@ export function AdminClient() {
           <AdminNavButton active={activeMenu === "analytics"} onClick={() => setActiveMenu("analytics")}>
             방문 분석
           </AdminNavButton>
+          <AdminNavButton active={activeMenu === "examUsage"} onClick={() => setActiveMenu("examUsage")}>
+            인기 시험
+          </AdminNavButton>
         </AdminNavGroup>
 
         <AdminNavGroup label="상품 · 데이터">
@@ -642,6 +648,7 @@ export function AdminClient() {
 
         {activeMenu === "questionBank" && <QuestionBankAdmin />}
         {activeMenu === "analytics" && <AdminAnalytics />}
+        {activeMenu === "examUsage" && <AdminExamUsage />}
 
         {activeMenu === "overview" && (
           <section className="store-admin-view">

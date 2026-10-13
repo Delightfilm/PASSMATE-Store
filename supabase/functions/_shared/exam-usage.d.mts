@@ -1,0 +1,9 @@
+export type ExamUsageRequest={startDate:string;endDate:string;groupBy:'qualification'|'exam'};
+export type ExamUsageCounts={starts:number;completions:number;users:number};
+export type ExamUsageRow=ExamUsageCounts&{qualification:string;examKey:string;examLabel:string;completionRate:number};
+export type ExamUsageData={rows:ExamUsageRow[];totals:ExamUsageCounts;truncated:boolean};
+export function validateExamUsageRequest(input:unknown,now:Date):ExamUsageRequest;
+export function normalizeExamUsage(input:unknown):ExamUsageData;
+export function sortExamUsage(rows:ExamUsageRow[],key:'starts'|'completions'|'users'|'completionRate'):ExamUsageRow[];
+export function examUsageCsv(rows:ExamUsageRow[],scope?:ExamUsageRequest&{truncated:boolean}):string;
+export function createExamUsageHandler(deps:{resolveAdmin:(request:Request)=>Promise<true|number>;query:(request:ExamUsageRequest)=>Promise<unknown>;now:()=>Date}):(request:Request)=>Promise<Response>;

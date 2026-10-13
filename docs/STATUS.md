@@ -1,16 +1,16 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-13**
+> Last updated: **2026-10-14**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
 
-### Admin visitor analytics — 2026-10-13 (preview; activation pending)
+### Admin visitor analytics and popular exams — 2026-10-14 (server connected; web release in progress)
 
-- Approved GA4 + administrator dashboard implementation is available in draft PR #48. Analytics tests passed 45/45 and the full production build passed. A fresh review's Important findings were reproduced and corrected in one fix pass.
-- Preview deployment `dpl_6fmZ98AkcsDKmA6W9rSAsitXxscM` is READY at implementation commit `037a418d133870b1e47672bc8996e7e83e7c1b4e`. Browser inspection confirmed the public home loads without GA collection scripts; anonymous administrator access redirects to login.
-- Production web integration, GA4 stream/readonly reporting credentials, operational Supabase cache/function, privacy notice and actual measurement/report reconciliation remain incomplete. Collection stays disabled. Automatic approval review rejected the exact stream/settings and Supabase operations; explicit approval requests are pending. No production collection or live statistics are claimed.
+- Approved GA4 dashboard plus member-only popular-exam sheet are in PR #48. Analytics tests passed 51/51. Original GA review findings and the bounded new sheet's identity/cohort findings were corrected. SQL fixtures and CSV metadata checks passed.
+- GA4 stream, readonly Viewer/server secret, Data API and five custom dimensions are connected. All actual provider report combinations succeeded. Operational Supabase cache/RLS and JWT/admin-only functions are applied; existing learner/order data is preserved.
+- Browser consent rejection sends no Google requests; grant sends sanitized page/qualification events with 204 responses. Actual GA realtime API received test events. This proof is from the enabled local build; actual www release and new admin/mobile/report reconciliation remain in progress. Prior disabled preview is not evidence for current changes. User chose to keep existing GA advertising region settings.
 - Scope, verification limits, decisions and rollback: `docs/ANALYTICS_QA.md`; activation runbook: `docs/ANALYTICS.md`.
 
 ### Automated access policy / edge protection — 2026-10-12
