@@ -1276,5 +1276,26 @@ body{word-break:keep-all}
 .cbt-public-links a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;line-height:1.5;word-break:keep-all}
 .cbt-public-links a:hover{text-decoration:underline}.cbt-public-links a:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 .cbt-tool-title{margin:14px 0 16px;font-size:28px;line-height:1.4;word-break:keep-all}
-.learning-home-container>.cbt-public-guide{padding-left:0;padding-right:0}
+.cbt-topics{max-width:1160px;padding-top:32px;padding-bottom:24px}
+.cbt-topics h2{margin:0 0 16px;font-size:20px;line-height:1.4;font-weight:600}
+.cbt-topic-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.cbt-topic-card,.cbt-topic-stage{min-width:0;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--white);color:var(--ink)}
+.cbt-topic-card{grid-column:span 3;display:flex;flex-direction:column;justify-content:center;gap:8px;min-height:100px;text-decoration:none}
+.cbt-topic-card strong{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:16px;font-weight:600;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
+.cbt-topic-card strong svg{flex-shrink:0;color:var(--blue)}
+.cbt-topic-card>span{font-size:14px;line-height:1.5;color:var(--muted)}
+.cbt-topic-card:hover{border-color:var(--blue);background:var(--blue-soft)}
+.cbt-topic-stage{grid-column:span 2}
+.cbt-topic-stage h3{margin:0 0 12px;font-size:16px;font-weight:600;line-height:1.5}
+.cbt-topic-grades{display:flex;gap:4px}
+.cbt-topic-grades a{display:flex;align-items:center;justify-content:center;flex:1;min-width:44px;min-height:44px;border-radius:8px;background:var(--blue-soft);color:var(--blue-dark);font-size:14px;line-height:1.5;text-decoration:none}
+.cbt-topic-grades a:hover{background:var(--blue);color:var(--white)}
+.cbt-topics a:focus-visible,.cbt-study-details>summary:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.cbt-study-details{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cbt-study-details>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;padding:16px 0;list-style:none;cursor:pointer;font-size:15px;font-weight:600;color:var(--muted)}
+.cbt-study-details>summary::-webkit-details-marker{display:none}
+.cbt-study-details[open]>summary svg{transform:rotate(180deg)}
+.cbt-study-content{padding-bottom:12px}
+.learning-home-container>.cbt-topics{width:100%;padding-left:0;padding-right:0}
 @media(max-width:767px){.cbt-public-intro{padding-top:28px}.cbt-public-guide h2{font-size:20px}.cbt-tool-title{font-size:24px}}
+@media(max-width:767px){.cbt-topics{padding-top:28px}.cbt-topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cbt-topic-card{grid-column:span 1;padding:14px;min-height:96px}.cbt-topic-stage{grid-column:span 2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px}.cbt-topic-stage h3{margin:0;flex-shrink:0}.cbt-topic-grades{flex:0 1 192px;width:100%;min-width:152px}}
