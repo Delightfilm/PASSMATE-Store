@@ -3,6 +3,7 @@ import {createTrafficAggregateCollector,type TrafficAggregateCollector} from './
 import {BASIC_CHOICE_KEY,resolveTrafficChoice} from './traffic-aggregate-policy.mjs';
 import {CONSENT_KEY} from './analytics-policy.mjs';
 import {publicQualifications} from './cbt-home-catalog';
+import {setAnalyticsStorageFailure} from './analytics';
 export const firstPartyAnalyticsAvailable=process.env.NEXT_PUBLIC_FIRST_PARTY_ANALYTICS_ENABLED==='true';
 let collector:TrafficAggregateCollector|null=null;
 let storageFailed=false;
@@ -19,6 +20,7 @@ function updateChoice(){
 export function applyTrafficPreference(mode:'off'|'basic'|'detail'){
  try{window.localStorage.setItem(BASIC_CHOICE_KEY,mode==='off'?'off':'on');window.localStorage.setItem(CONSENT_KEY,mode==='detail'?'granted':'denied');storageFailed=false;}
  catch{storageFailed=true;}
+ setAnalyticsStorageFailure(storageFailed);
  updateChoice();window.dispatchEvent(new Event('passmate:traffic-preference'));window.dispatchEvent(new Event('passmate:analytics-consent'));
 }
 export function visitTrafficAggregate(pathname:string){collector?.navigate(pathname,document.referrer);}

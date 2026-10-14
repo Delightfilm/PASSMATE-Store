@@ -5,6 +5,7 @@ import Link from "next/link";
 import { businessInfo } from "@/lib/business-info";
 import { BusinessInformation } from "./business-information";
 import { analyticsAvailable } from "@/lib/analytics";
+import { firstPartyAnalyticsAvailable } from "@/lib/traffic-aggregate";
 
 export function SiteFooter() {
   const pathname = usePathname();
@@ -19,7 +20,7 @@ export function SiteFooter() {
             <Link href="/store/" prefetch={false}>스토어</Link>
             <Link href="/library/" prefetch={false}>내 자료</Link>
             <Link href="/terms/" prefetch={false}>이용약관</Link>
-            {analyticsAvailable && <button type="button" className="footer-analysis-button" onClick={() => window.dispatchEvent(new Event("passmate:analytics-settings"))}>분석 설정</button>}
+            {(analyticsAvailable || firstPartyAnalyticsAvailable) && <Link href="/analytics-settings/" prefetch={false}>분석 설정</Link>}
             {businessInfo.email && <a href={`mailto:${businessInfo.email}`}>문의</a>}
           </nav>
         </div>
