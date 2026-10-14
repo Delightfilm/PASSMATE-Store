@@ -7,5 +7,6 @@ export const businessInfo = {
   "email": "report@mypassmate.com",
   "phone": "",
   "commerceRegistration": "2026-서울노원-1344",
-  "supportHours": ""
+  "supportHours": "",
+  "privacyOfficer": "김주환"
 } as const;

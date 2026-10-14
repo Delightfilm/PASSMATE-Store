@@ -20,6 +20,7 @@ export function SiteFooter() {
             <Link href="/store/" prefetch={false}>스토어</Link>
             <Link href="/library/" prefetch={false}>내 자료</Link>
             <Link href="/terms/" prefetch={false}>이용약관</Link>
+            <Link href="/privacy/" prefetch={false}><strong>개인정보처리방침</strong></Link>
             {(analyticsAvailable || firstPartyAnalyticsAvailable) && <Link href="/analytics-settings/" prefetch={false}>분석 설정</Link>}
             {businessInfo.email && <a href={`mailto:${businessInfo.email}`}>문의</a>}
           </nav>
