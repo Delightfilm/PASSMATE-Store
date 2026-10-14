@@ -307,5 +307,5 @@ Supabase Security Advisor의 계정 설정 WARN(Leaked Password Protection) 외�
 - 기존 계약 검사/타입 검사/운영 빌드와 NAS 캐시·재시도·종목별 로드 검증 통과. 검증 배포에서 727종목·979,863문항 표시, 회차/문항 선택, 북마크, NAS 이미지, 최종 제출/채점 확인. 모바일 390px 가로 넘침 없음, 새로고침 뒤 결과 복원 확인. 일시적 전송 오류는 1회 자동 재시도하며 HTTP 접근 제한 오류는 우회하지 않는다.
 # 2026-10-14 자체 기본 방문 집계 작업
 
-승인 설계/계획을 전용 `codex/first-party-traffic-analytics`에서 구현했다. 자동 팝업/배너 대신 noindex 설정 페이지, 식별자 없는 공개 화면 집계, 관리자 자체 통계·CSV, 별도 기존 GA4 메뉴를 제공한다. 빌드와 분석79개 및 격리 DB 검사는 통과했다. 운영은 아직 기존 `b8c0328`/`dpl_9CiWSBvtBwjxSV2wRHPkfvHT9Rfp`이며 새 기능 운영 활성화·실수집 확인은 진행 중이다. 현재 증거/롤백은 `docs/FIRST_PARTY_ANALYTICS.md`에 기록한다.
+승인 설계/계획을 전용 브랜치에서 구현하고 PR50/51로 운영 반영했다. 자동 팝업/배너 대신 noindex 설정 페이지, 식별자 없는 공개 화면 집계, 관리자 자체 통계·CSV, 별도 기존 GA4 메뉴를 제공한다. 최종 빌드와 분석81개 및 격리 DB 검사가 통과했다. 검증된 운영 웹 코드는 `b2d8b01055a67372a0d32a50a825b67e0de7f704`, READY `dpl_JA171Cr7TzwyPfmaaPThwV9nTBwn`이다. 실제 정상 요청17개와 DB/관리자/CSV 합계가 일치했고 기존 응시34/주문7 및 GA4를 보존했다. [운영 검증·롤백 기록](FIRST_PARTY_ANALYTICS_VERIFICATION_20261014.md)을 따른다.
 
