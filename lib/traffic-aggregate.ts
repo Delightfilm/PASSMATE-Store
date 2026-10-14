@@ -31,7 +31,7 @@ export function startTrafficAggregate(){
   if(!readTrafficPreferences().basic)return false;
   const controller=new AbortController();requests.add(controller);
   const timeout=window.setTimeout(()=>controller.abort(),5000);
-  try{const response=await fetch('/api/analytics/aggregate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(packet),credentials:'omit',referrerPolicy:'no-referrer',keepalive:true,redirect:'error',signal:controller.signal});return response.status===204;}
+  try{const response=await fetch('/api/analytics/aggregate/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(packet),credentials:'omit',referrerPolicy:'no-referrer',keepalive:true,redirect:'error',signal:controller.signal});return response.status===204;}
   catch{return false;}finally{window.clearTimeout(timeout);requests.delete(controller);}
  }},{enabled:true,publicQualifications,choice:readTrafficPreferences()});collector=current;
  const activity=()=>{current.setActivity({visible:document.visibilityState==='visible',focused:document.hasFocus()});if(document.visibilityState!=='visible'||!document.hasFocus())void current.flush();};

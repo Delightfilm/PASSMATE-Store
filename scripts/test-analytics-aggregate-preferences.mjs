@@ -13,6 +13,7 @@ function setup(initial={},gpc=false){
 test('newcomer basic measurement sends no credentials, referrer or persistent visitor state',async()=>{
  const s=setup();const stop=s.mod.startTrafficAggregate();s.advance(5000);s.advance(5000);s.advance(5000);s.advance(5000);await s.settle();assert.ok(s.requests.length);assert.equal(s.writes.length,0);
  const req=s.requests[0];assert.equal(req.credentials,'omit');assert.equal(req.referrerPolicy,'no-referrer');assert.equal(req.keepalive,true);assert.deepEqual(Object.keys(req.headers),['Content-Type']);assert.equal(JSON.stringify(req).includes('private'),false);stop();
+ assert.equal(req.url,'/api/analytics/aggregate/','trailingSlash canonical endpoint avoids a redirect that redirect:error must reject');
 });
 test('legacy refusal, GPC, corrupt preferences and storage failures prevent collection',async()=>{
  for(const [initial,gpc] of [[{[gaKey]:'denied'},false],[{[gaKey]:'granted'},true],[{[basicKey]:'invalid'},false]]){const s=setup(initial,gpc);const stop=s.mod.startTrafficAggregate();s.advance(20000);await s.settle();assert.equal(s.requests.length,0);assert.equal(s.mod.readTrafficPreferences().basic,false);stop();}
