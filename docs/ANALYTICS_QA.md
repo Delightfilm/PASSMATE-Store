@@ -64,3 +64,7 @@
 활성화 후 수집을 중단할 때는 웹 `NEXT_PUBLIC_ANALYTICS_ENABLED`를 false로 하고 새 빌드를 배포합니다. 보고서 API는 `PASSMATE_ANALYTICS_REPORTS_ENABLED=false`로 중단합니다. 이미 GA에 전달한 통계는 코드 롤백으로 삭제되지 않습니다. GA 접근 철회나 영구 삭제가 필요하면 실제 설정·권한·삭제 범위를 확인하고 별도로 처리합니다.
 
 웹 문제는 이전 정상 배포 복원 또는 해당 PR 변경 되돌리기로 복구합니다. Edge Function 배포와 DB 마이그레이션은 Git 되돌리기만으로 복구되지 않습니다. 캐시 테이블을 유지하더라도 일반 사용자 권한 차단을 유지하며, 기존 회원·문항·주문 테이블을 변경하거나 삭제하지 않습니다.
+# 2026-10-14 자체 기본 집계 검증
+
+관련 새 계약/수집/선택/권한/보고서 검사는 기존 `check:analytics` glob에 포함된다. 전체 분석79/79와 빌드 exit0, API 비노출 QA SQL 및 독립 중복 수집 검사가 통과했다. 로컬 기본 요청에서 Cookie/Authorization/Referer 없음과 신규 GA4 미호출을 확인했다. 운영 수집은 아직 비활성이며 실제 연결 결과는 [FIRST_PARTY_ANALYTICS.md](FIRST_PARTY_ANALYTICS.md)의 검증 기록으로 구분한다. 기존 아래 GA4 검증 결과를 자체 집계의 증거로 전용하지 않는다.
+
