@@ -6,8 +6,8 @@ import { businessInfo } from "@/lib/business-info";
 
 export const dynamic = "force-static";
 export const metadata: Metadata = {
-  title: "이용약관 — 자동화 접근 및 콘텐츠 수집 | PASSMATE",
-  description: "PASSMATE의 무단 자동화 접근, 크롤링, 대량 수집 및 서비스 보호 조치에 관한 이용 조건입니다.",
+  title: "이용약관 | PASSMATE",
+  description: "PASSMATE의 회원·학습·AI 해설·콘텐츠 이용, 자동화 접근 제한 및 소비자 권리에 관한 이용약관입니다.",
   alternates: { canonical: "/terms/" },
 };
 
