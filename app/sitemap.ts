@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/` },
     { url: `${SITE_URL}/cbt/` },
     { url: `${SITE_URL}/terms/` },
+    { url: `${SITE_URL}/privacy/` },
     ...publicQualifications.map(item => ({ url: `${SITE_URL}${qualificationHref(item.slug)}` })),
   ];
 }
