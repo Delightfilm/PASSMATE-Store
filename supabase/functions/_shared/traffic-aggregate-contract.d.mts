@@ -1,0 +1,10 @@
+export type AggregateMetrics={pageViews:number;visitStarts:number;activeMs:number};
+export type AggregateRow={key:string;metrics:AggregateMetrics};
+export type AggregateBuffer={totals:AggregateMetrics;sources:AggregateRow[];pages:AggregateRow[]};
+export type AggregatePacket=AggregateBuffer&{version:1;nonce:string};
+export type AggregateRequest={startDate:string;endDate:string;dimension:'date'|'source'|'page'};
+export const TRAFFIC_SOURCES:readonly string[];
+export function parseAggregatePacket(raw:unknown,byteLength:number):AggregatePacket|null;
+export function validateAggregateRequest(raw:unknown,today:string):AggregateRequest|null;
+export function mergeMetrics(a:AggregateMetrics,b:AggregateMetrics):AggregateMetrics;
+export function splitAggregateBuffer(buffer:AggregateBuffer):AggregateBuffer[];
