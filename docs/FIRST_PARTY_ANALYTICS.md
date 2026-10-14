@@ -35,8 +35,8 @@ RLS와 명시적 권한 철회로 anon/authenticated는 세 표와 세 RPC에 �
 
 ## 검증 기록
 
-- 전체 `npm run build` exit0, 분석79/79, 기존 browser-storage·공개 콘텐츠·회원·보안 검증 통과. 기존 법률/사업자 문서6개 미완료 경고는 그대로다.
+- 전체 `npm run build` exit0, 최종 분석81/81, 기존 browser-storage·공개 콘텐츠·회원·보안 검증 통과. 기존 법률/사업자 문서6개 미완료 경고는 그대로다.
 - API 비노출 QA 스키마: rollback SQL의 중복·권한·한국 자정·90일·만료 정리 PASS. 독립 SQL 세션 두 번의 같은 digest는 총 조회1/시작1/1000ms. QA는 비활성으로 복귀하고 시험 행만 제거했다.
 - 로컬 기본 수집만 활성화, 서버 수집 비활성: 기본 요청의 실제 wire headers에 Cookie/Authorization/Referer 없음, referrerPolicy no-referrer, 허용 패킷만 관측. 신규 GA4 요청0. 이 시험은 DB 저장 성공 증거가 아니다.
 - 초기 자동 배너/팝업 없음, 설정 버튼3개·noindex·데스크톱 가로 넘침 없음. 로컬 캡처 `output/first-party-traffic-analytics/local-settings.png`.
-- 운영 migration/Edge/유지관리/웹 활성화/실수집 검증: 진행 중. 실제 결과 확인 전 완료로 기록하지 않는다.
+- 운영 연결·실수집·관리자·실제 CSV 대조 완료. PR50/51, 검증된 웹 코드 `b2d8b01055a67372a0d32a50a825b67e0de7f704`, READY `dpl_JA171Cr7TzwyPfmaaPThwV9nTBwn`, www/mypassmate.com 별칭 확인. 상세 실제 결과·한계는 [운영 검증·롤백 기록](FIRST_PARTY_ANALYTICS_VERIFICATION_20261014.md)을 따른다.
