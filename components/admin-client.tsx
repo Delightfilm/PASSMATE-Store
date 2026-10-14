@@ -8,11 +8,13 @@ import { getPublicSupabaseConfig } from "@/lib/public-supabase-config";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { QuestionBankAdmin } from "@/components/question-bank-admin";
 const AdminAnalytics = dynamic(() => import("@/components/admin-analytics").then(module => module.AdminAnalytics), { loading: () => <p role="status">방문 분석을 여는 중입니다.</p> });
+const AdminTrafficAggregate = dynamic(() => import("@/components/admin-traffic-aggregate").then(module => module.AdminTrafficAggregate), { loading: () => <p role="status">자체 집계를 여는 중입니다.</p> });
 const AdminExamUsage = dynamic(() => import("@/components/admin-exam-usage").then(module => module.AdminExamUsage), { loading: () => <p role="status">인기 시험을 여는 중입니다.</p> });
 
 type MenuKey =
   | "overview"
   | "analytics"
+  | "ga4Analytics"
   | "examUsage"
   | "products"
   | "questionBank"
@@ -240,6 +242,7 @@ function menuTitle(menu: MenuKey): string {
   const titles: Record<MenuKey, string> = {
     overview: "대시보드",
     analytics: "방문 분석",
+    ga4Analytics: "GA4 동의자 분석",
     examUsage: "인기 시험",
     products: "상품 관리",
     questionBank: "문제은행 관리",
@@ -594,6 +597,9 @@ export function AdminClient() {
           <AdminNavButton active={activeMenu === "examUsage"} onClick={() => setActiveMenu("examUsage")}>
             인기 시험
           </AdminNavButton>
+          <AdminNavButton active={activeMenu === "ga4Analytics"} onClick={() => setActiveMenu("ga4Analytics")}>
+            GA4 동의자 분석
+          </AdminNavButton>
         </AdminNavGroup>
 
         <AdminNavGroup label="상품 · 데이터">
@@ -647,7 +653,8 @@ export function AdminClient() {
         {notice && <p className="auth-message auth-message--success">{notice}</p>}
 
         {activeMenu === "questionBank" && <QuestionBankAdmin />}
-        {activeMenu === "analytics" && <AdminAnalytics />}
+        {activeMenu === "analytics" && <AdminTrafficAggregate />}
+        {activeMenu === "ga4Analytics" && <AdminAnalytics />}
         {activeMenu === "examUsage" && <AdminExamUsage />}
 
         {activeMenu === "overview" && (
