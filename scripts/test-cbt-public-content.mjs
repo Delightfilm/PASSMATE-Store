@@ -35,6 +35,17 @@ for (const [slug, years] of [["전기기능사", "2002–2016"], ["지게차운�
   assert.ok(!/<details[^>]*\sopen(?:=|\s|>)/.test(html), "long guidance must be collapsed initially");
   const meta = await route.generateMetadata({ params });
   assert.ok(meta.alternates.canonical.includes(encodeURIComponent(slug)));
+  const study = html.slice(html.indexOf('class="cbt-public-guide'));
+  assert.ok(study.includes(`/cbt/${encodeURIComponent(slug)}/?tab=mock`), `${slug}: guidance must lead directly to its own mock exam`);
+  assert.equal(study.includes(`/cbt/${encodeURIComponent(slug)}/?tab=subjects`), slug !== "지게차운전기능사", "subject links must reflect the available archive structure");
+  if (slug.startsWith("무대")) {
+    for (const target of ["무대음향-2급", "무대기계-2급", "무대조명-2급"]) {
+      if (slug.endsWith("2급") && target !== slug) assert.ok(study.includes(`/cbt/${encodeURIComponent(target)}/`), "stage learners must be able to reach the other fields at the same grade");
+    }
+    assert.ok(study.includes('href="https://www.ntok.go.kr/staff/"'), "stage guidance must link to the official qualification authority");
+  } else {
+    assert.ok(study.includes('href="https://www.q-net.or.kr/cst006.do?'), "technical qualification guidance must link to official examination standards");
+  }
 }
 const hub = renderToStaticMarkup(load(path.join(root, "app/cbt/page.tsx")).default());
 const topics = renderToStaticMarkup(load(path.join(root, "components/cbt-public-content.tsx")).PriorityQualificationLinks());
