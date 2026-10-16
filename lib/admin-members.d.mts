@@ -1,0 +1,9 @@
+export type MemberRequest={view:'summary'|'members'|'detail';startDate:string;endDate:string;query?:string;provider?:'all'|'email'|'google'|'kakao';page?:number;periodOnly?:boolean;memberId?:string};
+export type Member={id:string;displayName:string;email:string|null;createdAt:string;lastSignInAt:string|null;providers:string[];emailConfirmed:boolean};
+export type MemberSummary={totals:{totalMembers:number;joinedToday:number;joined7Days:number;joinedInPeriod:number;confirmedMembers:number};trend:{date:string;count:number}[]};
+export type MemberList={total:number;page:number;pageSize:20;rows:Member[]};
+export type MemberDetail={member:Member|null;learning:null|{starts:number;completed:number;wrongNotes:number;bookmarks:number;averageScore:number|null}};
+export type MemberResponse<T>={status:'ok';view:MemberRequest['view'];data:T;meta:{timezone:'Asia/Seoul';fetchedAt:string}};
+export function memberPeriod(days:number,now?:Date):{startDate:string;endDate:string};
+export function parseMemberRequest(raw:unknown,now?:Date):MemberRequest|null;
+export function normalizeMemberReport(raw:unknown,request:MemberRequest,now?:Date):MemberResponse<MemberSummary|MemberList|MemberDetail>;

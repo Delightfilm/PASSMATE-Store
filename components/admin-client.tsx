@@ -10,9 +10,12 @@ import { QuestionBankAdmin } from "@/components/question-bank-admin";
 const AdminAnalytics = dynamic(() => import("@/components/admin-analytics").then(module => module.AdminAnalytics), { loading: () => <p role="status">방문 분석을 여는 중입니다.</p> });
 const AdminTrafficAggregate = dynamic(() => import("@/components/admin-traffic-aggregate").then(module => module.AdminTrafficAggregate), { loading: () => <p role="status">자체 집계를 여는 중입니다.</p> });
 const AdminExamUsage = dynamic(() => import("@/components/admin-exam-usage").then(module => module.AdminExamUsage), { loading: () => <p role="status">인기 시험을 여는 중입니다.</p> });
+const AdminMembers = dynamic(() => import("@/components/admin-members").then(module => module.AdminMembers), { loading: () => <p role="status">회원 관리를 여는 중입니다.</p> });
+const AdminAudienceOverview = dynamic(() => import("@/components/admin-members").then(module => module.AdminAudienceOverview), { loading: () => <p role="status">방문·회원 현황을 여는 중입니다.</p> });
 
 type MenuKey =
   | "overview"
+  | "members"
   | "analytics"
   | "ga4Analytics"
   | "examUsage"
@@ -241,6 +244,7 @@ function statusLabel(value: string | null): string {
 function menuTitle(menu: MenuKey): string {
   const titles: Record<MenuKey, string> = {
     overview: "대시보드",
+    members: "회원 관리",
     analytics: "방문 분석",
     ga4Analytics: "GA4 동의자 분석",
     examUsage: "인기 시험",
@@ -258,7 +262,8 @@ function menuTitle(menu: MenuKey): string {
 export function AdminClient() {
   const router = useRouter();
   const [access, setAccess] = useState<"loading" | "admin" | "denied">("loading");
-  const [activeMenu, setActiveMenu] = useState<MenuKey>("products");
+  const [activeMenu, setActiveMenu] = useState<MenuKey>("overview");
+  const [audienceRevision, setAudienceRevision] = useState(0);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [jobs, setJobs] = useState<JobRow[]>([]);
@@ -418,6 +423,7 @@ export function AdminClient() {
   }, [router]);
 
   async function refresh() {
+    setAudienceRevision(value => value + 1);
     const accessToken = await token();
     if (!accessToken) return;
     setError("");
@@ -594,6 +600,9 @@ export function AdminClient() {
           <AdminNavButton active={activeMenu === "analytics"} onClick={() => setActiveMenu("analytics")}>
             방문 분석
           </AdminNavButton>
+          <AdminNavButton active={activeMenu === "members"} onClick={() => setActiveMenu("members")}>
+            회원 관리
+          </AdminNavButton>
           <AdminNavButton active={activeMenu === "examUsage"} onClick={() => setActiveMenu("examUsage")}>
             인기 시험
           </AdminNavButton>
@@ -656,9 +665,11 @@ export function AdminClient() {
         {activeMenu === "analytics" && <AdminTrafficAggregate />}
         {activeMenu === "ga4Analytics" && <AdminAnalytics />}
         {activeMenu === "examUsage" && <AdminExamUsage />}
+        {activeMenu === "members" && <AdminMembers revision={audienceRevision} />}
 
         {activeMenu === "overview" && (
           <section className="store-admin-view">
+            <AdminAudienceOverview revision={audienceRevision} onMembers={() => setActiveMenu("members")} onTraffic={() => setActiveMenu("analytics")} />
             <div className="admin-overview">
               <DashboardMetric label="전체 상품" value={products.length} note="등록 데이터" />
               <DashboardMetric label="판매중" value={activeProducts} note="고객 노출" />

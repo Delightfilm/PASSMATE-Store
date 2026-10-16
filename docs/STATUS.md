@@ -1,10 +1,18 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-14**
+> Last updated: **2026-10-17**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### Admin member dashboard — 2026-10-17 (local verified; not deployed)
+
+- User-approved overview/member management implemented on `codex/admin-member-dashboard`, based on main `94b661657089e52cbacca7e4251ad2be4c60550b`.
+- GA4 consenting users and first-party visit starts/pageviews remain separate. Actual Auth signup/member counts use KST; deleted/anonymous accounts excluded. Read-only searchable/paginated members and saved-study summaries include both legacy and NAS state.
+- Final check, TypeScript, Next production build, Deno Edge type check, 12 member tests and disposable PostgreSQL migration/security fixtures passed. 360/390/430/1280 browser fixtures verified; screenshots are fictional data, not production counts.
+- Production Supabase metadata query was refused by the connected account. No production schema/data/function/web deployment changes were made. The new migration and Edge Function must be applied with separately authorized operational access before web activation. Existing six legal-content/business warnings remain.
+- Evidence and rollout/rollback: `docs/ADMIN_MEMBERS_QA_20261017.md`.
 
 ### Admin visitor analytics and popular exams — 2026-10-14 (server connected; web release in progress)
 
