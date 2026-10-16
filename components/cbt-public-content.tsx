@@ -17,7 +17,9 @@ export function QualificationStudyGuide({ qualification }: { qualification: Qual
   const guide = qualificationGuide(qualification.slug);
   if (!guide) return null;
   const stageField = qualification.title.match(/^무대(음향|기계|조명)/)?.[0];
-  const related = priorityQualifications.filter(item => item.slug !== qualification.slug && (stageField ? item.title.startsWith(stageField) : !item.title.startsWith("무대")));
+  const stageGrade = qualification.slug.match(/-([123]급)$/)?.[1];
+  const related = priorityQualifications.filter(item => item.slug !== qualification.slug && (stageField ? item.title.startsWith(stageField) || item.slug.endsWith(`-${stageGrade}`) : !item.title.startsWith("무대")));
+  const href = qualificationHref(qualification.slug);
   return <section className="cbt-public-guide container" aria-label={`${qualification.title} 학습 안내`}>
     <details className="cbt-study-details">
       <summary>학습 안내 및 자료 범위<DisclosureArrow /></summary>
@@ -27,13 +29,27 @@ export function QualificationStudyGuide({ qualification }: { qualification: Qual
         <p>제공 과목: {guide.scope}</p>
         <h2>{qualification.title} 문제은행 활용 방법</h2>
         <p>{guide.practice}</p>
+        <h3>복습할 때 살펴볼 내용</h3>
+        <ul>{guide.checkpoints.map(point => <li key={point}>{point}</li>)}</ul>
         <ol>
           <li><strong>회차별 기출:</strong> 학습 화면에서 연도와 회차를 선택해 문제를 풉니다.</li>
           <li><strong>CBT 모의시험:</strong> 문제 범위와 풀이 방식을 선택해 연습합니다. 사이트의 모의시험 설정은 실제 시험의 운영 방식과 다를 수 있습니다.</li>
           <li><strong>오답 복습:</strong> 정답을 확인하고, 제공되는 AI 해설을 참고해 풀이 과정을 점검합니다. AI 해설에는 오류가 있을 수 있으므로 의심되는 내용은 자료와 대조하세요.</li>
         </ol>
+        <nav className="cbt-public-links" aria-label={`${qualification.title} 학습 바로가기`}>
+          {/* The learning client reads its initial tab on mount; load the destination with that query. */}
+          <a href={`${href}?tab=mock`}>CBT 모의시험 연습</a>
+          {qualification.slug !== "지게차운전기능사" && <a href={`${href}?tab=subjects`}>단원별로 복습하기</a>}
+          <a href={`${href}?tab=records`}>내 풀이 기록 확인</a>
+        </nav>
+        <h2>자주 묻는 학습 질문</h2>
+        <h3>{guide.question}</h3>
+        <p>{guide.answer}</p>
+        <h3>여기 있는 기출이 현재 시험과 같은가요?</h3>
+        <p>PASSMATE는 수록된 과거 기출로 연습하는 학습 서비스입니다. CBT는 사이트에서 문제를 푸는 방식을 뜻하며, 해당 자격시험이 실제로 CBT로 시행되는지는 공식 시험 안내에서 확인해야 합니다. 수록 연도·과목과 현재 출제기준을 비교한 뒤 학습 범위를 정하세요.</p>
         <h2>학습 전에 확인하세요</h2>
         <p>이 페이지는 현재 제공 중인 {guide.years}년 기출 자료를 안내합니다. 수록된 기출 전체가 최신 출제기준과 일치한다는 뜻은 아닙니다. 시험 일정·응시 요건·현재 출제기준은 해당 시험의 공식 안내에서 확인하세요.</p>
+        <p><a href={guide.authority.href}>{guide.authority.label}</a>에서 준비하는 종목·급수와 적용 기간을 확인하세요.</p>
         <nav className="cbt-public-links" aria-label="관련 문제은행">
           <Link href="/cbt/">전체 자격증·시험 문제은행</Link>
           {related.map(item => <Link key={item.slug} href={qualificationHref(item.slug)} prefetch={false}>{item.title}</Link>)}
