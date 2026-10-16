@@ -55,10 +55,10 @@ const approvedAuditIps = [
 assert.deepEqual([...auditIps].sort(), [...approvedAuditIps].sort(), "Only the reviewed official IPs may bypass");
 assert.deepEqual([...audit.conditionGroup[0].conditions.find(c => c.type === "method").value].sort(), ["GET", "HEAD"], "Only reviewed read methods may bypass");
 const trustedAudit = { ip_address: "178.63.105.151", user_agent: "SEBot-WA", host: "www.mypassmate.com" };
-for (const path of ["/", "/cbt", "/cbt/", "/cbt/전기기능사/", "/robots.txt", "/sitemap.xml", "/sitemap.txt", "/favicon.ico", "/_next/static/app.js"]) {
+for (const path of ["/", "/cbt", "/cbt/", "/cbt/전기기능사/", "/robots.txt", "/sitemap.xml", "/sitemap.txt", "/favicon.ico", "/_next/static/app.js", "/terms", "/terms/", "/privacy", "/privacy/", "/cbtmate-logo.png"]) {
   assert.ok(matches(audit, path, "GET", trustedAudit), `Allow verified public audit: ${path}`);
 }
-for (const path of ["/admin/", "/api/cbt/", "/api/admin/", "/account/", "/library/", "/checkout/", "/.env", "/.git/config", "/wp-admin/", "/cbt/../admin/", "/cbt/%2e%2e/admin/", "/cbt-other/", "/robots.txt/extra"]) {
+for (const path of ["/admin/", "/api/cbt/", "/api/admin/", "/account/", "/library/", "/store/", "/analytics-settings/", "/checkout/", "/.env", "/.git/config", "/wp-admin/", "/cbt/../admin/", "/cbt/%2e%2e/admin/", "/cbt-other/", "/robots.txt/extra", "/terms/admin/", "/privacy/admin/", "/cbtmate-logo.png/extra"]) {
   assert.ok(!matches(audit, path, "GET", trustedAudit), `Do not bypass protected/nonpublic route: ${path}`);
 }
 assert.ok(matches(audit, "/", "HEAD", trustedAudit));

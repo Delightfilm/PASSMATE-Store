@@ -21,7 +21,7 @@
       "description": "Official SE Ranking IPs + SEBot-WA on public GET/HEAD SEO paths only. Preserve DDoS, exploit and API protections.",
       "active": true,
       "conditionGroup": [{ "conditions": [
-        { "type": "path", "op": "re", "value": "^/(?:$|cbt(?:/|$)|robots\\.txt$|sitemap\\.(?:xml|txt)$|favicon\\.ico$|_next/static/)" },
+        { "type": "path", "op": "re", "value": "^/(?:$|cbt(?:/|$)|robots\\.txt$|sitemap\\.(?:xml|txt)$|terms/?$|privacy/?$|cbtmate-logo\\.png$|favicon\\.ico$|_next/static/)" },
         { "type": "user_agent", "op": "eq", "value": "SEBot-WA" },
         { "type": "ip_address", "op": "inc", "value": [
           "5.9.48.208", "23.88.36.149", "37.27.13.192", "37.27.22.37", "37.27.22.127", "37.27.29.8",
