@@ -1,0 +1,112 @@
+{
+  "fixturesOnly": true,
+  "screens": [
+    {
+      "viewport": 360,
+      "screen": "overview",
+      "fonts": [
+        "14px"
+      ],
+      "inner": 360,
+      "minHeight": 44,
+      "scroll": 345
+    },
+    {
+      "viewport": 390,
+      "screen": "overview",
+      "fonts": [
+        "14px"
+      ],
+      "inner": 390,
+      "minHeight": 44,
+      "scroll": 375
+    },
+    {
+      "viewport": 430,
+      "screen": "overview",
+      "fonts": [
+        "14px"
+      ],
+      "inner": 430,
+      "minHeight": 44,
+      "scroll": 415
+    },
+    {
+      "viewport": 1280,
+      "screen": "overview",
+      "fonts": [
+        "14px"
+      ],
+      "inner": 1280,
+      "minHeight": 44,
+      "scroll": 1265
+    },
+    {
+      "viewport": 360,
+      "screen": "members-detail",
+      "focus": "audience-detail",
+      "fonts": [
+        "14px",
+        "16px"
+      ],
+      "inner": 360,
+      "minHeight": 44,
+      "minWidth": 44,
+      "scroll": 345
+    },
+    {
+      "viewport": 390,
+      "screen": "members-detail",
+      "focus": "audience-detail",
+      "fonts": [
+        "14px",
+        "16px"
+      ],
+      "inner": 390,
+      "minHeight": 44,
+      "minWidth": 44,
+      "scroll": 375
+    },
+    {
+      "viewport": 430,
+      "screen": "members-detail",
+      "focus": "audience-detail",
+      "fonts": [
+        "14px",
+        "16px"
+      ],
+      "inner": 430,
+      "minHeight": 44,
+      "minWidth": 44,
+      "scroll": 415
+    },
+    {
+      "viewport": 1280,
+      "screen": "members-detail",
+      "focus": "audience-detail",
+      "fonts": [
+        "14px",
+        "16px"
+      ],
+      "inner": 1280,
+      "minHeight": 44,
+      "minWidth": 44,
+      "scroll": 1265
+    }
+  ],
+  "contrast": {
+    "muted": 7.56,
+    "ink": 17.74,
+    "blue": 6.7
+  },
+  "checks": [
+    "pagination2pages",
+    "literalSearch",
+    "emptySearch",
+    "detailFocus",
+    "closeFocusReturn",
+    "queryFailureNoZero",
+    "retryRecovery",
+    "nasAndLegacyCounts"
+  ]
+}
