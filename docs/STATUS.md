@@ -1,10 +1,16 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-14**
+> Last updated: **2026-10-17**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
 ## Current Focus
+
+### SE Ranking crawl access — 2026-10-17
+
+- Diagnosed homepage/robots/sitemap HTTP 429 as Vercel's browser challenge. After exact user approval, published the official-IP + exact SEBot-WA + canonical host + GET/HEAD + public-path exception. Existing exploit/API and managed protections remain active; no system bypass or application/auth/data changes.
+- The restarted manual audit passed the homepage and began real page crawling. Progress and verified results are maintained in outer `reports/seo-429-20261017/diagnosis.md`; Vercel also confirmed actual matching requests from an official crawler IP. Configuration and regression boundaries: `security/vercel-firewall.json`, `scripts/test-security-policy.mjs`, `docs/SECURITY_BOT_POLICY.md`.
+- Current Google live tests and Naver access checks passed five representative pages each. GSC sitemap.txt is successful with 504 discovered URLs, last read October 15. Access/discovery is not proof that all qualification pages are indexed or ranked.
 
 ### Admin visitor analytics and popular exams — 2026-10-14 (server connected; web release in progress)
 

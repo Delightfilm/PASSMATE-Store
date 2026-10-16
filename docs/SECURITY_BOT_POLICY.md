@@ -1,4 +1,4 @@
-# Automated-access policy and firewall — 2026-10-12
+# Automated-access policy and firewall — updated 2026-10-17
 
 ## Scope and verified state
 
@@ -16,10 +16,22 @@
 | AI Bots | Deny | Vercel-recognized AI collectors; not proof that every custom scraper is detected |
 | PASSMATE exploit probes | Deny | Requests for `.env`, `.git`, WordPress/PHP scanner targets. Does not match legitimate CBT/admin/login/download/SEO paths |
 | PASSMATE CBT API burst | Fixed-window HTTP 429 | `/api/cbt/` only; 600 matching requests per IP per 60-second window; counters are per region. Static assets, login/OAuth callbacks and payment webhook paths are excluded |
+| PASSMATE verified SE Ranking audit | Bypass, after both custom protections | All five conditions required: official 29-IP snapshot, exact `SEBot-WA`, host `www.mypassmate.com`, GET/HEAD, and public home/CBT/SEO/static paths. No system-mitigation bypass |
 
 No remote device MAC can be obtained from ordinary routed HTTP requests. No MAC collection, device-fingerprint blacklist or permanent/shared-network IP ban was implemented. IPs can change or be shared, so the initial automatic rate limit is temporary and deliberately generous. Known malicious IP/CIDR blocks can be added separately after observing evidence.
 
 ## Verification
+
+### SE Ranking false positive — 2026-10-17
+
+- A plain HTTP request to home, robots.txt and sitemap.txt returned HTTP 429 with `x-vercel-mitigated: challenge` and Vercel Security Checkpoint HTML. Vercel's Bot Protection aggregate showed 23 SEBot-WA requests, and SE Ranking's error capture showed the checkpoint. This was a browser challenge, not the `/api/cbt/` request limit.
+- The observed `178.63.105.151` matches the [official audit crawler list](https://help.seranking.com/hc/en-us/articles/16335355751196-Verifying-SE-Ranking-Crawler-FAQ); reverse DNS `site-audit-crawler-01.sr-srv.net` resolves forward to that IP. The list is a reviewed snapshot and must be rechecked before future additions.
+- The user specifically approved activation. The five-condition rule was published through the actual project UI, ID `rule_passmate_verified_se_ranking_audit_2PK6uC`. Reopening the saved rule confirmed all conditions. Existing exploit/API rules remain first, Bot Protection remains Challenge, AI Bots remains Deny, and no system bypass was added. WAF changes apply independently of app deployment.
+- A single manual SE Ranking audit passed the formerly blocked homepage and began crawling real pages. Progress and verified results are tracked in outer `reports/seo-429-20261017/diagnosis.md`; do not infer whole-site audit success merely from that initial progress. The rule-specific Vercel traffic view also confirmed 283 matching requests from official IP `167.233.95.57` with UA `SEBot-WA`, including stage qualification paths.
+- Google Search Console actual URL tests and Naver URL inspections each passed home, `/cbt/`, electrical, forklift and stage-mechanics level 2. These current fetch tests do not certify every URL's index inclusion. Google sitemap.txt remains successful, 504 discovered pages, last read October 15; discovered count is not indexed count.
+- The source regression test first failed because the exception was absent, then passed with the exact scoped rule. It exercises allowed paths and negative private/traversal paths, method, hostname, IP and UA mismatches; it is a configuration check, not an emulator of Vercel's mitigation engine.
+
+### Original protection release — 2026-10-12
 
 - A first failing security-policy test confirmed the configuration was missing. The added configuration then passed probe-positive and legitimate-route-negative tests; these are included in `npm run check`.
 - `npm run check`, `npx tsc --noEmit`, `npx next build` passed. The policy route is static. Legal warnings remain explicit rather than suppressed.
@@ -37,7 +49,7 @@ Origin-specific protection remains required: obtain confirmed operator access, b
 
 ## Rollback
 
-Code and WAF are independent. Reverting this policy commit does **not** revert Vercel WAF. For a suspected false positive, edit only the relevant owned rule to log/disable, inspect the draft, then publish. Preserve DDoS protections, unrelated rules and the store-pause flag. Full WAF rollback of this initially empty project means removing only the two `PASSMATE` rules and returning Bot Protection to off and AI Bots to allow; leave provider system protections on. No DB rollback or learner-data deletion is needed.
+Code and WAF are independent. Reverting a configuration commit does **not** revert Vercel WAF. To roll back the October 17 exception, disable only `PASSMATE verified SE Ranking audit`, review and publish; preserve the two earlier rules, Bot Protection=Challenge, AI Bots=Deny and system DDoS protection. For other suspected false positives, inspect the specific owned rule before proposing a separate change. No DB rollback or learner-data deletion is needed.
 
 Detailed release/capture evidence: outer workspace `reports/bot-security-20261012/RESULT.md`.
 
