@@ -27,6 +27,17 @@ test('campaign and referrer filtering discards sensitive arbitrary text', () => 
   assert.equal(referrer(base+'/account/?code=secret'),'');
   assert.equal(referrer('not-a-url'),'');
 });
+
+test('only the published learning guides retain a safe page path without queries or fragments',()=>{
+ const sanitize=api(policy,'sanitizePage');
+ const guides=[{slug:'전기기능사',title:'전기기능사'},{slug:'지게차운전기능사',title:'지게차운전기능사'},{slug:'무대음향-3급',title:'무대음향 3급'},{slug:'제과기능사',title:'제과기능사'}];
+ for(const guide of guides.slice(0,3)){
+  const location=`${base}/cbt/${encodeURIComponent(guide.slug)}/guide/`;
+  assert.deepEqual(sanitize(`${location}?email=private#token`,guides),{location,title:`${guide.title} 학습 안내`,qualificationSlug:guide.slug});
+ }
+ assert.equal(sanitize(`${base}/cbt/제과기능사/guide/`,guides),null);
+ assert.equal(sanitize(`${base}/cbt/전기기능사/guide/private/`,guides),null);
+});
 test('events reject unknown names and extra PII instead of passing through', () => {
   const event=api(policy,'sanitizeEvent');
   assert.equal(event('exam_start',{qualification_slug:'전기기능사',email:'test@example.com'}),null);

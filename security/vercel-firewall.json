@@ -1,6 +1,6 @@
 {
-  "version": "2026-10-12",
-  "managed": { "bot-protection": "challenge", "ai-bots": "deny" },
+  "version": "2026-11-12",
+  "managed": { "bot-protection": "challenge", "ai-crawlers": "deny", "ai-assistants": "allow" },
   "rules": [
     {
       "name": "PASSMATE exploit probes",

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
 import { priorityQualifications, qualificationGuide } from "@/lib/cbt-public-content";
+import { findLearningGuide, learningGuideHref } from "@/lib/public-learning-guides";
 
 type Qualification = (typeof publicQualifications)[number];
 
@@ -10,6 +11,7 @@ export function QualificationIntro({ qualification }: { qualification: Qualifica
     <nav aria-label="페이지 경로"><Link href="/">PASSMATE</Link><span aria-hidden="true"> / </span><Link href="/cbt/">CBT 문제은행</Link></nav>
     <h1>{qualification.title}</h1>
     <p className="cbt-public-coverage">{qualification.exams.toLocaleString("ko-KR")}회차 · {qualification.questions.toLocaleString("ko-KR")}문항{guide ? ` · ${guide.years}년 자료` : ""}</p>
+    {findLearningGuide(qualification.slug) && <nav className="cbt-public-links" aria-label={`${qualification.title} 학습 안내`}><Link href={learningGuideHref(qualification.slug)} prefetch={false}>공부 방법과 개념 풀이 예시</Link></nav>}
   </section>;
 }
 
