@@ -6,6 +6,13 @@
 
 ## Current Focus
 
+### NAS transfer latency and backup review — 2026-11-12
+
+- User authorized investigating/improving NAS delivery and checking backup state while retaining daily12:00 operations. Origin loopback519509byte bundle200 measured below0.01s display precision; public TLS/transfer and repeated no-cache revalidation contribute to delay, not observed source corruption.
+- Backed up exact active nginx source and changed only the two public bundle cache headers plus an HTTP map. Valid digest200/304 responses get browser300s/edge3600s, legacy remains no-cache and errors/recovery no-store. nginx-t passed, graceful reload succeeded, gzip hash unchanged, public MISS→HIT and no-store404/recovery verified. Exact-peer protection/read-only mounts/CORS/private/catalog/health boundaries remain.
+- Browser adapter now versions bundle URL by catalog SHA and respects HTTP freshness, with one unique-query/no-store recovery for invalid/cacheable errors; access/rate/abort errors do not retry. Focused rollback/negative-cache tests, full checks/build and independent review are required before web rollout. Final delivery identity/browser measurements belong to outer reports/nas-latency-backup-20261112.
+- NAS backup app currently has no backup jobs or execution logs. Same-volume release archives/config copies and an examined local727qualification recovery copy are distinct from current738qualification complete independent backup; backup/restore completeness remains under review, not declared healthy.
+
 ### Daily operations follow-up — 2026-11-12
 
 - User authorized immediate full checks, minimal incident recovery, and applying supported SEO/GEO improvements during each daily12:00 report. Preserve original data/private/auth/payment boundaries and distinguish completed deployment from Google processing.
