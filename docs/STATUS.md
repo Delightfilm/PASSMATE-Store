@@ -1,6 +1,6 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-10-17**
+> Last updated: **2026-11-12**
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
@@ -8,9 +8,16 @@
 
 ### NAS incident, security patches and qualification 404 — 2026-11-12
 
-- Public NAS data chain and browser year/round selection recovered after starting the stopped question-bank origin and correcting its exact tunnel-peer trust. Automatic restart remains **confirmed disabled**; host/backup/reboot guarantees are not established.
-- Security patch and invalid qualification HTTP semantics passed local checks/build and independent review. Production identity and live verification must be read from the dated operator recovery report, not inferred from local success.
-- Google live URL test accepts the sampled previously Soft404 archive; the 56-item historical report still requires Google reprocessing. Details and boundaries: `docs/OPERATIONS_RECOVERY_20261112.md`.
+- Final operator evidence at16:35KST confirms public NAS chain and browser selectors recovered, origin healthy and automatic restart enabled after applying `restart: always`. Host reboot/backup restoration was not tested.
+- Security/qualification404 patch is deployed: main91ed4e7645daed75c88d706dd7ea06294a53bcd1, production dpl_GSRRLS7nimWCugg4obi33CnP2H1D; live200/404/308 confirmed. Final evidence is in the operator workspace `reports/operations-recovery-20261112/RESULT.md`.
+- Google live URL sample passed; Soft40456 validation requested and Started on November12. Final Google processing remains pending. The existing daily12:00 Asia/Seoul monitor includes completion follow-up.
+
+### SEO / GEO public-learning pilot — 2026-11-12 (in progress)
+
+- User authorized three public learning guides and nine original conceptual examples for 전기기능사, 지게차운전기능사 and 무대음향3급, existing practice links, search baseline and training/search crawler separation.
+- Existing private/auth/store/payment/learning persistence boundaries remain. Scope and verification ledger: `docs/SEO_GEO_PILOT_20261112.md`. Do not infer deployment or performance gains until recorded against live evidence.
+- Authenticated Search Console baseline2026-10-14–11-10:17web clicks/808impressions, separate Google generative-AI impressions75. Three original guides/nine examples passed tests/build and independent review; no ranking/traffic gain asserted.
+- Firewall category-only change is live at version7 after explicit publish approval: training crawlers denied, search/assistants allowed; bot challenge and all three custom rules unchanged. Final code deployment identity and live page proof belong to dated operator report `reports/seo-geo-pilot-20261112/RESULT.md`.
 
 ### Admin member dashboard — 2026-10-17 (local verified; not deployed)
 

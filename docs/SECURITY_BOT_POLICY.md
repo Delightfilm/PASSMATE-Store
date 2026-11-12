@@ -1,5 +1,9 @@
 # Automated-access policy and firewall — 2026-10-12
 
+## Current follow-up — 2026-11-12
+
+User approved SEO/GEO public learning content and search/training crawler separation. The reviewed category-only change keeps AI training Crawlers denied while allowing provider-classified AI Assistants (search/user fetches); general bot challenge, exploit probes, CBT API600/60s and the existing verified SE Ranking audit exception remain. No new bypass is added. The base JSON fixture contains owned base rules, not the entire remote rule list, and must not be used to replace that full list. Ordinary auth/private data access is unchanged. Public robots explicitly opts GPTBot out and allows OAI-SearchBot while retaining private exclusions. robots is a crawling preference, not authentication or a guarantee of model behavior. Final live version and verification are recorded in `docs/SEO_GEO_PILOT_20261112.md` and the operator report. The following October12 sections remain historical, not the final category policy.
+
 ## Scope and verified state
 
 - The user authorized an automated collection/bot access clause and technical protection. `/terms/` now publishes only those clauses, clearly titled “이용약관 — 자동화 접근 및 콘텐츠 수집”, effective 2026-10-12. No unapproved full terms/privacy/refund/copyright text is fabricated. The strict legal check continues to flag the missing full terms and other policies.

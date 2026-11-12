@@ -26,7 +26,11 @@ assert.equal(rate.action.mitigate.rateLimit.window, 60);
 assert.equal(rate.action.mitigate.rateLimit.action, "rate_limit");
 assert.ok(rate.action.mitigate.rateLimit.limit >= 600, "Allow shared-network learning bursts");
 assert.equal(policy.managed["bot-protection"], "challenge");
-assert.equal(policy.managed["ai-bots"], "deny");
+assert.equal(policy.managed["ai-crawlers"], "deny", "Keep training crawlers blocked");
+assert.equal(policy.managed["ai-assistants"], "allow", "Allow provider-classified search/assistant bots without a broad WAF bypass");
+// This fixture declares only owned base rules. Never replace the full live list:
+// its existing verified audit exception must survive a category-only update.
+assert.ok(!policy.rules.some(rule=>rule.action.mitigate.action==='bypass'), "This pilot must not introduce a search/assistant WAF bypass");
 assert.ok(!JSON.stringify(policy).includes("mac_address"), "Do not claim a remote device MAC address is available");
 assert.ok(!policy.rules.some(rule => rule.action.mitigate.actionDuration), "No unreviewed permanent or persistent IP ban");
 console.log("Security policy PASS: exploit probes, normal/auth/download/SEO routes preserved, bounded CBT API rate limit, no MAC/persistent ban");
