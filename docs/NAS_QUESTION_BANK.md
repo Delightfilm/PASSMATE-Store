@@ -1,5 +1,30 @@
 # NAS question-bank runtime
 
+## Versioned public bundle cache — 2026-11-12
+
+The latency investigation observed a loopback bundle response in under the
+terminal's 0.01s resolution while public gzip requests took5.8–6.6s and repeated
+Cloudflare REVALIDATED. Public bundles and browser fetches both forced origin
+revalidation. This is distinct from data corruption or an unhealthy container.
+
+Use the catalog's64-hex digest as the bundle URL's v query parameter and normal
+HTTP cache freshness. A changed digest selects a new HTTP cache entry; malformed
+legacy digests retain unversioned no-cache behavior. Catalog remains no-store
+with its existing60s memory cache, and release/count/image validation, four-bundle
+LRU, cancellation, corrections, saved learning data and retry rules remain.
+
+The matching origin policy is scoped to the two existing public bundle locations:
+successful200/304 with a valid digest and no recovery nonce use browser max-age300/
+edge s-maxage3600; successful legacy responses retain no-cache, and errors/recovery
+responses use no-store. An invalid or cached404/5xx versioned response gets at most
+one unique-query/no-store recovery inside the shared request; authentication,
+rate-limit and abort errors do not. This prevents cached release/error objects
+from blocking recovery after rollback. See nas/question-bank/versioned-cache.conf.example. Do not cache
+health/catalog/private/admin/AI routes or replace the full live configuration.
+Source backups, nginx syntax validation, public hash/data chain, browser behavior
+and live deployment identity are mandatory; dated operator reports record whether
+the prepared policy was actually applied and measured.
+
 Qualification cards use the presentation-only grouping contract in
 [QUESTION_BANK_GROUPING.md](QUESTION_BANK_GROUPING.md). Original source IDs and
 bundles are retained; this does not rename the NAS corpus or migrate user state.

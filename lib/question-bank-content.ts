@@ -46,11 +46,29 @@ export async function loadContentBundle(catalog: ContentCatalog, code: string, o
   const cached = bundles.get(key);
   if (cached && !cached.controller.signal.aborted) { bundles.delete(key); bundles.set(key, cached); return watchContentRequest(cached, options); }
   const value = createContentRequest(async (requestOptions) => {
-    const url = `${contentBase()}/${entry.bundle}`;
-    const response = await fetchContent(url, "no-cache", requestOptions.signal);
-    if (!response.ok) throw new Error(`question_bank_bundle_${response.status}`);
-    const bundle = await readContentJson<Bundle>(response, { ...requestOptions, totalBytes: entry.uncompressedBytes });
-    if (bundle.schemaVersion !== "passmate.question-bank.bundle.v1" || bundle.releaseId !== catalog.releaseId || bundle.qualification.code !== code || bundle.questions.length !== entry.questions || bundle.exams.length !== entry.exams) throw new Error("question_bank_bundle_invalid");
+    // The catalog stays fresh; a changed digest selects a distinct HTTP cache
+    // entry. Legacy metadata retains origin revalidation until it has a digest.
+    const version = /^[a-f0-9]{64}$/i.test(entry.sha256) ? entry.sha256.toLowerCase() : null;
+    const url = `${contentBase()}/${entry.bundle}${version ? `?v=${version}` : ""}`;
+    const readBundle = async (requestUrl: string, cache: RequestCache) => {
+      const response = await fetchContent(requestUrl, cache, requestOptions.signal);
+      if (!response.ok) throw new Error(`question_bank_bundle_${response.status}`);
+      let data: Bundle;
+      try { data = await readContentJson<Bundle>(response, { ...requestOptions, totalBytes: entry.uncompressedBytes }); }
+      catch (error) { if ((error as Error)?.name === "SyntaxError") throw new Error("question_bank_bundle_invalid"); throw error; }
+      if (!data || data.schemaVersion !== "passmate.question-bank.bundle.v1" || data.releaseId !== catalog.releaseId || data.qualification?.code !== code || data.questions?.length !== entry.questions || data.exams?.length !== entry.exams) throw new Error("question_bank_bundle_invalid");
+      return data;
+    };
+    let bundle: Bundle;
+    try { bundle = await readBundle(url, version ? "default" : "no-cache"); }
+    catch (error) {
+      if (!version || requestOptions.signal?.aborted || !/^question_bank_bundle_(invalid|404|5\d\d)$/.test((error as Error)?.message || "")) throw error;
+      // A release swap can leave a stale/error response under an old digest.
+      // One fresh query bypasses both browser and shared caches after rollback;
+      // keep the retry inside this coalesced request, never bypass access errors.
+      const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      bundle = await readBundle(`${url}&_retry=${nonce}`, "no-store");
+    }
     const imageUrl = (image: string) => {
       if (!/^images\/[a-f0-9]{2}\/[a-f0-9]{64}\.[a-z0-9]+$/i.test(image)) throw new Error("question_bank_image_invalid");
       return `${contentBase()}/${image}`;

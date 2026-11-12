@@ -1,0 +1,15 @@
+# HTTP-context map (conf.d is included by the existing nginx http block).
+# Only public bundle responses use this variable. Do not apply to catalog,
+# health, corrections, AI cache, admin or private data.
+map "$status:$arg_v:$arg__retry" $passmate_bundle_cache_control {
+    default "no-store";
+    "~^(?:200|304):[0-9a-f]{64}:$" "public, max-age=300, s-maxage=3600";
+    "~^(?:200|304):[^:]*:$" "no-cache, max-age=0, must-revalidate";
+}
+
+# In the existing public /bundles/... location and @original_bundle fallback,
+# replace only its Cache-Control add_header with:
+# add_header Cache-Control $passmate_bundle_cache_control always;
+# Keep existing try_files, gzip encoding, read-only mounts, rate limits,
+# exact trusted tunnel peer and security/CORS includes unchanged.
+# Back up the active source file, validate nginx -t, then gracefully reload.
