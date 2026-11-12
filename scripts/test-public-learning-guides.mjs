@@ -21,6 +21,17 @@ assert.equal(new Set(learningGuides.flatMap(g=>g.examples.map(e=>e.id))).size,9)
 for(const guide of learningGuides){
  const params=Promise.resolve({certSlug:encodeURIComponent(guide.slug)});
  const html=renderToStaticMarkup(await route.default({params}));
+ const structured=[...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)].map(match=>JSON.parse(match[1]));
+ const breadcrumb=structured.find(item=>item['@type']==='BreadcrumbList');
+ assert.ok(breadcrumb,'Visible learning-guide navigation needs a machine-readable breadcrumb');
+ assert.equal(breadcrumb['@context'],'https://schema.org');
+ assert.equal(breadcrumb.itemListElement.length,3);
+ assert.deepEqual(Array.from(breadcrumb.itemListElement,item=>item.position),[1,2,3]);
+ assert.ok(breadcrumb.itemListElement.every(item=>item['@type']==='ListItem' && item.name && item.item.startsWith('https://www.mypassmate.com/')));
+ assert.equal(breadcrumb.itemListElement[0].item,'https://www.mypassmate.com/cbt/');
+ assert.equal(breadcrumb.itemListElement[1].item,`https://www.mypassmate.com/cbt/${encodeURIComponent(guide.slug)}/`);
+ assert.equal(breadcrumb.itemListElement[2].item,`https://www.mypassmate.com${learningGuideHref(guide.slug)}`);
+ assert.equal(breadcrumb.itemListElement[2].name,'학습 안내');
  assert.ok(html.includes(`<h1>${guide.title}</h1>`));
  assert.ok(html.includes('자체 제작'));
  assert.ok(html.includes('2026-11-12'));
