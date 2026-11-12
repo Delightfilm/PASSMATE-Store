@@ -62,5 +62,21 @@ assert.match(hub, /문제은행/); assert.match(hub, /CBT/);
 for (const slug of ["missing-qualification", "%E0%A4%A"]) {
   const meta = await route.generateMetadata({ params: Promise.resolve({ certSlug: slug }) });
   assert.equal(meta.robots.index, false);
+  await assert.rejects(route.default({ params: Promise.resolve({ certSlug: slug }) }),
+    error => error.digest === "NEXT_HTTP_ERROR_FALLBACK;404",
+    "nonexistent or malformed qualifications must return a real 404, not a successful client shell");
+}
+// Actual Search Console examples: valid archives must survive a cold render without the NAS.
+for (const slug of ["종자산업기사", "전기산업기사", "기상기사"]) {
+  const html = renderToStaticMarkup(await route.default({ params: Promise.resolve({ certSlug: slug }) }));
+  assert.ok(html.includes(`<h1>${slug}</h1>`));
+  assert.match(html, /회차.*문항/);
+  assert.ok(!html.includes("종목을 찾을 수 없습니다"));
+}
+for (const alias of ["jo"]) {
+  const params = Promise.resolve({ certSlug: alias });
+  await assert.rejects(route.default({ params }),
+    error => error.digest?.startsWith("NEXT_REDIRECT;") && error.digest.includes(`/cbt/${encodeURIComponent("전기기능사")}/;308;`),
+    "known source identifiers must keep working through a permanent canonical redirect");
 }
 console.log("Public SEO cold-render tests passed: 11 qualifications, verified coverage, canonical links, hub navigation, private/invalid URL boundaries");

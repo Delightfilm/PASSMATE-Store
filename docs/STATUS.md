@@ -6,6 +6,12 @@
 
 ## Current Focus
 
+### NAS incident, security patches and qualification 404 — 2026-11-12
+
+- Public NAS data chain and browser year/round selection recovered after starting the stopped question-bank origin and correcting its exact tunnel-peer trust. Automatic restart remains **confirmed disabled**; host/backup/reboot guarantees are not established.
+- Security patch and invalid qualification HTTP semantics passed local checks/build and independent review. Production identity and live verification must be read from the dated operator recovery report, not inferred from local success.
+- Google live URL test accepts the sampled previously Soft404 archive; the 56-item historical report still requires Google reprocessing. Details and boundaries: `docs/OPERATIONS_RECOVERY_20261112.md`.
+
 ### Admin member dashboard — 2026-10-17 (local verified; not deployed)
 
 - User-approved overview/member management implemented on `codex/admin-member-dashboard`, based on main `94b661657089e52cbacca7e4251ad2be4c60550b`.

@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
 import { QuestionBankClient } from "@/components/question-bank-client";
 import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
 import { publicMetadata, privateMetadata } from "@/lib/seo";
 import { QualificationIntro, QualificationStudyGuide } from "@/components/cbt-public-content";
 import { qualificationGuide } from "@/lib/cbt-public-content";
 
+function findQualification(slug: string) {
+  return publicQualifications.find(item => item.slug === slug || item.title === slug || item.codes.includes(slug)
+    || item.aliases.some(alias => alias.trim().replace(/\s+/g, "-") === slug));
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ certSlug: string }> }): Promise<Metadata> {
   const { certSlug } = await params;
   let slug: string;
   try { slug = decodeURIComponent(certSlug); }
   catch { return { title: "종목을 찾을 수 없습니다 | PASSMATE", ...privateMetadata }; }
-  const qualification = publicQualifications.find(item => item.slug === slug);
+  const qualification = findQualification(slug);
   if (!qualification) return { title: "종목을 찾을 수 없습니다 | PASSMATE", ...privateMetadata };
   const name = qualification.title;
   const guide = qualificationGuide(slug);
@@ -20,8 +26,9 @@ export async function generateMetadata({ params }: { params: Promise<{ certSlug:
 export default async function CertPage({ params }: { params: Promise<{ certSlug: string }> }) {
   const { certSlug } = await params;
   let slug: string;
-  try { slug = decodeURIComponent(certSlug); } catch { return <QuestionBankClient mode="cert" certParam={certSlug} />; }
-  const qualification = publicQualifications.find(item => item.slug === slug);
-  if (!qualification) return <QuestionBankClient mode="cert" certParam={certSlug} />;
+  try { slug = decodeURIComponent(certSlug); } catch { notFound(); }
+  const qualification = findQualification(slug);
+  if (!qualification) notFound();
+  if (qualification.slug !== slug) permanentRedirect(qualificationHref(qualification.slug));
   return <><QualificationIntro qualification={qualification} /><QuestionBankClient mode="cert" certParam={certSlug} /><QualificationStudyGuide qualification={qualification} /></>;
 }
