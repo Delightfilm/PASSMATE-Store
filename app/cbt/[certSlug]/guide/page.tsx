@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
 import { qualificationGuide } from "@/lib/cbt-public-content";
 import { findLearningGuide, learningGuides, learningGuideHref, learningGuideCheckedAt } from "@/lib/public-learning-guides";
-import { publicMetadata, privateMetadata } from "@/lib/seo";
+import { publicMetadata, privateMetadata, SITE_URL } from "@/lib/seo";
 
 type Props = { params: Promise<{ certSlug: string }> };
 export function generateStaticParams() { return learningGuides.map(guide => ({ certSlug: guide.slug })); }
@@ -19,7 +19,17 @@ export default async function LearningGuidePage({ params }: Props) {
   if (!qualification) notFound();
   const archive = qualificationGuide(guide.slug);
   const href = qualificationHref(guide.slug);
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "CBT 문제은행", item: `${SITE_URL}/cbt/` },
+      { "@type": "ListItem", position: 2, name: qualification.title, item: `${SITE_URL}${href}` },
+      { "@type": "ListItem", position: 3, name: "학습 안내", item: `${SITE_URL}${learningGuideHref(guide.slug)}` },
+    ],
+  };
   return <article className="learning-guide-page container">
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
     <nav className="learning-guide-breadcrumb" aria-label="페이지 경로"><Link href="/cbt/">CBT 문제은행</Link><span aria-hidden="true"> / </span><Link href={href}>{qualification.title}</Link><span aria-hidden="true"> / </span><span>학습 안내</span></nav>
     <header><h1>{guide.title}</h1><p>{guide.introduction}</p><p className="learning-guide-meta">PASSMATE 자체 제작 · 계산·단위·참고자료 대조일 <time dateTime={learningGuideCheckedAt}>{learningGuideCheckedAt}</time></p></header>
     <nav className="cbt-public-links" aria-label="학습 안내 목차"><a href="#study-order">공부 순서</a><a href="#worked-examples">개념 풀이 예시</a><a href="#archive-scope">수록 범위</a><a href="#references">참고자료</a></nav>

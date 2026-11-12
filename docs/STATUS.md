@@ -6,6 +6,12 @@
 
 ## Current Focus
 
+### Daily operations follow-up — 2026-11-12
+
+- User authorized immediate full checks, minimal incident recovery, and applying supported SEO/GEO improvements during each daily12:00 report. Preserve original data/private/auth/payment boundaries and distinguish completed deployment from Google processing.
+- Fresh public www response200 showed missing MIME/referrer/framing headers. Prepare nosniff, strict-origin-when-cross-origin and SAMEORIGIN without cache/CORS/auth changes. Add BreadcrumbList matching the visible hierarchy on the three public guides; no invented expertise/rating/FAQ claims or UI redesign.
+- New regression checks were observed failing before implementation. Code/deployment verification belongs in dated outer `reports/daily-operations/2026-11-12-evening/` evidence; production completion requires main/deployment identity and actual responses.
+
 ### NAS incident, security patches and qualification 404 — 2026-11-12
 
 - Final operator evidence at16:35KST confirms public NAS chain and browser selectors recovered, origin healthy and automatic restart enabled after applying `restart: always`. Host reboot/backup restoration was not tested.
