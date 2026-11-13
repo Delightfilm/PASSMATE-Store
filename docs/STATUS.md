@@ -1,6 +1,33 @@
 # PASSMATE Current Status
 
 > Last updated: **2026-11-13**
+
+### NAS independent backup and public bundle edge — 2026-11-13
+
+- NAS static Brotli sidecars for738 current bundles are decoded-identical to
+  original gzip data; total187324600→135679151bytes. Verified live nginx SHA
+  8860ddf39f96e7dc4cd099d2a5238395a31dbd7a24aae363b0b937d7d15313fd, public
+  JSON/hash and real electric/audio preparation. Origin protection, private
+  routes, catalog freshness and original source gzip remain. Initial failed
+  candidate was rolled back; final uses try_files rather than if child locations.
+- Independent PC public-question-bank backup verified245795 archive files and
+  current738qualification catalog coverage; full isolated restore verified all
+  245795 physical files. Windows PASSMATE-Public-NAS-Backup daily11:30KST ran with
+  exit0 and captured the live config. Existing user login/SMB access is required;
+  no passwords stored, no backup retention deletion,12GiB disk reserve. This is
+  public runtime/config protection, not a claim of private AI/user DB or offsite
+  whole-NAS backup. Evidence: outer reports/nas-recovery-backup-20261113.
+- Remaining public NAS browser connections used Cloudflare LAX while www edge
+  cache used ICN. Prepare a strict public bundle-only site-edge rewrite with
+  nonempty safe header overrides and direct-NAS error recovery. Catalog, images,
+  server AI lookups, legacy hashes and all private routes retain existing paths.
+  Source tests/review are distinct from preview/production cache and browser
+  verification; final deployment identity belongs in the dated outer report.
+- Google individual URL inspection confirmed electric/audio guides indexed;
+  forklift guide remains pending. Original Soft40456 cycle remains Started,
+  pending56/failed0 with original full URL set unchanged. Noon operations and
+  SEO/GEO reporting remain active; do not restart validation or submit duplicates.
+
 >
 > This file records the **current verified state**, not the full history. Historical work remains in `SESSION_LOG.md` and `docs/archive/`.
 
