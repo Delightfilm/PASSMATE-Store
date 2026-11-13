@@ -8,6 +8,6 @@ export const metadata: Metadata = publicMetadata(
 );
 
 import { QuestionBankClient } from "@/components/question-bank-client";
-import { CbtPublicIntro, PriorityQualificationLinks } from "@/components/cbt-public-content";
+import { CbtPublicIntro, PriorityQualificationLinks, LearningGuideLinks } from "@/components/cbt-public-content";
 
-export default function CbtPage() { return <><CbtPublicIntro /><PriorityQualificationLinks /><QuestionBankClient mode="home" /></>; }
+export default function CbtPage() { return <><CbtPublicIntro /><PriorityQualificationLinks /><LearningGuideLinks /><QuestionBankClient mode="home" /></>; }
