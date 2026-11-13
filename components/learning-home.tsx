@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CertificationSearch } from "./certification-search";
 import { qualificationHref, quickQualifications } from "@/lib/cbt-home-catalog";
 import { STORE_ENABLED } from "@/lib/store-availability";
-import { PriorityQualificationLinks } from "@/components/cbt-public-content";
+import { PriorityQualificationLinks, LearningGuideLinks } from "@/components/cbt-public-content";
 
 export function LearningHome() {
   return <section className="learning-home" aria-labelledby="learning-home-title">
@@ -25,6 +25,7 @@ export function LearningHome() {
         {STORE_ENABLED && <Link className="learning-store" href="/store/" prefetch={false}>핵심노트 스토어 <span aria-hidden="true">→</span></Link>}
       </nav>
       <PriorityQualificationLinks embedded />
+      <LearningGuideLinks embedded />
     </div>
   </section>;
 }

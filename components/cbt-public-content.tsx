@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
 import { priorityQualifications, qualificationGuide } from "@/lib/cbt-public-content";
-import { findLearningGuide, learningGuideHref } from "@/lib/public-learning-guides";
+import { findLearningGuide, learningGuides, learningGuideHref } from "@/lib/public-learning-guides";
 
 type Qualification = (typeof publicQualifications)[number];
 
@@ -85,6 +85,10 @@ export function PriorityQualificationLinks({ embedded = false }: { embedded?: bo
 
 export function CbtPublicIntro() {
   return <section className="cbt-public-intro container"><h1>CBT 문제은행</h1></section>;
+}
+
+export function LearningGuideLinks({ embedded = false }: { embedded?: boolean } = {}) {
+  return <section className={`cbt-topics${embedded ? "" : " container"}`} aria-labelledby="learning-guides-title"><h2 id="learning-guides-title">개념부터 복습하기</h2><nav className="cbt-public-links" aria-label="종목별 학습 안내">{learningGuides.map(guide => <Link key={guide.slug} href={learningGuideHref(guide.slug)} prefetch={false}>{publicQualifications.find(item => item.slug === guide.slug)!.title} 공부 방법</Link>)}</nav></section>;
 }
 
 function DisclosureArrow() {

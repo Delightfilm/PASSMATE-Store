@@ -6,9 +6,10 @@ export type LearningExample = {
 type LearningGuide = {
   slug: string; title: string; description: string; introduction: string;
   approach: string[]; checkpoints: string[];
+  questions: { id: string; question: string; answer: string; exampleId: string; sourceIds: string[] }[];
   sources: { id: string; label: string; href: string }[]; examples: LearningExample[];
 };
-export const learningGuideCheckedAt = "2026-11-12";
+export const learningGuideCheckedAt = "2026-11-13";
 export function learningGuideHref(slug: string) { return `/cbt/${encodeURIComponent(slug)}/guide/`; }
 const physics = "https://openstax.org/books/university-physics-volume-";
 
@@ -24,6 +25,10 @@ export const learningGuides: LearningGuide[] = [
       "같은 개념을 다른 수치로 다시 계산한 뒤 회차별 기출이나 모의시험으로 돌아갑니다. 설비·규정은 기출 당시 내용과 준비하는 시험의 현행 출제기준을 구분하세요.",
     ],
     checkpoints: ["직렬에서는 같은 전류, 병렬에서는 같은 전압이 걸리는지 확인하기", "전력 W와 전력량 Wh·kWh를 구분하기", "법규·설비의 과거 정답을 현행 기준으로 바로 적용하지 않기"],
+    questions: [
+      { id: "electric-parallel-why", question: "병렬 합성저항은 왜 가장 작은 저항보다 작나요?", answer: "양의 저항이 같은 두 지점에 병렬로 연결되면 전류가 흐를 경로가 늘어납니다. 합성저항의 역수는 각 저항 역수의 합이므로, 두 저항 이상에서는 합성저항이 각 저항보다 작습니다. 반면 직렬은 저항값을 더합니다. 회로의 두 접속점을 먼저 확인한 뒤 식을 선택하세요.", exampleId: "electric-parallel", sourceIds: ["resistors"] },
+      { id: "electric-energy-units", question: "W와 Wh·kWh는 어떻게 구분하나요?", answer: "W는 단위 시간에 전달되는 에너지인 전력, Wh와 kWh는 사용 시간까지 반영한 에너지인 전력량입니다. 전력이 일정하면 전력량은 전력과 시간의 곱입니다. kW에 시간을 h로 넣어야 kWh가 되므로, 30분은 0.5시간으로 바꿔 계산합니다.", exampleId: "electric-energy", sourceIds: ["power"] },
+    ],
     sources: [
       { id: "ohm", label: "OpenStax University Physics 2 — Ohm’s Law", href: `${physics}2/pages/9-4-ohms-law` },
       { id: "resistors", label: "OpenStax University Physics 2 — Resistors in Series and Parallel", href: `${physics}2/pages/10-2-resistors-in-series-and-parallel` },
@@ -46,6 +51,10 @@ export const learningGuides: LearningGuide[] = [
       "회차별 복습 후 모의시험으로 다시 확인하고, 안전·법규 문제는 준비하는 시험에 적용되는 공식 자료로 대조합니다. 필기 연습과 실제 장비 운전 교육은 별개입니다.",
     ],
     checkpoints: ["cm²를 m²로 바꾸거나 면적비를 사용할 때 같은 단위인지 확인하기", "모멘트의 거리는 힘의 작용선까지의 수직거리로 읽기", "이상적인 계산값을 실제 허용하중이나 운전 기준으로 사용하지 않기"],
+    questions: [
+      { id: "forklift-pressure-force", question: "유압 계산에서 압력과 힘은 무엇이 다른가요?", answer: "압력은 단위 면적에 작용하는 힘으로 P = F/A입니다. 같은 압력이 전달되는 이상적인 유압 모형에서는 피스톤 면적이 커지면 힘도 커집니다. 출력 면적이 입력의 5배라고 해서 압력이 5배가 되는 것은 아닙니다. 실제 장비의 허용하중과 안전 조건은 이 모형만으로 판단할 수 없습니다.", exampleId: "forklift-hydraulic", sourceIds: ["hydraulics"] },
+      { id: "forklift-work-power", question: "일과 일률 문제에서는 무엇부터 확인하나요?", answer: "일은 힘이 작용한 방향의 이동거리까지 반영한 에너지이고, 평균 일률은 그 일을 걸린 시간으로 나눈 값입니다. 먼저 구할 단위가 J인지 W인지 확인하세요. 힘과 이동 방향이 같은 일정한 힘의 모형에서는 일 = 힘 × 이동거리, 평균 일률 = 일 ÷ 시간으로 계산합니다.", exampleId: "forklift-work", sourceIds: ["work", "power"] },
+    ],
     sources: [
       { id: "hydraulics", label: "OpenStax University Physics 1 — Pascal’s Principle and Hydraulics", href: `${physics}1/pages/14-3-pascals-principle-and-hydraulics` },
       { id: "torque", label: "OpenStax University Physics 1 — Torque", href: `${physics}1/pages/10-6-torque` },
@@ -60,23 +69,32 @@ export const learningGuides: LearningGuide[] = [
   },
   {
     slug: "무대음향-3급",
-    title: "무대음향 3급 공부 방법과 음향 개념 풀이 예시",
-    description: "무대음향 3급 기출을 복습하는 순서와 데시벨·샘플링·음의 전달 시간에 관한 자체 제작 풀이 예시를 확인하고 회차별 문제풀이로 이어가세요.",
-    introduction: "무대음향 3급은 음향 용어를 신호와 장비의 관계 속에서 이해하며 공부해 보세요. 이 페이지에서는 수치를 읽을 때 자주 혼동하는 데시벨, 디지털 샘플링, 전달 시간을 기초 예시로 살펴봅니다.",
+    title: "무대음향 3급 공부 방법과 dBu·dBV·데시벨 풀이",
+    description: "무대음향 3급 공부 순서, dBu·dBV와 10log·20log의 차이를 확인하세요. 신호 전압·데시벨·샘플링·전달 시간의 자체 제작 예시에서 기출 문제풀이로 이어집니다.",
+    introduction: "무대음향 3급은 음향 용어를 신호와 장비의 관계 속에서 이해하며 공부해 보세요. dBu·dBV의 전압 기준, 음압과 강도의 데시벨 계산을 구분하고 디지털 샘플링·전달 시간까지 네 가지 예시로 연습합니다.",
     approach: [
       "응시하려는 3급의 회차와 자료 범위를 먼저 확인합니다. 공연장 안전과 관련 법규, 무대기술일반, 음향 개념을 구분하며 틀린 이유를 적습니다.",
       "마이크에서 입력·처리·증폭·출력으로 이어지는 신호 흐름에 용어를 연결해 보세요. 디지털 오디오의 Hz와 시간, 신호 레벨의 dB를 서로 다른 단위로 구분합니다.",
       "수치가 달라진 개념 예시를 다시 푼 뒤 기출로 돌아갑니다. 다른 급수는 보충 자료로 사용하되 3급의 시험 범위와 같다고 가정하지 않고 공식 시험 안내를 확인합니다.",
     ],
     checkpoints: ["압력비와 강도비의 데시벨 계산을 구분하기", "샘플링 주파수와 보존하려는 신호의 주파수를 구분하기", "거리차에 의한 전달 시간과 장비의 처리 지연을 구분하기"],
+    questions: [
+      { id: "audio-dbu-dbv", question: "dBu와 dBV의 차이는 무엇인가요?", answer: "둘 다 신호의 실효 전압을 기준 전압과 비교한 레벨이지만 기준값이 다릅니다. 제조사 자료에서 0 dBu는 0.775 V RMS, 0 dBV는 1 V RMS입니다. dBu = 20 log₁₀(V/0.775), dBV = 20 log₁₀(V/1)로 구분합니다. 같은 숫자라도 같은 전압은 아니며, 아래 예시는 반올림한 기준값 0.775 V를 사용합니다.", exampleId: "audio-reference-voltage", sourceIds: ["voltage-reference", "audio-level-units"] },
+      { id: "audio-ten-twenty-log", question: "데시벨 계산에서 10log와 20log는 언제 쓰나요?", answer: "전력이나 음향 강도의 비는 10 log₁₀로, 같은 매질·조건에서 음압의 비는 20 log₁₀로 표현합니다. 강도가 음압의 제곱에 비례하기 때문입니다. 전압비를 전력비와 연결할 때도 임피던스 조건을 확인해야 합니다. 먼저 문제에서 비교하는 값이 음압·전압인지, 전력·강도인지 구분하세요.", exampleId: "audio-level", sourceIds: ["sound-level", "audio-level-units"] },
+      { id: "audio-dbu-dbfs", question: "dBu를 dBFS로 바로 바꿀 수 있나요?", answer: "장비의 아날로그 전압과 디지털 풀스케일 대응을 모르면 바로 바꿀 수 없습니다. 예를 들어 해당 장비가 0 dBFS를 +24 dBu에 맞춘 조건이라면 +4 dBu는 그보다 20 dB 낮은 −20 dBFS에 대응합니다. 이 대응은 장비의 정렬 조건이며 모든 장비에 같은 값으로 적용할 수 없습니다.", exampleId: "audio-reference-voltage", sourceIds: ["digital-levels"] },
+    ],
     sources: [
       { id: "sound-level", label: "OpenStax University Physics 1 — Sound Intensity", href: `${physics}1/pages/17-3-sound-intensity` },
+      { id: "voltage-reference", label: "Yamaha EMX7/EMX5 — Specifications", href: "https://usa.yamaha.com/business/audio/products/mixers/emx7-emx5/specs.html" },
+      { id: "audio-level-units", label: "Biamp — Gain structure: input and output levels", href: "https://support.biamp.com/General/Audio/Gain_structure:_input_and_output_levels" },
+      { id: "digital-levels", label: "Yamaha — 아날로그·디지털 레벨의 차이", href: "https://jp.yamaha.com/business/audio/explore/featured-contents/mailmagazine/archive/tips08.html" },
       { id: "sampling", label: "Analog Devices — Sampling Rate", href: "https://www.analog.com/en/resources/glossary/sampling-rate.html" },
       { id: "aliasing", label: "Analog Devices — Mixed-Signal Components, Part V", href: "https://www.analog.com/en/resources/analog-dialogue/articles/mixed-signal-components-for-digital-communications-systems-part-v.html" },
       { id: "sound-waves", label: "OpenStax University Physics 1 — Sound Waves", href: `${physics}1/pages/17-1-sound-waves` },
     ],
     examples: [
       { id: "audio-level", concept: "압력비와 데시벨", question: "같은 매질·조건에서 음압의 실효값이 기존의 3배가 되면 음압 레벨의 차이는 약 몇 dB일까요?", assumption: "비교하는 음압은 같은 종류의 실효값이며 같은 기준 음압을 사용합니다. 청감상의 크기나 안전한 노출 수준을 계산하는 문제가 아닙니다.", formula: "ΔL = 20 log₁₀(p₂ / p₁)", steps: ["음압비가 3이므로 20 × log₁₀(3)을 계산합니다.", "log₁₀(3) ≈ 0.4771이므로 차이는 약 9.54 dB입니다. 같은 조건에서 음향 강도는 음압의 제곱에 비례하므로 10 log₁₀(9)로도 같은 결과를 확인할 수 있습니다."], answer: "약 9.54 dB", mistake: "강도가 3배라는 문제라면 10 log₁₀(3) ≈ 4.77 dB입니다. 음압과 강도 중 무엇의 비율인지 먼저 확인하세요.", sourceIds: ["sound-level"], result: { value: 9.542425, unit: "dB" } },
+      { id: "audio-reference-voltage", concept: "dBu 기준과 실효 전압", question: "0 dBu의 기준을 0.775 V RMS로 사용할 때 +4 dBu 신호의 실효 전압은 약 몇 V일까요?", assumption: "제조사 표기의 반올림한 기준 전압 0.775 V RMS와 전압 레벨 정의를 사용합니다. 출력 전력·부하·장비 설정을 구하는 문제가 아닙니다.", formula: "V = 0.775 × 10^(L_dBu / 20)", steps: ["레벨 +4 dBu를 넣으면 V = 0.775 × 10^(4/20)입니다.", "10^0.2 ≈ 1.5849이므로 V ≈ 0.775 × 1.5849 = 1.2283 V RMS, 약 1.23 V RMS입니다. 20 log₁₀(1.2283/0.775)로 되돌리면 약 4 dBu입니다."], answer: "약 1.23 V RMS", mistake: "dBu의 숫자 4를 전압 4 V로 읽거나 dBV의 기준 1 V를 그대로 넣지 마세요. dBFS와의 대응은 장비의 정렬 조건이 별도로 필요합니다.", sourceIds: ["voltage-reference", "audio-level-units"], result: { value: 1.2282925, unit: "V RMS" } },
       { id: "audio-sampling", concept: "샘플링과 에일리어싱", question: "48 kHz로 이상적으로 샘플링할 때, 필터링되지 않은 30 kHz 단일 정현파는 기본 대역에서 어떤 주파수와 구별되지 않을까요?", assumption: "기저대역 샘플링의 이상적인 모형이며 입력의 30 kHz 성분을 제거하는 사전 필터가 없다고 가정합니다.", formula: "f_alias = |f_s − f|", steps: ["샘플링 주파수 48 kHz의 절반인 24 kHz가 나이퀴스트 주파수입니다. 30 kHz는 이를 넘습니다.", "이 경우 48 − 30 = 18 kHz, 즉 18,000 Hz 성분으로 접혀 나타납니다. 실제 변환에서는 필요한 대역 밖 성분을 샘플링 전에 억제하도록 필터를 고려합니다."], answer: "18,000 Hz (18 kHz)", mistake: "48 kHz 샘플링이 48 kHz까지의 신호를 그대로 보존한다는 뜻은 아닙니다. 실제 필터의 전이 대역도 있으므로 이론적 경계 24 kHz까지 무조건 보존된다고 보지 마세요.", sourceIds: ["sampling", "aliasing"], result: { value: 18000, unit: "Hz" } },
       { id: "audio-delay", concept: "거리차와 전달 시간", question: "두 소리 경로의 거리차가 10.29 m이고 계산용 음속이 343 m/s로 주어지면 경로차에 의한 시간차는 몇 ms일까요?", assumption: "같은 일정한 음속의 매질을 통과하며 장비 처리 지연과 반사를 무시합니다. 실제 공연장 정렬값을 지정하는 예시는 아닙니다.", formula: "Δt = Δd / c", steps: ["시간차는 10.29 / 343 = 0.03 s입니다.", "1 s = 1,000 ms이므로 0.03 × 1,000 = 30 ms입니다. 실제 시스템을 판단할 때는 거리뿐 아니라 장비 지연과 측정 조건도 구분해야 합니다."], answer: "30 ms", mistake: "0.03 s를 0.03 ms로 쓰지 마세요. 음속은 항상 343 m/s로 고정된 상수가 아니라 이 계산에서 주어진 조건입니다.", sourceIds: ["sound-waves"], result: { value: 30, unit: "ms" } },
     ],
