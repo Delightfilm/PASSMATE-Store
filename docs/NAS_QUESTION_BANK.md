@@ -1,5 +1,21 @@
 # NAS question-bank runtime
 
+## Existing-site edge delivery for versioned browser bundles — 2026-11-13
+
+The browser may request valid SHA-versioned official-origin bundles through
+`/question-bank-content/bundles/<code>.json.gz?v=<sha>`. A scoped middleware
+rewrites only GET/HEAD and that exact public path/query to the fixed NAS origin.
+It seeds a safe Accept header before forwarding encoding/validators so the
+framework always removes non-allowlisted incoming Cookie/Authorization/private
+headers, including when the requester supplied no public headers. Origin cache
+policies remain authoritative; errors must not be forced into shared cache.
+
+Catalog, images, server-side AI lookups, other origins and legacy hashes stay
+direct. The existing single invalid/404/5xx recovery goes directly to NAS with a
+unique no-store nonce. Authentication/rate-limit errors and cancellation never
+bypass this boundary. Deployment/cache HIT/real preparation proof is required;
+see NAS_BUNDLE_EDGE_20261113.md and the dated outer operator evidence.
+
 ## Versioned public bundle cache — 2026-11-12
 
 The latency investigation observed a loopback bundle response in under the
