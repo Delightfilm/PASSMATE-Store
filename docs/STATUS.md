@@ -1,6 +1,16 @@
 # PASSMATE Current Status
 
-> Last updated: **2026-11-13**
+> Last updated: **2026-11-15**
+
+### Public favicon repair — 2026-11-15 (release verification in progress)
+
+- Daily authenticated Naver diagnosis identified `/favicon.ico` as its one
+  restricted URL. Fresh browser and previous local production build reproduce404.
+  Add a small multi-resolution ICO using the existing PASSMATE logo mark and
+  Next's metadata-file convention. Source/HTTP tests are distinct from verified
+  main/deployment and Naver recrawl. See FAVICON_REPAIR_20261115.md and outer daily
+  evidence; do not claim the historical Naver finding has cleared before its
+  report updates. Other public/SEO/NAS/private boundaries are preserved.
 
 ### NAS independent backup and public bundle edge — 2026-11-13
 
