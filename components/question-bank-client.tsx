@@ -152,6 +152,15 @@ function readTabState(): TabValue | null {
   const legacy = new URLSearchParams(window.location.search).get("tab");
   return isTabValue(legacy) ? legacy : null;
 }
+function subscribeToLearningLocation(sync: () => void) {
+  sync();
+  window.addEventListener("hashchange", sync);
+  window.addEventListener("popstate", sync);
+  return () => {
+    window.removeEventListener("hashchange", sync);
+    window.removeEventListener("popstate", sync);
+  };
+}
 function writeTabState(value: TabValue | "exams") {
   const url = new URL(window.location.href);
   url.searchParams.delete("tab");
@@ -163,12 +172,22 @@ function CbtSkeleton() { return <section className="question-bank-page"><div cla
 
 function CbtHome({ dataset }: { dataset: Dataset }) {
   const [query, setQuery] = useState(""); const [category, setCategory] = useState("전체"); const [builder, setBuilder] = useState(false);
-  useEffect(() => { const search = new URLSearchParams(window.location.search); setCategory(search.get("cat") || "전체"); setBuilder(readTabState() === "builder"); }, []);
+  useEffect(() => subscribeToLearningLocation(() => {
+    const search = new URLSearchParams(window.location.search);
+    setCategory(search.get("cat") || "전체");
+    setBuilder(readTabState() === "builder");
+  }), []);
   const certs = useMemo(() => qualificationGroups(dataset.certs).map((cert) => ({ ...cert, category: cert.category || certCategory(cert.name) })), [dataset]);
   const categories = useMemo(() => ["전체", ...Array.from(new Set(certs.map((cert) => cert.category!))).sort((a, b) => a.localeCompare(b, "ko"))], [certs]);
   const filtered = certs.filter((cert) => { const word = query.replace(/\s/g, "").toLowerCase(); const name = [cert.name, ...cert.sourceNames].join(" ").replace(/\s/g, "").toLowerCase(); return (category === "전체" || cert.category === category) && (!word || name.includes(word) || hangulInitials(name).includes(word)); });
   const groups = categories.filter((item) => item !== "전체").map((item) => ({ name: item, certs: filtered.filter((cert) => cert.category === item) })).filter((group) => group.certs.length);
-  function chooseCategory(value: string) { setCategory(value); const url = new URL(window.location.href); if (value === "전체") url.searchParams.delete("cat"); else url.searchParams.set("cat", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
+  function chooseCategory(value: string) {
+    setCategory(value);
+    const url = new URL(window.location.href);
+    if (value === "전체") url.searchParams.delete("cat");
+    else url.searchParams.set("cat", value);
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }
   return <PageShell>
     <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow eyebrow--latin">CBT MATE</span><h2 className="cbt-tool-title">실전처럼 풀고, 약점을 바로 확인하세요.</h2><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">기출 {(dataset.totalQuestions ?? dataset.questions.length).toLocaleString()}문항</span></div>
     <label className="cbt-search"><span className="cbt-search-icon" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="종목명을 검색하세요 (예: 정보처리기사)" aria-label="종목 검색" /></label>
@@ -205,7 +224,9 @@ function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Datase
   const [showGuide, setShowGuide] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const displayName = typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : "수험자";
-  useEffect(() => { const value = readTabState(); if (value) setTabState(value); }, []);
+  useEffect(() => subscribeToLearningLocation(() => {
+    setTabState(readTabState() ?? "exams");
+  }), []);
   function setTab(value: typeof tab) { setTabState(value); writeTabState(value); }
   function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects, learningMethod: "past" | "mock" | "custom" = "past") {
     const ids = exact ? questionIds : order === "random" ? shuffle(questionIds).slice(0, count) : questionIds.slice(0, count);

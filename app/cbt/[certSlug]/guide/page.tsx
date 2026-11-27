@@ -3,11 +3,12 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
 import { qualificationGuide } from "@/lib/cbt-public-content";
-import { findLearningGuide, learningGuides, learningGuideHref, learningGuideCheckedAt } from "@/lib/public-learning-guides";
+import { findLearningGuide, learningGuideHref, learningGuideCheckedAt } from "@/lib/public-learning-guides";
 import { publicMetadata, privateMetadata, SITE_URL } from "@/lib/seo";
 
 type Props = { params: Promise<{ certSlug: string }> };
-export function generateStaticParams() { return learningGuides.map(guide => ({ certSlug: guide.slug })); }
+// Next 15 can emit two Location headers on a cold static fallback redirect.
+export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const guide = findLearningGuide((await params).certSlug);
   return guide ? publicMetadata(`${guide.title} | PASSMATE`, guide.description, learningGuideHref(guide.slug)) : { title: "학습 안내를 찾을 수 없습니다 | PASSMATE", ...privateMetadata };
