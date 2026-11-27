@@ -7,6 +7,10 @@ export type { HomeQualification, HomeCatalogSnapshot } from "./cbt-home-catalog-
 export const homeCatalog = validateSnapshot(snapshot);
 const groupedQualifications = qualificationGroups(homeCatalog.qualifications.map(item => ({ id: item.code, name: item.title, questionCount: item.questions, examCount: item.exams }))).map(group => ({ code: group.id, title: group.name, slug: group.slug!, questions: group.questionCount!, exams: group.examCount!, aliases: group.sourceNames, codes: group.memberIds }));
 export function qualificationHref(slug: string) { return `/cbt/${encodeURIComponent(slug)}/`; }
+// Crawled Korean slugs arrive in several Unicode forms (decomposed Hangul copied from macOS,
+// full-width or compatibility characters, extra spacing). They name the same qualification, so a
+// lookup folds them onto the published slug instead of answering 404 for a page that exists.
+export function normalizeQualificationValue(value: string) { return value.normalize("NFKC").replace(/\s+/g, " ").trim(); }
 const initials = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
 export function normalizeSearch(value: string) { return value.normalize("NFKC").toLocaleLowerCase("ko-KR").replace(/\s+/g, ""); }
 function initialSearch(value: string) {

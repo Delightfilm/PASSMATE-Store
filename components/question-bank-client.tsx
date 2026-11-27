@@ -140,12 +140,30 @@ export function QuestionBankClient({ mode = "home", certParam = "", attemptId = 
   return withStorageNotice(<CertDetail dataset={dataset} cert={cert} store={store} saveStore={saveStore} user={user} />);
 }
 
+// Learning tabs are page state, not a second URL for the same content. Crawlers follow
+// server-rendered links, so the tab is carried in the fragment (never sent to the server)
+// and a legacy ?tab= link keeps working for people who already have one.
+const TAB_VALUES = ["subjects", "mock", "builder", "records"] as const;
+type TabValue = (typeof TAB_VALUES)[number];
+function isTabValue(value: string | null | undefined): value is TabValue { return !!value && (TAB_VALUES as readonly string[]).includes(value); }
+function readTabState(): TabValue | null {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (isTabValue(hash)) return hash;
+  const legacy = new URLSearchParams(window.location.search).get("tab");
+  return isTabValue(legacy) ? legacy : null;
+}
+function writeTabState(value: TabValue | "exams") {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("tab");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${value === "exams" ? "" : `#${value}`}`);
+}
+
 function PageShell({ children }: { children: React.ReactNode }) { return <section className="question-bank-page"><div className="container question-bank-container">{children}</div></section>; }
 function CbtSkeleton() { return <section className="question-bank-page"><div className="container question-bank-skeleton" aria-label="불러오는 중"><span /><strong /><i /><div><span /><span /></div></div></section>; }
 
 function CbtHome({ dataset }: { dataset: Dataset }) {
   const [query, setQuery] = useState(""); const [category, setCategory] = useState("전체"); const [builder, setBuilder] = useState(false);
-  useEffect(() => { const search = new URLSearchParams(window.location.search); setCategory(search.get("cat") || "전체"); setBuilder(search.get("tab") === "builder"); }, []);
+  useEffect(() => { const search = new URLSearchParams(window.location.search); setCategory(search.get("cat") || "전체"); setBuilder(readTabState() === "builder"); }, []);
   const certs = useMemo(() => qualificationGroups(dataset.certs).map((cert) => ({ ...cert, category: cert.category || certCategory(cert.name) })), [dataset]);
   const categories = useMemo(() => ["전체", ...Array.from(new Set(certs.map((cert) => cert.category!))).sort((a, b) => a.localeCompare(b, "ko"))], [certs]);
   const filtered = certs.filter((cert) => { const word = query.replace(/\s/g, "").toLowerCase(); const name = [cert.name, ...cert.sourceNames].join(" ").replace(/\s/g, "").toLowerCase(); return (category === "전체" || cert.category === category) && (!word || name.includes(word) || hangulInitials(name).includes(word)); });
@@ -155,7 +173,7 @@ function CbtHome({ dataset }: { dataset: Dataset }) {
     <div className="question-bank-hero cbt-home-hero"><div><span className="eyebrow eyebrow--latin">CBT MATE</span><h2 className="cbt-tool-title">실전처럼 풀고, 약점을 바로 확인하세요.</h2><p>종목을 선택한 뒤 회차별 기출이나 모의고사를 시작하세요.</p></div><span className="question-bank-status">기출 {(dataset.totalQuestions ?? dataset.questions.length).toLocaleString()}문항</span></div>
     <label className="cbt-search"><span className="cbt-search-icon" aria-hidden="true" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="종목명을 검색하세요 (예: 정보처리기사)" aria-label="종목 검색" /></label>
     {certs.length > 1 && <div className="cbt-category-chips" aria-label="종목 카테고리">{categories.map((item) => <button className={category === item ? "is-active" : ""} onClick={() => chooseCategory(item)} key={item}>{item}</button>)}</div>}
-    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "?tab=builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong><span><HighlightQuery text={cert.name} query={query} /></span><span className="qualification-arrow" aria-hidden="true">→</span></strong><span>기출 시험지 {(cert.examCount ?? dataset.exams.filter((exam) => belongsToQualification(cert, exam.certId)).length).toLocaleString()}개 · 문제 {(cert.questionCount ?? dataset.questions.filter((question) => belongsToQualification(cert, question.certId)).length).toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
+    {groups.length ? groups.map((group) => <section className="cbt-cert-group" key={group.name}>{certs.length > 1 && <div className="cbt-section-head"><h2>{group.name}</h2><span>{group.certs.length.toLocaleString()}개</span></div>}<div className="cbt-cert-grid">{group.certs.map((cert) => <Link href={`/cbt/${encodeURIComponent(certSlug(cert))}/${builder ? "#builder" : ""}`} className="cbt-cert-card" key={cert.id}>{certs.length > 1 && <small>{cert.category}</small>}<strong><span><HighlightQuery text={cert.name} query={query} /></span><span className="qualification-arrow" aria-hidden="true">→</span></strong><span>기출 시험지 {(cert.examCount ?? dataset.exams.filter((exam) => belongsToQualification(cert, exam.certId)).length).toLocaleString()}개 · 문제 {(cert.questionCount ?? dataset.questions.filter((question) => belongsToQualification(cert, question.certId)).length).toLocaleString()}문항</span></Link>)}</div></section>) : <EmptyState title="검색 결과가 없습니다." body="다른 종목명이나 카테고리로 찾아보세요." action="검색 초기화" onAction={() => { setQuery(""); chooseCategory("전체"); }} />}
   </PageShell>;
 }
 
@@ -187,8 +205,8 @@ function CertDetail({ dataset, cert, store, saveStore, user }: { dataset: Datase
   const [showGuide, setShowGuide] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const displayName = typeof user?.user_metadata?.display_name === "string" ? user.user_metadata.display_name : "수험자";
-  useEffect(() => { const value = new URLSearchParams(window.location.search).get("tab"); if (value === "subjects" || value === "mock" || value === "builder" || value === "records") setTabState(value); }, []);
-  function setTab(value: typeof tab) { setTabState(value); const url = new URL(window.location.href); if (value === "exams") url.searchParams.delete("tab"); else url.searchParams.set("tab", value); window.history.replaceState({}, "", `${url.pathname}${url.search}`); }
+  useEffect(() => { const value = readTabState(); if (value) setTabState(value); }, []);
+  function setTab(value: typeof tab) { setTabState(value); writeTabState(value); }
   function begin(questionIds: string[], examIds: string[], mode: GradeMode, minutes: number | null, exact = false, subjectIds = selectedSubjects, learningMethod: "past" | "mock" | "custom" = "past") {
     const ids = exact ? questionIds : order === "random" ? shuffle(questionIds).slice(0, count) : questionIds.slice(0, count);
     if (!ids.length) { setToast("선택한 범위에 출제 가능한 문제가 없습니다."); return; }

@@ -36,8 +36,9 @@ for (const [slug, years] of [["전기기능사", "2002–2016"], ["지게차운�
   const meta = await route.generateMetadata({ params });
   assert.ok(meta.alternates.canonical.includes(encodeURIComponent(slug)));
   const study = html.slice(html.indexOf('class="cbt-public-guide'));
-  assert.ok(study.includes(`/cbt/${encodeURIComponent(slug)}/?tab=mock`), `${slug}: guidance must lead directly to its own mock exam`);
-  assert.equal(study.includes(`/cbt/${encodeURIComponent(slug)}/?tab=subjects`), slug !== "지게차운전기능사", "subject links must reflect the available archive structure");
+  assert.ok(study.includes(`/cbt/${encodeURIComponent(slug)}/#mock`), `${slug}: guidance must lead directly to its own mock exam`);
+  assert.equal(study.includes(`/cbt/${encodeURIComponent(slug)}/#subjects`), slug !== "지게차운전기능사", "subject links must reflect the available archive structure");
+  assert.ok(!study.includes("/?tab="), "in-page tabs stay in the fragment: a query would publish a second URL whose canonical is this page");
   if (slug.startsWith("무대")) {
     for (const target of ["무대음향-2급", "무대기계-2급", "무대조명-2급"]) {
       if (slug.endsWith("2급") && target !== slug) assert.ok(study.includes(`/cbt/${encodeURIComponent(target)}/`), "stage learners must be able to reach the other fields at the same grade");
@@ -79,4 +80,20 @@ for (const alias of ["jo"]) {
     error => error.digest?.startsWith("NEXT_REDIRECT;") && error.digest.includes(`/cbt/${encodeURIComponent("전기기능사")}/;308;`),
     "known source identifiers must keep working through a permanent canonical redirect");
 }
-console.log("Public SEO cold-render tests passed: 11 qualifications, verified coverage, canonical links, hub navigation, private/invalid URL boundaries");
+// Crawled Korean slugs arrive decomposed (macOS copy) or in compatibility forms. Those URLs name
+// the same qualification, so they must reach the canonical page instead of answering 404.
+for (const slug of ["전기기능사", "무대음향-3급"]) {
+  for (const variant of [slug.normalize("NFD"), slug.replace(/-/g, " ")].filter(value => value !== slug)) {
+    const params = Promise.resolve({ certSlug: encodeURIComponent(variant) });
+    await assert.rejects(route.default({ params }),
+      error => error.digest?.startsWith("NEXT_REDIRECT;") && error.digest.includes(`/cbt/${encodeURIComponent(slug)}/;308;`),
+      `equivalent slug form must redirect to the canonical page: ${JSON.stringify(variant)}`);
+  }
+}
+const notFound = renderToStaticMarkup(load(path.join(root, "app/not-found.tsx")).default());
+assert.match(notFound, /페이지를 찾을 수 없습니다/, "404 page must explain the state in Korean");
+assert.ok(notFound.includes('href="/cbt/"'), "404 page must lead back to the public hub");
+const notFoundMeta = load(path.join(root, "app/not-found.tsx")).metadata;
+assert.match(notFoundMeta.title, /페이지를 찾을 수 없습니다/);
+assert.equal(notFoundMeta.robots.index, false, "a 404 page must not be offered for indexing");
+console.log("Public SEO cold-render tests passed: 11 qualifications, verified coverage, canonical links, fragment-only in-page tabs, equivalent-slug redirects, hub navigation, private/invalid URL boundaries");

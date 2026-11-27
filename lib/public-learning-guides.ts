@@ -102,6 +102,6 @@ export const learningGuides: LearningGuide[] = [
 ];
 
 export function findLearningGuide(value: string) {
-  try { const slug = decodeURIComponent(value); return learningGuides.find(guide => guide.slug === slug); }
+  try { const slug = decodeURIComponent(value).normalize("NFKC"); return learningGuides.find(guide => guide.slug === slug); }
   catch { return undefined; }
 }

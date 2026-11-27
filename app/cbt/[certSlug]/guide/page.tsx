@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
 import { qualificationGuide } from "@/lib/cbt-public-content";
 import { findLearningGuide, learningGuides, learningGuideHref, learningGuideCheckedAt } from "@/lib/public-learning-guides";
@@ -13,8 +13,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return guide ? publicMetadata(`${guide.title} | PASSMATE`, guide.description, learningGuideHref(guide.slug)) : { title: "학습 안내를 찾을 수 없습니다 | PASSMATE", ...privateMetadata };
 }
 export default async function LearningGuidePage({ params }: Props) {
-  const guide = findLearningGuide((await params).certSlug);
+  const raw = (await params).certSlug;
+  let decoded: string;
+  try { decoded = decodeURIComponent(raw); } catch { notFound(); }
+  const guide = findLearningGuide(raw);
   if (!guide) notFound();
+  if (decoded !== guide.slug) permanentRedirect(learningGuideHref(guide.slug));
   const qualification = publicQualifications.find(item => item.slug === guide.slug);
   if (!qualification) notFound();
   const archive = qualificationGuide(guide.slug);
@@ -40,7 +44,7 @@ export default async function LearningGuidePage({ params }: Props) {
         <h3 id={`${example.id}-title`}>{index + 1}. {example.concept}</h3><p className="learning-example-question">{example.question}</p><p><strong>가정</strong> {example.assumption}</p><p className="learning-example-formula">{example.formula}</p><ol>{example.steps.map(step => <li key={step}>{step}</li>)}</ol><p><strong>답: {example.answer}</strong></p><p><strong>헷갈리기 쉬운 점</strong> {example.mistake}</p><p className="learning-example-source">개념 근거: {example.sourceIds.map((id, sourceIndex) => { const source = guide.sources.find(item => item.id === id)!; return <span key={id}>{sourceIndex > 0 && " · "}<a href={source.href}>{source.label}</a></span>; })}</p>
       </section>)}
     </section>
-    <section id="archive-scope"><h2>현재 문제은행의 수록 범위</h2><p>{qualification.title} 문제은행은 {qualification.exams.toLocaleString("ko-KR")}회차 · {qualification.questions.toLocaleString("ko-KR")}문항{archive ? ` · ${archive.years}년 자료` : ""}를 제공합니다.</p><p>과거 기출 전체가 현재 출제기준과 일치한다는 뜻은 아닙니다. 이 페이지의 기초 예시 {guide.examples.length}개도 전체 시험 범위를 대신하지 않습니다.{archive && <> 응시 요건·일정·적용 출제기준은 <a href={archive.authority.href}>{archive.authority.label}</a>에서 확인하세요.</>}</p><nav className="cbt-public-links" aria-label="문제풀이로 이동"><Link href={href}>회차별 기출 풀어보기</Link><a href={`${href}?tab=mock`}>모의시험으로 연습하기</a></nav></section>
+    <section id="archive-scope"><h2>현재 문제은행의 수록 범위</h2><p>{qualification.title} 문제은행은 {qualification.exams.toLocaleString("ko-KR")}회차 · {qualification.questions.toLocaleString("ko-KR")}문항{archive ? ` · ${archive.years}년 자료` : ""}를 제공합니다.</p><p>과거 기출 전체가 현재 출제기준과 일치한다는 뜻은 아닙니다. 이 페이지의 기초 예시 {guide.examples.length}개도 전체 시험 범위를 대신하지 않습니다.{archive && <> 응시 요건·일정·적용 출제기준은 <a href={archive.authority.href}>{archive.authority.label}</a>에서 확인하세요.</>}</p><nav className="cbt-public-links" aria-label="문제풀이로 이동"><Link href={href}>회차별 기출 풀어보기</Link><a href={`${href}#mock`}>모의시험으로 연습하기</a></nav></section>
     <section id="references"><h2>참고자료와 확인 범위</h2><p>아래 자료의 물리 법칙과 신호 처리 개념을 대조해 예시를 작성하고 계산식·단위를 확인했습니다. 공식 기출의 정답이나 외부 전문가 검수본을 뜻하지 않습니다.</p><ul>{guide.sources.map(source => <li key={source.id}><a href={source.href}>{source.label}</a></li>)}</ul><p>기출 오류는 문제풀이 화면의 오류 신고로, 이 학습 안내의 수정 의견은 <a href="mailto:report@mypassmate.com">report@mypassmate.com</a>으로 알려주세요.</p></section>
   </article>;
 }
