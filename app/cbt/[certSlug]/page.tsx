@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { QuestionBankClient } from "@/components/question-bank-client";
-import { publicQualifications, qualificationHref } from "@/lib/cbt-home-catalog";
+import { publicQualifications, qualificationHref, normalizeQualificationValue } from "@/lib/cbt-home-catalog";
 import { publicMetadata, privateMetadata } from "@/lib/seo";
 import { QualificationIntro, QualificationStudyGuide } from "@/components/cbt-public-content";
 import { qualificationGuide } from "@/lib/cbt-public-content";
 
-function findQualification(slug: string) {
-  return publicQualifications.find(item => item.slug === slug || item.title === slug || item.codes.includes(slug)
-    || item.aliases.some(alias => alias.trim().replace(/\s+/g, "-") === slug));
+function findQualification(raw: string) {
+  const slug = normalizeQualificationValue(raw);
+  if (!slug) return undefined;
+  return publicQualifications.find(item => item.slug === slug || normalizeQualificationValue(item.title) === slug || item.codes.includes(slug)
+    || item.aliases.some(alias => normalizeQualificationValue(alias).replace(/\s+/g, "-") === slug));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ certSlug: string }> }): Promise<Metadata> {

@@ -39,10 +39,11 @@ export function QualificationStudyGuide({ qualification }: { qualification: Qual
           <li><strong>오답 복습:</strong> 정답을 확인하고, 제공되는 AI 해설을 참고해 풀이 과정을 점검합니다. AI 해설에는 오류가 있을 수 있으므로 의심되는 내용은 자료와 대조하세요.</li>
         </ol>
         <nav className="cbt-public-links" aria-label={`${qualification.title} 학습 바로가기`}>
-          {/* The learning client reads its initial tab on mount; load the destination with that query. */}
-          <a href={`${href}?tab=mock`}>CBT 모의시험 연습</a>
-          {qualification.slug !== "지게차운전기능사" && <a href={`${href}?tab=subjects`}>단원별로 복습하기</a>}
-          <a href={`${href}?tab=records`}>내 풀이 기록 확인</a>
+          {/* The learning client reads the requested tab from the fragment on mount: a query would
+              create a second indexable URL whose canonical is this page. */}
+          <a href={`${href}#mock`}>CBT 모의시험 연습</a>
+          {qualification.slug !== "지게차운전기능사" && <a href={`${href}#subjects`}>단원별로 복습하기</a>}
+          <a href={`${href}#records`}>내 풀이 기록 확인</a>
         </nav>
         <h2>자주 묻는 학습 질문</h2>
         <h3>{guide.question}</h3>
